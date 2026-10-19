@@ -8,6 +8,7 @@
 /coverage
 /frontend/test-results/
 /frontend/playwright-report/
+/frontend/package.json.md5
 /.impeccable/review/
 /.impeccable/cache/
 *.exe

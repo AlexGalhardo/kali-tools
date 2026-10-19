@@ -204,6 +204,7 @@ Start a listening local service for the TCP/HTTP examples; otherwise a refused c
 | Docker daemon unavailable/denied | Start the engine; check context, Linux-container mode and daemon access. |
 | Bun reports `EBADF` in a sandbox | Use the committed npm lockfile and `npm ci`; frozen Bun parity remains pending. |
 | Browser test port is occupied | Stop the previous development/test server and retry. |
+| Windows reports `EPERM` on a native npm module during build | Close running Vite/Playwright development processes before `npm ci` or a Wails rebuild; the DLL may still be loaded. |
 | Wi-Fi/capture denied or unsupported | Read the capability response; permissions and hardware need separate native acceptance. |
 
 Windows raw capture is limited to IPv4, requires administrator authorization, reports no reliable drop count, and is bounded to 60 seconds/10000 packets. Revealed Wi-Fi keys are never written to ordinary history. See [capture boundaries](docs/adr/002-capture-backend.md).
