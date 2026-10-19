@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+node_modules/
+build/bin/
+dist/
+coverage.out
+*.pcap
+*.pcapng
+*.db
+*.db-shm
+*.db-wal
