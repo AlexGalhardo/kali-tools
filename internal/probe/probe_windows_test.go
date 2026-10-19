@@ -1,0 +1,30 @@
+//go:build windows
+
+package probe
+
+import (
+	"context"
+	"errors"
+	"github.com/AlexGalhardo/hacker-tools/internal/domain"
+	"testing"
+	"time"
+)
+
+func TestNativeLoopbackPingAndCancellation(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), 3*time.Second)
+	defer cancel()
+	values, e := Run(ctx, "127.0.0.1", false)
+	var permission *domain.Error
+	if errors.As(e, &permission) && permission.Code == "permission_required" {
+		t.Skip("Native ICMP is denied by this host; acceptance remains pending")
+	}
+	if e != nil || len(values) != 5 {
+		t.Fatal(values, e)
+	}
+	cancelled, c := context.WithCancel(t.Context())
+	c()
+	_, e = Run(cancelled, "127.0.0.1", true)
+	if !errors.Is(e, context.Canceled) {
+		t.Fatal(e)
+	}
+}

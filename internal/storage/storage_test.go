@@ -1,0 +1,90 @@
+package storage
+
+import (
+	"context"
+	"path/filepath"
+	"sync"
+	"testing"
+	"time"
+)
+
+func TestPersistenceRecoveryAndRetention(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "history.db")
+	s, e := Open(path)
+	if e != nil {
+		t.Fatal(e)
+	}
+	now := time.Now().UTC()
+	if e = s.SaveSettings(t.Context(), Settings{"pt-BR", 7}); e != nil {
+		t.Fatal(e)
+	}
+	if e = s.PutJob(t.Context(), Job{ID: "1", Kind: "tcp", State: "running", Created: now.AddDate(0, 0, -60), Summary: "Running"}); e != nil {
+		t.Fatal(e)
+	}
+	s.Close()
+	s, e = Open(path)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer s.Close()
+	v, e := s.Settings(t.Context())
+	if e != nil || v.Language != "pt-BR" {
+		t.Fatal(v, e)
+	}
+	history, e := s.History(t.Context())
+	if e != nil || len(history) != 1 || history[0].State != "cancelled" {
+		t.Fatal(history, e)
+	}
+	if e = s.Retain(t.Context(), now.AddDate(0, 0, -30)); e != nil {
+		t.Fatal(e)
+	}
+	history, e = s.History(t.Context())
+	if e != nil || len(history) != 0 {
+		t.Fatal(history, e)
+	}
+}
+func TestConcurrentReadsAndCancelledWrite(t *testing.T) {
+	s, e := Open(filepath.Join(t.TempDir(), "db"))
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer s.Close()
+	var wg sync.WaitGroup
+	for range 20 {
+		wg.Go(func() {
+			if _, e := s.History(t.Context()); e != nil {
+				t.Error(e)
+			}
+		})
+	}
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	if s.PutJob(ctx, Job{ID: "cancelled", Created: time.Now()}) == nil {
+		t.Fatal("cancelled write succeeded")
+	}
+	wg.Wait()
+	rows, e := s.History(t.Context())
+	if e != nil || len(rows) != 0 {
+		t.Fatal(rows, e)
+	}
+	if e = s.SaveSettings(t.Context(), Settings{"unknown", 0}); e == nil {
+		t.Fatal("invalid settings accepted")
+	}
+}
+func TestMigrationRollback(t *testing.T) {
+	s, e := Open(":memory:")
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer s.Close()
+	if _, e = s.db.Exec("UPDATE schema_migrations SET version=99; INSERT INTO jobs VALUES('x','tcp','running','2026-01-01T00:00:00Z',NULL,'unchanged')"); e != nil {
+		t.Fatal(e)
+	}
+	if s.migrate(t.Context()) == nil {
+		t.Fatal("accepted future schema")
+	}
+	var summary string
+	if e = s.db.QueryRow("SELECT summary FROM jobs WHERE id='x'").Scan(&summary); e != nil || summary != "unchanged" {
+		t.Fatal(summary, e)
+	}
+}

@@ -1,0 +1,23 @@
+import {expect,test,type Page} from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+async function connect(page:Page){await page.addInitScript(()=>{
+  const handlers:Record<string,((v:unknown)=>void)[]>={};let settings={language:"en",retention_days:30};let count=100;
+  const job={id:"fixture-job",kind:"tcp",state:"completed",created:"2026-10-19T12:00:00Z",summary:"Diagnostic completed"};
+  const api={
+    Version:async()=>"0.1.0-alpha.1-dev",
+    Interfaces:async()=>[{index:1,name:"Fixture Ethernet",mac:"02:00:00:00:00:01",mtu:1500,up:true,loopback:false,addresses:["192.0.2.10/24"]}],
+    Inventory:async()=>({adapters:[{index:1,name:"Fixture Ethernet",gateways:["192.0.2.1"],dns:["192.0.2.53"]}],counters:[{id:"1",received:count+=100,sent:count}]}),
+    Settings:async()=>settings,SaveSettings:async(v:typeof settings)=>{settings=v;},
+    StartDiagnostic:async()=>{setTimeout(()=>handlers.job?.forEach(fn=>fn({schema_version:1,job,result:{kind:"tcp",target:"localhost",status:"completed",elapsed_ms:1,values:["connected"],provider:"fixture"}})),100);return {...job,state:"queued"};},CancelJob:async()=>true,
+    History:async()=>[job],ClearHistory:async()=>{},CurrentWiFi:async()=>({profile:"Fixture",ssid:"Fixture Network",bssid:"02:00:00:00:00:02",signal:80,authentication:7,state:"connected"}),RevealWiFi:async()=>({state:"available",value:"synthetic-test-key"}),
+    Tools:async()=>[{name:"nmap",state:"dependency_missing",version:"",path:""}],Discover:async()=>[{host:"192.0.2.1",port:80,state:"open"}],
+    ImportCapture:async()=>({packets:[{number:1,timestamp:"2026-10-19T12:00:00Z",length:64,source:"192.0.2.1",destination:"192.0.2.2",protocol:"DNS",info:"example.test"}],limited:false,format:"pcap"}),StartCapture:async()=>{},StopCapture:async()=>{}
+  };
+  Object.assign(window,{go:{main:{App:api}},runtime:{EventsOn:(name:string,fn:(v:unknown)=>void)=>{handlers[name]??=[];handlers[name].push(fn);return()=>{handlers[name]=handlers[name].filter(f=>f!==fn);};}}});
+});await page.goto("/");await expect(page.getByText("Fixture Ethernet")).toBeVisible();}
+test("diagnostic job returns real contract result and history",async({page})=>{await connect(page);await page.getByRole("button",{name:"Diagnostics",exact:true}).click();await page.getByRole("button",{name:/Run diagnostic/}).click();await expect(page.locator("pre")).toHaveText("connected");await page.getByRole("button",{name:"History",exact:true}).click();await expect(page.getByRole("cell",{name:"Diagnostic completed",exact:true})).toBeVisible();});
+test("Wi-Fi key clears on navigation and blur",async({page})=>{await connect(page);await page.getByRole("button",{name:"Wi-Fi",exact:true}).click();await page.getByRole("button",{name:"Reveal current network key"}).click();await expect(page.getByText("synthetic-test-key")).toBeVisible();await page.evaluate(()=>window.dispatchEvent(new Event("blur")));await expect(page.getByText("synthetic-test-key")).toHaveCount(0);await page.getByRole("button",{name:"Reveal current network key"}).click();await page.getByRole("button",{name:"Overview",exact:true}).click();await expect(page.getByText("synthetic-test-key")).toHaveCount(0);});
+test("packet import and display filtering",async({page})=>{await connect(page);await page.getByRole("button",{name:"Packet inspector",exact:true}).click();await page.getByRole("button",{name:"Import PCAP / PCAPNG"}).click();await expect(page.getByRole("cell",{name:"DNS",exact:true})).toBeVisible();await page.getByLabel("Display filter (protocol or address)").fill("TCP");await expect(page.getByRole("cell",{name:"DNS",exact:true})).toHaveCount(0);});
+test("PT-BR catalog and preferences",async({page})=>{await connect(page);await page.getByRole("button",{name:"Settings",exact:true}).click();await page.getByLabel("Language",{exact:true}).last().selectOption("pt-BR");await page.getByRole("button",{name:"Salvar preferências"}).click();await expect(page.getByRole("status")).toHaveText("Preferências salvas");});
+test("all screens have no serious or critical accessibility violations",async({page})=>{await connect(page);for(const name of ["Overview","Interfaces","Diagnostics","Wi-Fi","Packet inspector","Discovery & tools","History","Settings"]){await page.getByRole("button",{name,exact:true}).click();const results=await new AxeBuilder({page}).analyze();expect(results.violations.filter(v=>v.impact==="serious"||v.impact==="critical"),name).toEqual([]);}});
+test("browser without Wails shows explicit limitation",async({page})=>{await page.goto("/");await expect(page.getByText("Native bridge unavailable. Launch the desktop app to access your network.")).toBeVisible();await expect(page.getByRole("button",{name:/Refresh/})).toBeDisabled();});

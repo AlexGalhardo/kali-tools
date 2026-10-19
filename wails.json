@@ -1,0 +1,11 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "hacker-tools",
+  "outputfilename": "hacker-tools-desktop",
+  "frontend:install": "bun install --frozen-lockfile",
+  "frontend:build": "bun run build",
+  "frontend:dev:watcher": "bun run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": { "name": "Alex Galhardo" },
+  "info": { "productName": "Hacker Tools", "productVersion": "0.1.0", "comments": "Development alpha; see capability matrix" }
+}

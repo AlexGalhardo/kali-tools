@@ -1,0 +1,3 @@
+# Contributor instructions
+
+Use English for source, documentation and commits. Keep business logic in Go services shared by CLI and Wails. Never concatenate shell commands. Bound network operations, parser input, event queues and subprocess output. Never persist Wi-Fi secrets or packet payloads in diagnostic history. Keep GitHub workflows dormant in docs/ci. Mark PLAN.md tasks complete only with actual verification evidence. Run `go test ./...`, `go vet ./...` and the frontend check/build after relevant changes. Do not claim native platform acceptance from cross compilation. No release tag before qualification and owner decisions on licensing and signing.

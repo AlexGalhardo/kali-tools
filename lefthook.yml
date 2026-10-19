@@ -1,0 +1,22 @@
+pre-commit:
+  parallel: true
+  commands:
+    go-vet:
+      glob: "*.go"
+      run: go vet ./...
+    frontend:
+      glob: "*.{ts,tsx,css}"
+      run: npm --prefix frontend run lint
+commit-msg:
+  commands:
+    conventional:
+      run: node frontend/node_modules/@commitlint/cli/cli.js --edit {1}
+pre-push:
+  parallel: true
+  commands:
+    go-test:
+      run: go test -timeout 90s ./...
+    typecheck:
+      run: npm --prefix frontend run typecheck
+    vulnerabilities:
+      run: govulncheck ./...

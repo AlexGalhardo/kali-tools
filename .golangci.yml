@@ -1,0 +1,36 @@
+version: "2"
+run:
+  timeout: 5m
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - durationcheck
+    - errorlint
+    - makezero
+    - nilerr
+    - rowserrcheck
+    - sqlclosecheck
+    - copyloopvar
+    - gocheckcompilerdirectives
+    - misspell
+    - predeclared
+    - unconvert
+  settings:
+    errcheck:
+      exclude-functions:
+        - (io.Closer).Close
+        - (*database/sql.DB).Close
+        - (*database/sql.Tx).Rollback
+        - (net.Conn).Close
+        - (net.Listener).Close
+        - (*os.File).Close
+        - github.com/AlexGalhardo/hacker-tools/internal/storage.(*Store).Close
+        - github.com/AlexGalhardo/hacker-tools/internal/app.(*Service).Close
+        - golang.org/x/sys/windows.Closesocket
+        - golang.org/x/sys/windows.WSACleanup
+        - (golang.org/x/sys/windows.LazyProc).Call
+        - (*golang.org/x/sys/windows.LazyProc).Call
+formatters:
+  enable:
+    - gofmt

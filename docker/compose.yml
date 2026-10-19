@@ -1,0 +1,31 @@
+services:
+  fixture:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: runtime
+    entrypoint: ["lab-fixture"]
+    command: []
+    read_only: true
+    cap_drop: [ALL]
+    healthcheck:
+      test: [CMD, lab-fixture, --health]
+      interval: 1s
+      timeout: 2s
+      retries: 30
+    networks: [lab]
+  test:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: test
+    environment:
+      LAB_FIXTURE: fixture
+    depends_on:
+      fixture:
+        condition: service_healthy
+    cap_drop: [ALL]
+    networks: [lab]
+networks:
+  lab:
+    internal: true
