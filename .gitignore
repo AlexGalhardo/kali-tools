@@ -19,3 +19,11 @@
 *.pcap
 *.pcapng
 !/tests/fixtures/*.pcap
+
+# Local Windows development preview
+/kali-tools-desktop.exe
+
+# Native release staging
+/build/release/
+/build/notices/
+/build/staging-*/

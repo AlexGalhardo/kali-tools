@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -17,7 +18,7 @@ func TestDiagnosticsFixtures(t *testing.T) {
 	defer destination.Close()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, destination.URL, http.StatusFound) }))
 	defer server.Close()
-	result, e := Diagnose(t.Context(), Request{"http", server.URL, 0, 1000})
+	result, e := Diagnose(t.Context(), Request{Kind: "http", Target: server.URL, TimeoutMS: 1000})
 	if e != nil || len(result.Values) != 2 || result.Values[0] != "302 Found" {
 		t.Fatalf("%+v %v", result, e)
 	}
@@ -29,16 +30,16 @@ func TestDiagnosticsFixtures(t *testing.T) {
 		t.Fatal(e)
 	}
 	port := listener.Addr().(*net.TCPAddr).Port
-	if _, e = Diagnose(t.Context(), Request{"tcp", "127.0.0.1", port, 500}); e != nil {
+	if _, e = Diagnose(t.Context(), Request{Kind: "tcp", Target: "127.0.0.1", Port: port, TimeoutMS: 500}); e != nil {
 		t.Fatal(e)
 	}
 	listener.Close()
-	if _, e = Diagnose(t.Context(), Request{"tcp", "127.0.0.1", port, 500}); e == nil {
+	if _, e = Diagnose(t.Context(), Request{Kind: "tcp", Target: "127.0.0.1", Port: port, TimeoutMS: 500}); e == nil {
 		t.Fatal("closed listener succeeded")
 	}
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	if _, e = Diagnose(ctx, Request{"tcp", "127.0.0.1", port, 500}); e == nil {
+	if _, e = Diagnose(ctx, Request{Kind: "tcp", Target: "127.0.0.1", Port: port, TimeoutMS: 500}); e == nil {
 		t.Fatal("cancelled diagnostic succeeded")
 	}
 }
@@ -46,7 +47,7 @@ func TestHTTPTimeout(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { <-r.Context().Done() }))
 	defer server.Close()
 	start := time.Now()
-	if _, e := Diagnose(t.Context(), Request{"http", server.URL, 0, 100}); e == nil {
+	if _, e := Diagnose(t.Context(), Request{Kind: "http", Target: server.URL, TimeoutMS: 100}); e == nil {
 		t.Fatal("expected timeout")
 	}
 	if time.Since(start) > time.Second {
@@ -96,5 +97,34 @@ func TestTargetValidation(t *testing.T) {
 		if e := ValidateHost(host); e != nil {
 			t.Fatal(host, e)
 		}
+	}
+}
+
+func TestHTTPHeaderAndPortBounds(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Fixture", strings.Repeat("x", 70<<10))
+		w.WriteHeader(200)
+	}))
+	defer server.Close()
+	result, err := Diagnose(t.Context(), Request{Kind: "http", Target: server.URL, TimeoutMS: 1000})
+	if err == nil || result.Status != "failed" {
+		t.Fatalf("oversized header accepted: %+v %v", result, err)
+	}
+	for _, target := range []string{"http://localhost:0", "http://localhost:65536", "http://localhost:99999999999999999999"} {
+		if Validate(Request{Kind: "http", Target: target, TimeoutMS: 100}) == nil {
+			t.Fatal("invalid HTTP port accepted")
+		}
+	}
+}
+
+func TestIPv6TCPFixture(t *testing.T) {
+	listener, err := net.Listen("tcp6", "[::1]:0")
+	if err != nil {
+		t.Skip("IPv6 loopback is unavailable on this host")
+	}
+	defer listener.Close()
+	result, err := Diagnose(t.Context(), Request{Kind: "tcp", Target: "::1", Port: listener.Addr().(*net.TCPAddr).Port, TimeoutMS: 1000})
+	if err != nil || result.Status != "completed" || len(result.Values) != 1 {
+		t.Fatalf("IPv6 TCP: %+v %v", result, err)
 	}
 }

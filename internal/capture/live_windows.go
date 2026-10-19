@@ -5,39 +5,27 @@ package capture
 import (
 	"context"
 	"errors"
-	"github.com/AlexGalhardo/hacker-tools/internal/domain"
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/layers"
 	"golang.org/x/sys/windows"
-	"net"
 	"net/netip"
 	"sync"
 	"time"
 	"unsafe"
 )
 
-func Live(ctx context.Context, r LiveRequest) (LiveResult, error) {
+func live(ctx context.Context, r LiveRequest, artifact *Artifact) (LiveResult, error) {
 	result := LiveResult{Packets: []Packet{}, Provider: "Windows raw IPv4 socket", Started: time.Now().UTC()}
-	ip, e := netip.ParseAddr(r.Address)
-	if e != nil || !ip.Is4() || ip.IsLoopback() || r.DurationSeconds < 1 || r.DurationSeconds > 60 || r.PacketLimit < 1 || r.PacketLimit > MaxPackets {
-		return result, domain.Invalid("select a local non-loopback IPv4, duration 1..60 and packet limit 1..10000")
-	}
-	addresses, e := net.InterfaceAddrs()
-	if e != nil {
+	if e := ctx.Err(); e != nil {
 		return result, e
 	}
-	local := false
-	for _, a := range addresses {
-		p, e := netip.ParsePrefix(a.String())
-		if e == nil && p.Addr() == ip {
-			local = true
-		}
+	if e := ValidateLiveRequest(r); e != nil {
+		return result, e
 	}
-	if !local {
-		return result, domain.Invalid("capture address must belong to a local interface")
-	}
+	ip, _ := netip.ParseAddr(r.Address)
 	var wsa windows.WSAData
-	if e = windows.WSAStartup(0x202, &wsa); e != nil {
+	if e := windows.WSAStartup(0x202, &wsa); e != nil {
 		return result, e
 	}
 	defer windows.WSACleanup()
@@ -74,7 +62,14 @@ func Live(ctx context.Context, r LiveRequest) (LiveResult, error) {
 			}
 			return result, e
 		}
-		packet, e := Decode(buf[:n], layers.LinkTypeRaw, gopacket.CaptureInfo{Timestamp: time.Now().UTC(), CaptureLength: n, Length: n}, len(result.Packets)+1)
+		ci := gopacket.CaptureInfo{Timestamp: time.Now().UTC(), CaptureLength: n, Length: n}
+		if artifact != nil {
+			if e := artifact.Add(buf[:n], ci); e != nil {
+				result.Limited = true
+				break
+			}
+		}
+		packet, e := Decode(buf[:n], layers.LinkTypeRaw, ci, len(result.Packets)+1)
 		if e != nil {
 			return result, e
 		}

@@ -2,7 +2,7 @@
 
 package wifi
 
-import "github.com/AlexGalhardo/hacker-tools/internal/domain"
+import "github.com/AlexGalhardo/kali-tools/internal/domain"
 
 func Current() (Network, error) {
 	return Network{}, domain.Unsupported("Wi-Fi provider is not implemented for this platform")

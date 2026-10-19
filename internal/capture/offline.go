@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlexGalhardo/hacker-tools/internal/domain"
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/layers"
 	"github.com/gopacket/gopacket/pcapgo"
@@ -41,6 +41,11 @@ func Decode(data []byte, link layers.LinkType, ci gopacket.CaptureInfo, n int) (
 	}
 	p := gopacket.NewPacket(data, link, gopacket.DecodeOptions{Lazy: false, NoCopy: true})
 	r := Packet{Number: n, Timestamp: ci.Timestamp, Length: ci.Length, Protocol: "unknown"}
+	if l := p.LinkLayer(); l != nil {
+		r.Source = l.LinkFlow().Src().String()
+		r.Destination = l.LinkFlow().Dst().String()
+		r.Protocol = l.LayerType().String()
+	}
 	if l := p.NetworkLayer(); l != nil {
 		r.Source = l.NetworkFlow().Src().String()
 		r.Destination = l.NetworkFlow().Dst().String()
@@ -49,6 +54,14 @@ func Decode(data []byte, link layers.LinkType, ci gopacket.CaptureInfo, n int) (
 	if l := p.TransportLayer(); l != nil {
 		r.Protocol = l.LayerType().String()
 		r.Info = l.TransportFlow().String()
+	}
+	if l := p.Layer(layers.LayerTypeICMPv4); l != nil {
+		r.Protocol = "ICMPv4"
+		r.Info = l.(*layers.ICMPv4).TypeCode.String()
+	}
+	if l := p.Layer(layers.LayerTypeICMPv6); l != nil {
+		r.Protocol = "ICMPv6"
+		r.Info = l.(*layers.ICMPv6).TypeCode.String()
 	}
 	if d := p.Layer(layers.LayerTypeDNS); d != nil {
 		r.Protocol = "DNS"
@@ -61,8 +74,8 @@ func Decode(data []byte, link layers.LinkType, ci gopacket.CaptureInfo, n int) (
 	}
 	if t := p.Layer(layers.LayerTypeTCP); t != nil {
 		tcp := t.(*layers.TCP)
-		payload := string(tcp.Payload)
-		for _, method := range []string{"GET ", "POST ", "HEAD ", "PUT ", "DELETE ", "HTTP/"} {
+		payload := string(tcp.Payload[:min(len(tcp.Payload), 8)])
+		for _, method := range []string{"GET ", "POST ", "HEAD ", "PUT ", "DELETE ", "OPTIONS ", "PATCH ", "CONNECT ", "TRACE ", "HTTP/"} {
 			if strings.HasPrefix(payload, method) {
 				r.Protocol = "HTTP"
 				r.Info = "Plaintext HTTP message (payload omitted)"
@@ -70,7 +83,7 @@ func Decode(data []byte, link layers.LinkType, ci gopacket.CaptureInfo, n int) (
 			}
 		}
 		if tcp.SrcPort == 443 || tcp.DstPort == 443 {
-			r.Info += " TLS/encrypted application data"
+			r.Info += " Port 443 (encryption not verified)"
 		}
 	}
 	if p.ErrorLayer() != nil {
@@ -94,6 +107,9 @@ func ReadFile(path string) (ImportResult, error) {
 	return Read(io.LimitReader(f, MaxFileSize+1))
 }
 func Read(input io.Reader) (ImportResult, error) {
+	return read(input, nil)
+}
+func read(input io.Reader, retain func([]byte, gopacket.CaptureInfo, layers.LinkType) error) (ImportResult, error) {
 	raw, e := io.ReadAll(io.LimitReader(input, MaxFileSize+1))
 	if e != nil {
 		return ImportResult{}, e
@@ -142,6 +158,11 @@ func Read(input io.Reader) (ImportResult, error) {
 		if n > MaxPackets {
 			out.Limited = true
 			break
+		}
+		if retain != nil {
+			if e := retain(data, ci, link); e != nil {
+				return out, e
+			}
 		}
 		packet, e := Decode(data, link, ci, n)
 		if e != nil {

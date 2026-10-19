@@ -6,7 +6,7 @@ ACTION="${1:-test}"
 if [ "$ACTION" = help ]; then printf '%s\n' 'Usage: bash setups/setup-linux-docker.sh [test|build|doctor|down|help]' 'Start the Docker engine first. Docker tests the CLI, not host Wi-Fi, capture permissions or the native UI.'; exit 0; fi
 command -v docker >/dev/null 2>&1 || { printf '%s\n' 'Install Docker Engine and the Compose plugin; see README.' >&2; exit 1; }
 docker info >/dev/null 2>&1 || { printf '%s\n' 'Docker is unavailable. Start the engine and check Docker socket permissions.' >&2; exit 1; }
-compose() { docker compose --project-name hacker-tools-lab -f docker/compose.yml "$@"; }
+compose() { docker compose --project-name kali-tools-lab -f docker/compose.yml "$@"; }
 case "$ACTION" in
   test) trap 'status=$?; compose down --volumes --remove-orphans || true; exit "$status"' EXIT; compose up --build --abort-on-container-exit --exit-code-from test ;;
   build) compose build ;;

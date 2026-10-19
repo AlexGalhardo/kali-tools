@@ -4,31 +4,39 @@ package main
 
 import (
 	"context"
-	"github.com/AlexGalhardo/hacker-tools/internal/app"
-	"github.com/AlexGalhardo/hacker-tools/internal/capture"
-	"github.com/AlexGalhardo/hacker-tools/internal/domain"
-	"github.com/AlexGalhardo/hacker-tools/internal/network"
-	"github.com/AlexGalhardo/hacker-tools/internal/platform"
-	"github.com/AlexGalhardo/hacker-tools/internal/storage"
-	"github.com/AlexGalhardo/hacker-tools/internal/tools"
-	"github.com/AlexGalhardo/hacker-tools/internal/wifi"
+	"github.com/AlexGalhardo/kali-tools/internal/app"
+	"github.com/AlexGalhardo/kali-tools/internal/capture"
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
+	"github.com/AlexGalhardo/kali-tools/internal/network"
+	"github.com/AlexGalhardo/kali-tools/internal/platform"
+	"github.com/AlexGalhardo/kali-tools/internal/storage"
+	"github.com/AlexGalhardo/kali-tools/internal/tools"
+	"github.com/AlexGalhardo/kali-tools/internal/wifi"
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 	"sync"
 	"time"
 )
 
 type App struct {
-	ctx           context.Context
-	cancel        context.CancelFunc
-	service       *app.Service
-	initErr       error
-	captureMu     sync.Mutex
-	captureCancel context.CancelFunc
-	captureWG     sync.WaitGroup
+	initMu          sync.RWMutex
+	closed          bool
+	ctx             context.Context
+	cancel          context.CancelFunc
+	service         *app.Service
+	initErr         error
+	captureMu       sync.Mutex
+	captureCancel   context.CancelFunc
+	captureWG       sync.WaitGroup
+	captureArtifact *capture.Artifact
 }
 
 func NewApp() *App { return &App{} }
 func (a *App) startup(ctx context.Context) {
+	a.initMu.Lock()
+	defer a.initMu.Unlock()
+	if a.closed {
+		return
+	}
 	a.ctx, a.cancel = context.WithCancel(ctx)
 	path, e := storage.DefaultPath()
 	if e != nil {
@@ -73,16 +81,33 @@ func (a *App) startup(ctx context.Context) {
 	}()
 }
 func (a *App) shutdown(context.Context) {
+	a.initMu.Lock()
+	defer a.initMu.Unlock()
+	if a.closed {
+		return
+	}
+	a.closed = true
 	if a.cancel != nil {
 		a.cancel()
 	}
 	a.StopCapture()
 	a.captureWG.Wait()
+	a.captureMu.Lock()
+	a.captureArtifact = nil
+	a.captureMu.Unlock()
 	if a.service != nil {
-		a.service.Close()
+		_ = a.service.Close()
 	}
 }
 func (a *App) ready() error {
+	a.initMu.RLock()
+	defer a.initMu.RUnlock()
+	return a.readyLocked()
+}
+func (a *App) readyLocked() error {
+	if a.closed {
+		return domain.Invalid("application is shutting down")
+	}
 	if a.initErr != nil {
 		return a.initErr
 	}
@@ -95,7 +120,12 @@ func (a *App) Version() string                              { return domain.Vers
 func (a *App) Capabilities() []domain.Capability            { return app.Capabilities() }
 func (a *App) Interfaces() ([]network.InterfaceInfo, error) { return network.Interfaces() }
 func (a *App) Inventory() (platform.Snapshot, error)        { return platform.Inventory() }
-func (a *App) Tools() []tools.Tool                          { return tools.Inventory(a.ctx) }
+func (a *App) Tools() ([]tools.Tool, error) {
+	if e := a.ready(); e != nil {
+		return nil, e
+	}
+	return tools.Inventory(a.ctx), nil
+}
 func (a *App) Diagnose(r network.Request) (network.Result, error) {
 	if e := a.ready(); e != nil {
 		return network.Result{}, e
@@ -109,7 +139,7 @@ func (a *App) StartDiagnostic(r network.Request) (storage.Job, error) {
 	return a.service.Start(a.ctx, r)
 }
 func (a *App) CancelJob(id string) bool {
-	if a.service == nil {
+	if a.ready() != nil {
 		return false
 	}
 	return a.service.Cancel(id)
@@ -141,11 +171,21 @@ func (a *App) SaveSettings(v storage.Settings) error {
 func (a *App) CurrentWiFi() (wifi.Network, error) { return wifi.Current() }
 func (a *App) RevealWiFi() (wifi.Secret, error)   { return wifi.Reveal() }
 func (a *App) Discover(cidr string, ports []int) ([]network.PortResult, error) {
-	ctx, cancel := context.WithTimeout(a.ctx, 2*time.Minute)
-	defer cancel()
-	return network.Discover(ctx, cidr, ports, 500*time.Millisecond)
+	if e := a.ready(); e != nil {
+		return nil, e
+	}
+	return a.service.Discover(a.ctx, cidr, ports, 500*time.Millisecond)
 }
 func (a *App) ImportCapture() (capture.ImportResult, error) {
+	if e := a.ready(); e != nil {
+		return capture.ImportResult{}, e
+	}
+	a.captureMu.Lock()
+	running := a.captureCancel != nil
+	a.captureMu.Unlock()
+	if running {
+		return capture.ImportResult{}, domain.Invalid("stop capture before importing a file")
+	}
 	path, e := wruntime.OpenFileDialog(a.ctx, wruntime.OpenDialogOptions{Title: "Import capture", Filters: []wruntime.FileFilter{{DisplayName: "Packet capture", Pattern: "*.pcap;*.pcapng"}}})
 	if e != nil {
 		return capture.ImportResult{}, e
@@ -153,9 +193,26 @@ func (a *App) ImportCapture() (capture.ImportResult, error) {
 	if path == "" {
 		return capture.ImportResult{Packets: []capture.Packet{}}, nil
 	}
-	return capture.ReadFile(path)
+	result, artifact, e := capture.ReadArtifactFile(path)
+	if e == nil {
+		a.captureMu.Lock()
+		defer a.captureMu.Unlock()
+		if a.captureCancel != nil {
+			return capture.ImportResult{}, domain.Invalid("capture started while importing")
+		}
+		a.captureArtifact = artifact
+	}
+	return result, e
 }
 func (a *App) StartCapture(r capture.LiveRequest) error {
+	if e := capture.ValidateLiveRequest(r); e != nil {
+		return e
+	}
+	a.initMu.RLock()
+	defer a.initMu.RUnlock()
+	if e := a.readyLocked(); e != nil {
+		return e
+	}
 	a.captureMu.Lock()
 	defer a.captureMu.Unlock()
 	if a.captureCancel != nil {
@@ -163,12 +220,14 @@ func (a *App) StartCapture(r capture.LiveRequest) error {
 	}
 	ctx, cancel := context.WithCancel(a.ctx)
 	a.captureCancel = cancel
+	a.captureArtifact = nil
 	a.captureWG.Add(1)
 	go func() {
 		defer a.captureWG.Done()
 		defer cancel()
-		result, e := capture.Live(ctx, r)
+		result, artifact, e := capture.LiveSession(ctx, r)
 		a.captureMu.Lock()
+		a.captureArtifact = artifact
 		a.captureCancel = nil
 		a.captureMu.Unlock()
 		message := ""
@@ -185,4 +244,37 @@ func (a *App) StopCapture() {
 	if a.captureCancel != nil {
 		a.captureCancel()
 	}
+}
+
+func (a *App) SaveCapture(format string) (bool, error) {
+	if e := a.ready(); e != nil {
+		return false, e
+	}
+	if format != "pcap" && format != "pcapng" {
+		return false, domain.Invalid("capture format must be pcap or pcapng")
+	}
+	a.captureMu.Lock()
+	artifact := a.captureArtifact
+	running := a.captureCancel != nil
+	a.captureMu.Unlock()
+	if running || artifact == nil {
+		return false, domain.Invalid("import or finish a capture before saving")
+	}
+	path, e := wruntime.SaveFileDialog(a.ctx, wruntime.SaveDialogOptions{Title: "Save capture", DefaultFilename: "capture." + format, Filters: []wruntime.FileFilter{{DisplayName: "Packet capture", Pattern: "*." + format}}})
+	if e != nil || path == "" {
+		return false, e
+	}
+	ctx, cancel := context.WithTimeout(a.ctx, 30*time.Second)
+	defer cancel()
+	if e = artifact.Save(ctx, path, format); e != nil {
+		return false, e
+	}
+	return true, nil
+}
+
+func (a *App) InspectServices(cidr string, ports []int) (tools.Nmap, error) {
+	if e := a.ready(); e != nil {
+		return tools.Nmap{}, e
+	}
+	return a.service.InspectServices(a.ctx, cidr, ports)
 }

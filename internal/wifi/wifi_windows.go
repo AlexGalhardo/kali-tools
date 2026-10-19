@@ -4,7 +4,7 @@ package wifi
 
 import (
 	"fmt"
-	"github.com/AlexGalhardo/hacker-tools/internal/domain"
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"golang.org/x/sys/windows"
 	"net"
 	"unsafe"
@@ -95,16 +95,25 @@ func connected() (windows.Handle, iface, connection, error) {
 	return 0, iface{}, connection{}, &domain.Error{Code: "no_connection", Message: "No connected Wi-Fi interface"}
 }
 func Current() (Network, error) {
-	h, _, c, e := connected()
+	h, i, c, e := connected()
 	if e != nil {
 		return Network{}, e
 	}
 	defer closeHandle.Call(uintptr(h), 0)
-	n := c.Association.SSIDLength
-	if n > 32 {
-		return Network{}, domain.Invalid("invalid SSID length")
+	var data unsafe.Pointer
+	var size, opcode uint32
+	var channel *uint32
+	code, _, _ := queryInterface.Call(uintptr(h), uintptr(unsafe.Pointer(&i.GUID)), 8, 0, uintptr(unsafe.Pointer(&size)), uintptr(unsafe.Pointer(&data)), uintptr(unsafe.Pointer(&opcode)))
+	if code == 0 && data != nil {
+		defer freeMemory.Call(uintptr(data))
+		if size >= 4 {
+			value := *(*uint32)(data)
+			if value > 0 {
+				channel = &value
+			}
+		}
 	}
-	return Network{Profile: windows.UTF16ToString(c.Profile[:]), SSID: string(c.Association.SSID[:n]), BSSID: net.HardwareAddr(c.Association.BSSID[:]).String(), Signal: c.Association.Signal, Authentication: c.Auth, State: "connected"}, nil
+	return networkFromConnection(c, channel)
 }
 func Reveal() (Secret, error) {
 	h, i, c, e := connected()
@@ -139,4 +148,12 @@ func Reveal() (Secret, error) {
 		}
 	}
 	return secretFromProfile([]byte(windows.UTF16ToString(units)))
+}
+
+func networkFromConnection(c connection, channel *uint32) (Network, error) {
+	n := c.Association.SSIDLength
+	if n > 32 || c.Association.Signal > 100 {
+		return Network{}, domain.Invalid("invalid WLAN metadata")
+	}
+	return Network{Profile: windows.UTF16ToString(c.Profile[:]), SSID: string(c.Association.SSID[:n]), BSSID: net.HardwareAddr(c.Association.BSSID[:]).String(), Signal: c.Association.Signal, Authentication: c.Auth, State: "connected", Channel: channel}, nil
 }

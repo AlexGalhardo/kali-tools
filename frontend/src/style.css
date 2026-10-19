@@ -458,7 +458,7 @@ td strong {
   gap: 10px;
   min-width: 0;
 }
-.field > span {
+.field > label {
   font-size: 11px;
   color: #94a6b8;
 }
@@ -478,6 +478,7 @@ input::placeholder {
   color: #94a6b8;
 }
 .actions {
+  align-items: end;
   display: flex;
   gap: 12px;
   flex-wrap: wrap;

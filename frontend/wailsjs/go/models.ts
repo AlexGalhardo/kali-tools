@@ -178,6 +178,7 @@ export namespace network {
 	    }
 	}
 	export class Request {
+	    record_type?: string;
 	    kind: string;
 	    target: string;
 	    port: number;
@@ -189,6 +190,7 @@ export namespace network {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.record_type = source["record_type"];
 	        this.kind = source["kind"];
 	        this.target = source["target"];
 	        this.port = source["port"];
@@ -196,6 +198,7 @@ export namespace network {
 	    }
 	}
 	export class Result {
+	    error_code?: string;
 	    kind: string;
 	    target: string;
 	    status: string;
@@ -209,6 +212,7 @@ export namespace network {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.error_code = source["error_code"];
 	        this.kind = source["kind"];
 	        this.target = source["target"];
 	        this.status = source["status"];
@@ -338,6 +342,174 @@ export namespace storage {
 
 export namespace tools {
 	
+	export class NmapService {
+	    name: string;
+	    product: string;
+	    version: string;
+	    method: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new NmapService(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.product = source["product"];
+	        this.version = source["version"];
+	        this.method = source["method"];
+	    }
+	}
+	export class NmapPort {
+	    service: NmapService;
+	    port: number;
+	    protocol: string;
+	    state: NmapState;
+	
+	    static createFrom(source: any = {}) {
+	        return new NmapPort(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.service = this.convertValues(source["service"], NmapService);
+	        this.port = source["port"];
+	        this.protocol = source["protocol"];
+	        this.state = this.convertValues(source["state"], NmapState);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class NmapAddress {
+	    address: string;
+	    type: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new NmapAddress(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.address = source["address"];
+	        this.type = source["type"];
+	    }
+	}
+	export class NmapState {
+	    state: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new NmapState(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.state = source["state"];
+	    }
+	}
+	export class NmapHost {
+	    status: NmapState;
+	    addresses: NmapAddress[];
+	    ports: NmapPort[];
+	
+	    static createFrom(source: any = {}) {
+	        return new NmapHost(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.status = this.convertValues(source["status"], NmapState);
+	        this.addresses = this.convertValues(source["addresses"], NmapAddress);
+	        this.ports = this.convertValues(source["ports"], NmapPort);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class NmapFinished {
+	    exit: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new NmapFinished(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.exit = source["exit"];
+	    }
+	}
+	export class Nmap {
+	    scanner: string;
+	    version: string;
+	    finished: NmapFinished;
+	    hosts: NmapHost[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Nmap(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.scanner = source["scanner"];
+	        this.version = source["version"];
+	        this.finished = this.convertValues(source["finished"], NmapFinished);
+	        this.hosts = this.convertValues(source["hosts"], NmapHost);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	
+	
+	
+	
+	
 	export class Tool {
 	    name: string;
 	    state: string;
@@ -362,6 +534,7 @@ export namespace tools {
 export namespace wifi {
 	
 	export class Network {
+	    channel?: number;
 	    profile: string;
 	    ssid: string;
 	    bssid: string;
@@ -375,6 +548,7 @@ export namespace wifi {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.channel = source["channel"];
 	        this.profile = source["profile"];
 	        this.ssid = source["ssid"];
 	        this.bssid = source["bssid"];
@@ -395,6 +569,25 @@ export namespace wifi {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.state = source["state"];
 	        this.value = source["value"];
+	    }
+	}
+
+}
+
+export namespace xml {
+	
+	export class Name {
+	    Space: string;
+	    Local: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Name(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Space = source["Space"];
+	        this.Local = source["Local"];
 	    }
 	}
 

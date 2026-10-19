@@ -5,3 +5,5 @@ frontend/test-results
 build
 coverage.out
 *.db
+
+*.exe

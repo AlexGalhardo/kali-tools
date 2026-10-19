@@ -1,5 +1,5 @@
 {
-  "name": "hacker-tools-frontend",
+  "name": "kali-tools-frontend",
   "private": true,
   "version": "0.1.0-alpha.1-dev",
   "type": "module",
@@ -36,5 +36,14 @@
   },
   "overrides": {
     "katex": "0.19.0"
+  },
+  "license": "MIT",
+  "author": "Alex Galhardo",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlexGalhardo/kali-tools.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AlexGalhardo/kali-tools/issues"
   }
 }

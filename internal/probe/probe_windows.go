@@ -7,9 +7,10 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/AlexGalhardo/hacker-tools/internal/domain"
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"golang.org/x/sys/windows"
 	"net"
+	"net/netip"
 	"time"
 	"unsafe"
 )
@@ -33,6 +34,9 @@ func Run(ctx context.Context, target string, trace bool) ([]string, error) {
 	if e := ctx.Err(); e != nil {
 		return nil, e
 	}
+	if ip, e := netip.ParseAddr(target); e == nil && !ip.Is4() {
+		return nil, domain.Unsupported("Windows native ICMP supports IPv4 only")
+	}
 	addresses, e := net.DefaultResolver.LookupIP(ctx, "ip4", target)
 	if e != nil {
 		return nil, e
@@ -53,13 +57,22 @@ func Run(ctx context.Context, target string, trace bool) ([]string, error) {
 	}
 	defer closeICMP.Call(handle)
 	results := []string{}
-	payload := []byte("hacker-tools")
+	payload := []byte("kali-tools")
 	count := 4
 	if trace {
 		count = 20
 	}
 	received := 0
+	pace := time.NewTicker(100 * time.Millisecond)
+	defer pace.Stop()
 	for i := 1; i <= count; i++ {
+		if i > 1 {
+			select {
+			case <-pace.C:
+			case <-ctx.Done():
+				return results, ctx.Err()
+			}
+		}
 		if e = ctx.Err(); e != nil {
 			return results, e
 		}

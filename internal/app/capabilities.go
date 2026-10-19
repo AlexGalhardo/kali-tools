@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/AlexGalhardo/hacker-tools/internal/domain"
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"runtime"
 )
 

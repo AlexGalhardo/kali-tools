@@ -2,7 +2,7 @@ package capture
 
 import (
 	"encoding/binary"
-	"github.com/AlexGalhardo/hacker-tools/internal/domain"
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
 )
 
 // Validate declared lengths before handing untrusted files to decoders that allocate.

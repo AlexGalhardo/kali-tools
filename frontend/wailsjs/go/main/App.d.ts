@@ -5,8 +5,8 @@ import {wifi} from '../models';
 import {network} from '../models';
 import {storage} from '../models';
 import {capture} from '../models';
-import {platform} from '../models';
 import {tools} from '../models';
+import {platform} from '../models';
 
 export function CancelJob(arg1:string):Promise<boolean>;
 
@@ -24,11 +24,15 @@ export function History():Promise<Array<storage.Job>>;
 
 export function ImportCapture():Promise<capture.ImportResult>;
 
+export function InspectServices(arg1:string,arg2:Array<number>):Promise<tools.Nmap>;
+
 export function Interfaces():Promise<Array<network.InterfaceInfo>>;
 
 export function Inventory():Promise<platform.Snapshot>;
 
 export function RevealWiFi():Promise<wifi.Secret>;
+
+export function SaveCapture(arg1:string):Promise<boolean>;
 
 export function SaveSettings(arg1:storage.Settings):Promise<void>;
 

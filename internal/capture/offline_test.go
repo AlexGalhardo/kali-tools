@@ -6,6 +6,7 @@ import (
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/layers"
 	"github.com/gopacket/gopacket/pcapgo"
+	"strings"
 	"testing"
 	"time"
 )
@@ -76,4 +77,56 @@ func FuzzCapture(f *testing.F) {
 		}
 		_, _ = Read(bytes.NewReader(data))
 	})
+}
+
+func TestLinkAndICMPSummaries(t *testing.T) {
+	ethernet := &layers.Ethernet{SrcMAC: []byte{2, 0, 0, 0, 0, 1}, DstMAC: []byte{2, 0, 0, 0, 0, 2}, EthernetType: layers.EthernetTypeARP}
+	cases := []struct {
+		name                                string
+		link                                layers.LinkType
+		layers                              []gopacket.SerializableLayer
+		protocol, source, destination, info string
+	}{
+		{"ethernet", layers.LinkTypeEthernet, []gopacket.SerializableLayer{ethernet, &layers.ARP{AddrType: layers.LinkTypeEthernet, Protocol: layers.EthernetTypeIPv4, HwAddressSize: 6, ProtAddressSize: 4, Operation: layers.ARPRequest, SourceHwAddress: ethernet.SrcMAC, SourceProtAddress: []byte{192, 0, 2, 1}, DstHwAddress: ethernet.DstMAC, DstProtAddress: []byte{192, 0, 2, 2}}}, "Ethernet", "02:00:00:00:00:01", "02:00:00:00:00:02", ""},
+		{"icmp4", layers.LinkTypeRaw, []gopacket.SerializableLayer{
+			&layers.IPv4{Version: 4, IHL: 5, TTL: 64, SrcIP: []byte{192, 0, 2, 1}, DstIP: []byte{192, 0, 2, 2}, Protocol: layers.IPProtocolICMPv4},
+			&layers.ICMPv4{TypeCode: layers.CreateICMPv4TypeCode(layers.ICMPv4TypeEchoRequest, 0)},
+		}, "ICMPv4", "192.0.2.1", "192.0.2.2", "EchoRequest"},
+		{"icmp6", layers.LinkTypeRaw, []gopacket.SerializableLayer{
+			&layers.IPv6{Version: 6, HopLimit: 64, SrcIP: []byte{0x20, 1, 0xd, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}, DstIP: []byte{0x20, 1, 0xd, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}, NextHeader: layers.IPProtocolICMPv6},
+			&layers.ICMPv6{TypeCode: layers.CreateICMPv6TypeCode(layers.ICMPv6TypeEchoRequest, 0)},
+			&layers.ICMPv6Echo{},
+		}, "ICMPv6", "2001:db8::1", "2001:db8::2", "EchoRequest"},
+	}
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			b := gopacket.NewSerializeBuffer()
+			if err := gopacket.SerializeLayers(b, gopacket.SerializeOptions{FixLengths: true}, tt.layers...); err != nil {
+				t.Fatal(err)
+			}
+			got, err := Decode(b.Bytes(), tt.link, gopacket.CaptureInfo{Length: len(b.Bytes())}, 1)
+			if err != nil || got.Protocol != tt.protocol || got.Source != tt.source || got.Destination != tt.destination || got.Info != tt.info {
+				t.Fatalf("got %+v, err %v", got, err)
+			}
+		})
+	}
+}
+
+func TestHTTPAndPortMetadata(t *testing.T) {
+	for _, tt := range []struct{ payload, protocol, info string }{
+		{"PATCH /private HTTP/1.1\r\n", "HTTP", "Plaintext HTTP message (payload omitted) Port 443 (encryption not verified)"},
+		{"OPTIONS /private HTTP/1.1\r\n", "HTTP", "Plaintext HTTP message (payload omitted) Port 443 (encryption not verified)"},
+		{"private-payload", "TCP", "Port 443 (encryption not verified)"},
+	} {
+		ip := &layers.IPv4{Version: 4, IHL: 5, TTL: 64, SrcIP: []byte{192, 0, 2, 1}, DstIP: []byte{192, 0, 2, 2}, Protocol: layers.IPProtocolTCP}
+		tcp := &layers.TCP{SrcPort: 12345, DstPort: 443, DataOffset: 5}
+		b := gopacket.NewSerializeBuffer()
+		if err := gopacket.SerializeLayers(b, gopacket.SerializeOptions{FixLengths: true}, ip, tcp, gopacket.Payload(tt.payload)); err != nil {
+			t.Fatal(err)
+		}
+		got, err := Decode(b.Bytes(), layers.LinkTypeRaw, gopacket.CaptureInfo{Length: len(b.Bytes())}, 1)
+		if err != nil || got.Protocol != tt.protocol || !strings.Contains(got.Info, tt.info) || strings.Contains(got.Info, "private") {
+			t.Fatalf("got %+v, err %v", got, err)
+		}
+	}
 }

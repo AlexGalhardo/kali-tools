@@ -1,4 +1,4 @@
-# Hacker Tools — delivery plan
+# kali-tools — delivery plan
 
 Planning baseline: 2026-10-19. Product owner decisions are recorded in [brainstorming](docs/brainstorming.md); technical sources are in [research](docs/tools-research.md).
 
@@ -8,7 +8,7 @@ Build a local desktop toolkit with Go, Wails, React, TypeScript, Base UI and Tai
 
 The alpha includes Wi-Fi password display and live packet capture, as well as addresses, interfaces, passive traffic, diagnostics and discovery. These are real implementation requirements, not placeholder panels. Alpha acceptance is Windows-first; beta and 1.0 broaden native verification to Linux and macOS. Capability limitations must be visible to users.
 
-The project has no commercial purpose. Select dependencies with source available under suitable open-source licenses and no mandatory paid runtime service. Do not infer that every open-source license forbids commercial use. Project license remains an owner decision: adding a noncommercial restriction would change whether the result qualifies as open source. Keep Nmap/TShark optional and separately installed until redistribution is reviewed. Windows capture-driver selection is a feasibility gate, because a free driver is not automatically an eligible open-source dependency.
+The project has no commercial purpose. Select dependencies with source available under suitable open-source licenses and no mandatory paid runtime service. Do not infer that every open-source license forbids commercial use. The owner delegated open-source housekeeping on 2026-10-19; project code uses MIT in LICENSE.md. No noncommercial restriction is added. Keep Nmap/TShark optional and separately installed until redistribution is reviewed. Windows capture-driver selection is a feasibility gate, because a free driver is not automatically an eligible open-source dependency.
 
 ## 2. Scope and architecture
 
@@ -24,7 +24,7 @@ React UI -> thin Wails bindings -> application services <- headless CLI
 ```text
 main.go                         Wails composition root
 app.go                          narrow desktop facade
-cmd/hacker-tools/                CLI composition root
+cmd/kali-tools/                CLI composition root
 internal/app/                   shared use cases and job lifecycle
 internal/network/               interfaces, diagnostics, metrics
 internal/wifi/                  current-network metadata and explicit secret retrieval
@@ -34,7 +34,8 @@ internal/tools/                 Nmap and TShark discovery, execution, parsing
 internal/storage/               SQLite, migrations, retention
 frontend/src/                   React features, shared components, translations
 docs/adr/                       architecture decisions
-docs/ci/                        inactive workflow source
+.github/workflows/              authorized active CI/CD
+docs/ci/                        CI/CD operating guide
 tests/fixtures/                 synthetic PCAP and tool outputs
 tests/integration/              CLI integration tests
 docker/                         deterministic lab services
@@ -53,7 +54,7 @@ SQLite proposed schema: settings, jobs, diagnostic_results, tool_inventory and s
 - SemVer sequence: structure before release; `0.1.0-alpha.N`; `0.1.0-beta.N`; `1.0.0-rc.N`; `1.0.0`. No tag is created merely because a checklist exists.
 - Define the public CLI, result/export schemas and supported configuration contract before 1.0. Stable breaking changes require a major version; pre-1.0 breaking changes need explicit migration notes.
 - Conventional Commits feed git-cliff and Keep a Changelog. Review generated changelog and version consistency before a release. Never include tokens, saved Wi-Fi keys or real capture data in commits.
-- GitHub Actions must stay inactive until the owner explicitly requests activation. Store source as `.yml.disabled` outside `.github/workflows/`; no scheduled, push, PR or dispatch workflow is registered yet.
+- GitHub Actions activation was explicitly authorized on 2026-10-19. Active pinned source is under `.github/workflows/`; pull requests receive read-only permissions and only the gated main-branch draft-release job can write releases.
 
 ## 4. Structure phase
 
@@ -62,7 +63,7 @@ SQLite proposed schema: settings, jobs, diagnostic_results, tool_inventory and s
   - [x] Record sources, architecture tradeoffs and owner answers.
   - Assert: both documents distinguish confirmed decisions from proposals. Verify: document review.
 - [x] S02 Initialize local Git and configure the requested origin.
-  - Assert: origin resolves to the owner's hacker-tools URL. Verify: `git remote -v`.
+  - Assert: origin resolves to the owner's kali-tools URL. Verify: `git remote -v`.
 - [x] S03 Establish GitHub access and push the planning baseline.
   - [x] Reauthenticate GitHub CLI using the owner's browser authorization.
   - [x] Configure scoped Git authentication; inspect remote state before pushing.
@@ -71,38 +72,38 @@ SQLite proposed schema: settings, jobs, diagnostic_results, tool_inventory and s
   - Evidence: authenticated as AlexGalhardo with repository push permission; `main` tracks `origin/main`. GitHub API confirmed planning commit `223c4b06b7dcb764456a179ab349b373f9e54870` after push. Credentials are outside the repository; global Git configuration was not required.
 - [ ] S04 Reproducible Go and frontend toolchain.
   - [x] Install/verify Go and Wails v2 stable; record exact versions and `wails doctor` output.
-  - [ ] Create Go module and actual Wails React/TypeScript shell; pin versions after registry verification.
-  - [ ] Configure Bun, committed lockfile, Vite, Base UI, Tailwind v4 and translation catalogs.
+  - [x] Create Go module and actual Wails React/TypeScript shell; pin versions after registry verification.
+  - [ ] Configure Bun, committed lockfile, Vite, Base UI, Tailwind v4 and translation catalogs. Frozen Bun installation/build passed; bun.lock is added to the workspace and awaits commit.
   - [x] Add Biome, golangci-lint, govulncheck, commitlint, Lefthook and Markdown checks.
   - [x] Supply dev/check/build commands for Windows and Unix hosts.
   - Assert: clean checkout installs frozen dependencies and opens native shell; no placeholder build reports success.
-- [ ] S05 Repository conventions and developer guides.
+- [x] S05 Repository conventions and developer guides.
   - [x] EditorConfig and LF policy, contribution guide, security policy and agent instructions.
   - [x] Commit-message hook and release/changelog generation configuration.
   - [x] Document capability boundaries and dependency/license inventory.
-  - Assert: formatting is consistent and invalid commit messages fail locally once hooks are installed.
-- [ ] S06 CLI and core contracts.
+  - Assert: formatting is consistent and invalid commit messages fail locally once hooks are installed. Evidence: installed pre-commit/pre-push/commit-msg hooks; actual commit-msg rejects invalid input and accepts a Conventional Commit message on 2026-10-19.
+- [x] S06 CLI and core contracts.
   - [x] Add version, doctor and interfaces commands; JSON mode with schema version.
   - [x] Define errors, job states, cancellation, clock abstraction and bounded event stream.
-  - [ ] Share services with Wails; return a clear unsupported response for absent providers.
+  - [x] Share services with Wails; return a clear unsupported response for absent providers.
   - Assert: CLI and UI get equivalent interface data; malformed input produces a stable nonzero exit code.
-- [ ] S07 SQLite foundation.
+- [x] S07 SQLite foundation.
   - [x] Compare eligible drivers, document decision and pin dependency.
   - [x] Create migration runner, schema and per-user application data path.
   - [x] Test empty install, upgrade, failed migration rollback, concurrent reads and retention.
   - Assert: restart preserves preferences/history; failed writes do not leave partial jobs; secrets never enter DB.
-- [ ] S08 Docker CLI laboratory.
-  - [ ] Multi-stage CLI build and non-root runtime; separate test stage with required test toolchain.
-  - [ ] Private Compose lab with health-checked HTTP/DNS/TCP fixture services.
-  - [ ] Deterministic integration assertions; cleanup and bounded startup time.
-  - [ ] Document that host Wi-Fi, elevation, capture drivers and WebViews require native tests.
+- [x] S08 Docker CLI laboratory.
+  - [x] Multi-stage CLI build and non-root runtime; separate test stage with required test toolchain.
+  - [x] Private Compose lab with health-checked HTTP/DNS/TCP fixture services.
+  - [x] Deterministic integration assertions; cleanup and bounded startup time.
+  - [x] Document that host Wi-Fi, elevation, capture drivers and WebViews require native tests.
   - Assert: one documented command fails on wrong results and returns zero only after assertions pass.
-- [ ] S09 Dormant CI/CD implementation.
-  - [ ] Prepare CI source for formatting/lint/typecheck/build, race tests, vulnerabilities and CLI lab.
+- [ ] S09 CI/CD implementation (activation authorized 2026-10-19).
+  - [x] Prepare CI source for formatting/lint/typecheck/build, race tests, vulnerabilities and CLI lab. Active source passes actionlint and immutable-pin checks; execution acceptance is recorded separately.
   - [ ] Prepare native Wails build matrix with per-OS dependencies and capability tests.
   - [ ] Prepare release source for draft artifacts, checksums and source/dependency notices.
-  - [ ] Pin actions to reviewed immutable revisions; minimize permissions and avoid release credentials in CI.
-  - Assert: static workflow checks pass; `.github/workflows/` has no executable YAML; no workflow is activated.
+  - [x] Pin official Actions release revisions; minimize permissions and use the short-lived GitHub token only in the main-branch release job.
+  - Assert: static workflow checks and hosted jobs pass; activation follows explicit owner authorization; only successful main-branch runs assemble development release drafts.
 
 Structure exit: S01–S09 pass; a clean checkout runs the native shell and CLI lab; GitHub push is verified. Documentation alone does not complete this phase.
 
@@ -116,50 +117,69 @@ Structure exit: S01–S09 pass; a clean checkout runs the native shell and CLI l
 - [ ] A02 Passive traffic monitoring.
   - [x] Sample native interface counters with monotonic elapsed time.
   - [x] Handle counter reset, suspend/resume and interface replacement.
-  - [ ] Bounded history and batched UI events; graph units and sample timestamp visible.
+  - [x] Bounded history and batched UI events; graph units and sample timestamp visible.
   - Assert: controlled fixture traffic yields expected positive rates; reset never produces a negative spike.
-- [ ] A03 Go diagnostics.
-  - [ ] DNS record queries, ping latency/loss and bounded TCP connect checks.
-  - [ ] HTTP response/timing and TLS certificate summary; redirects remain within selected scope.
-  - [ ] Traceroute with platform-specific transport and permission reporting.
-  - [ ] Rate limits, target validation, IPv6 scope handling and cancellable worker pool.
+- [x] A03 Go diagnostics.
+  - [x] DNS A/AAAA/CNAME/MX/NS/TXT/PTR, native Windows IPv4 ping latency/loss and bounded TCP checks; local fixtures and native loopback passed.
+  - [x] HTTP response/timing and TLS certificate summary; redirects are reported without being followed.
+    - [x] HTTP response/timing, timeout and refusal to follow redirects verified with local fixtures.
+    - [x] Trusted TLS summary, untrusted/expired certificate rejection and handshake deadline/cancellation verified with controlled local certificates.
+  - [x] TCP success/refusal, HTTP timeout and pre-cancelled diagnostics tested against local fixtures.
+  - [x] DNS record coverage and native Windows loopback ping/first-hop traceroute acceptance; IPv6 ICMP is explicitly unsupported.
+  - [x] Windows IPv4 ICMP traceroute with typed permission reporting, hop/deadline limits and native loopback first-hop evidence.
+  - [x] Discovery paced to 100 probes/second with 32 workers, ICMP paced to 10 probes/second and application jobs capped at eight; shutdown/cancellation and IPv6 TCP fixtures passed. Scoped IPv6 hosts validate; native ICMP explicitly requires IPv4.
   - Assert: local fixtures distinguish success, refusal, timeout, NXDOMAIN and cancellation without goroutine leaks.
-- [ ] A04 LAN discovery and basic service inventory.
+- [x] A04 LAN discovery and basic service inventory.
   - [x] Explicit CIDR/host scope, host/port limits and deterministic result ordering.
   - [x] Native TCP discovery first; label inference and unknown states honestly.
-  - [ ] Store summaries and export versioned JSON/CSV.
+  - [x] Store summaries and export versioned JSON/CSV.
   - Assert: lab service inventory matches fixture ground truth; no scan expands beyond requested scope.
 - [ ] A05 Wi-Fi inspector and current-network password.
   - [ ] Windows WLAN metadata: current profile, SSID/BSSID, signal/channel when available.
+    - [x] Channel query and bounded native-structure decoding implemented; synthetic Windows metadata/layout tests passed.
+    - [ ] Controlled native Wi-Fi network acceptance.
   - [ ] Explicit reveal action for the current saved network; native authorization as required.
   - [ ] Distinguish open network, enterprise authentication, no saved key, denied and unsupported.
   - [x] Mask by default; automatically clear displayed secret; no logs, database or default clipboard writes.
-  - [ ] Add Linux/macOS provider contracts and document implementation milestones in beta.
+  - [x] Shared Linux/macOS provider contracts return explicit unsupported states; native implementation milestones remain B01/B02.
   - Assert: native Windows acceptance verifies reveal and denial with owner's test network; automated tests use synthetic secrets and check redaction.
 - [ ] A06 Live packet capture and offline import.
   - [ ] Spike an eligible open-source Windows capture backend; document driver/license/performance tradeoffs.
   - [ ] Prefer Go capture/decoding; optional separate TShark process only for justified gaps.
   - [ ] Start/stop capture, interface selection, limits, dropped-packet counters and bounded buffers.
   - [ ] PCAP/PCAPNG import/export with file-size limits and malformed-file handling.
-  - [ ] Ethernet/IPv4/IPv6/TCP/UDP/ICMP/DNS and plaintext HTTP summaries in Go where feasible.
-  - [ ] Distinguish capture filters from display filters and encrypted metadata from readable content.
+    - [x] PCAP and PCAPNG import with 64 MiB file, 1 MiB packet and 10,000-packet limits; malformed declared lengths rejected and parser fuzz smoke passed.
+    - [x] Explicit raw PCAP/PCAPNG export in desktop/CLI, with bounded retained bytes, nanosecond timestamps and failure-safe replacement; round-trip, writer failure and destination-preservation tests passed.
+  - [x] Ethernet/IPv4/IPv6/TCP/UDP/ICMP/DNS and plaintext HTTP summaries in Go where feasible. Synthetic PCAP/PCAPNG, Ethernet/ARP, ICMPv4/v6 and HTTP tests pass. Port 443 alone is explicitly not proof of encryption.
+  - [x] UI explicitly identifies display-only filtering and complete retained-data exports; encrypted content remains encrypted and port 443 is not treated as proof of encryption.
   - Assert: synthetic captures decode expected fields; native Windows test captures controlled traffic, stops promptly and leaves no live handle.
   - Gate: resolve capture-driver eligibility before declaring alpha complete; an incompatible dependency is not silently accepted.
 - [ ] A07 Optional advanced adapters.
-  - [ ] Record why a Go implementation is unsuitable before adding each Nmap/TShark path.
+  - [x] ADR 003 justifies Nmap service signatures; native TCP remains default and no TShark execution is introduced.
   - [ ] Tool discovery, supported versions, structured parsers and dependency diagnostics.
-  - [ ] Argument arrays, output limits, deadlines and cancellation of descendant processes.
-  - [ ] Parser fixtures for valid, partial, malformed and version-incompatible output.
+    - [x] Bounded optional-executable version inventory and explicit missing-dependency states; core remains usable without installed tools.
+    - [x] Bounded Nmap XML parser and fuzz smoke.
+    - [x] Nmap 7.80+ within major 7 version validation and explicit CLI/desktop service inspection; TShark 4.2+ within major 4 is inventory-only.
+  - [x] Fixed argument arrays, stdout/stderr limits and deadlines; Windows suspended-start Job Object descendant cancellation and Unix process-group execution tested.
+  - [x] Executable fixtures cover valid, partial, malformed, wrong-version and out-of-scope/unrequested-port Nmap output.
+  - [ ] Qualify the actual separately installed Nmap executable; it is absent from this host.
   - Assert: core works without tools installed; optional results preserve provider/version and cannot execute arbitrary shell input.
 - [ ] A08 Integrated UI.
-  - [ ] Dashboard, interfaces, diagnostics, Wi-Fi, packet inspector, toolkit, history and settings.
+  - [x] Dashboard, interfaces, diagnostics, Wi-Fi, packet inspector, toolkit, history and settings.
   - [ ] PT-BR/English catalogs, keyboard access, focus states and Base UI primitives.
   - [ ] Virtualized packet/result tables, loading/error/permission states and cancel controls.
+    - [x] Packet and discovery tables render at most 100 rows per page; discovery pagination verified with 205 synthetic endpoints. Pagination is implemented; virtualization remains pending.
+    - [x] Diagnostics cancellation, capture stop and discovery cancellation controls; browser discovery test uses the emitted service job ID.
+    - [x] Actual provider capability states, bounded-import notice and metric sample timestamps.
+    - [x] Translated states, permission/diagnostic reasons, capture start failure recovery and optional-adapter dependency flows.
+    - [ ] Complete all permission/error acceptance and decide whether pagination satisfies the virtualization requirement.
   - [ ] SQLite preferences and history; opt-in capture save and clear-history action.
+    - [x] SQLite-backed preferences/history and explicit clear-history action; restart/retention and settings validation tests pass.
+    - [x] Native save-dialog integration and explicit PCAP/PCAPNG format selection; browser success/cancellation/failure and Go filesystem tests passed.
   - Assert: UI has real service connections; Playwright tests with contract-faithful providers pass; native smoke verifies the actual Wails bridge.
 - [ ] A09 Alpha validation and release candidate.
-  - [ ] Go unit/integration/race checks; fuzz packet and tool parser boundaries. Unit/race and parser fuzz smoke have evidence; Docker integration and final qualification remain open.
-  - [ ] React typecheck/lint/build, accessibility smoke and critical workflow tests.
+  - [x] Go unit/integration/race checks; fuzz packet and tool parser boundaries. Windows unit/race, Linux Docker integration and parser fuzz smoke passed; native hardware and release qualification remain open.
+  - [x] React typecheck/lint/build, accessibility smoke and critical workflow tests.
   - [ ] Record Windows native evidence for Wi-Fi and capture, with dependency/setup instructions.
   - [ ] Measure idle memory/CPU and capture workload; establish numeric beta regression budgets.
   - Assert: all alpha tasks pass; release notes disclose platform and protocol limits; no enabled CI/CD is introduced.
@@ -196,6 +216,9 @@ Alpha exit: addresses, passive monitoring, diagnostics, discovery, Wi-Fi key dis
 - [ ] B06 Persistence, privacy and compatibility.
   - [ ] SQLite upgrade/backup/recovery, retention, export and migration fixtures.
   - [ ] Validate settings and versioned result formats; redact diagnostic bundles.
+    - [x] Stored preferences reject malformed, oversized or unsupported values without echoing contents.
+    - [x] Versioned CLI JSON and discovery JSON/CSV contracts tested; discovery history stores counts without targets.
+    - [ ] Redacted diagnostic bundles and compatibility fixtures for all exported formats.
   - [ ] Test translation key parity and all permission/error UI flows.
   - Assert: prior beta data upgrades without silent loss; secret fixtures appear in no ordinary artifact.
 - [ ] B07 Native packaging matrix.
@@ -210,7 +233,7 @@ Beta exit: agreed capability matrix verified on all three OSes; limitations appr
 
 - [ ] R01 Freeze supported CLI commands, schemas, settings and platform matrix.
   - [ ] Document API compatibility, errors, permission requirements and unavailable capabilities.
-  - [ ] Finalize license and dependency redistribution decisions; exclude ineligible bundled components.
+  - [x] Adopt MIT for project code, retain third-party/vendored licenses and collect notices for pinned Go/production frontend dependencies; Nmap/TShark remain excluded.
   - Assert: README and doctor agree with tested artifacts; no promise of all Kali tools or all protocol payloads.
 - [ ] R02 Release qualification.
   - [ ] Re-run meaningful regression suites after final changes and review evidence.
@@ -225,9 +248,9 @@ Beta exit: agreed capability matrix verified on all three OSes; limitations appr
   - [ ] Create RC, test it, then tag 1.0.0 only after acceptance.
   - Assert: version matches CLI, desktop metadata, tag and changelog; artifacts correspond to tagged source.
 - [ ] R04 Optional automation activation.
-  - [ ] Obtain explicit instruction to activate workflows before moving source into `.github/workflows/`.
+  - [x] Owner explicitly requested full GitHub Actions activation on 2026-10-19; active source replaced dormant copies.
   - [ ] Configure protected release environment and minimum repository permissions.
-  - Assert: dormant source remains dormant until instructed; 1.0 can be released manually if automation stays disabled.
+  - Assert: activation follows the recorded owner instruction; pull requests cannot create releases and qualified releases retain acceptance gates.
 
 ## 8. Verification strategy
 
@@ -243,9 +266,18 @@ Third-party downloaded plugins, firewall modification, traffic shaping, Wi-Fi mo
 
 ## 10. Current evidence and next task
 
+Checklist review: 2026-10-19. Completed substeps below are separated from remaining acceptance gates. Latest verification: Go tests/vet, capture race tests and 11 frontend workflow tests passed. See [development evidence](docs/verification/0.1.0-alpha.1-dev.md).
+
 - Research baseline committed as `c4bf7fe`.
-- Go 1.27.2 and Wails 2.17.0 were installed in the task workspace; Wails doctor passed on Windows 11 Pro 25H2. Bun temporary-file operations fail in this sandbox; the verified frontend fallback uses a committed npm lockfile.
+- The module now requires Go 1.27.2; Wails 2.17.0 builds the native Windows shell. Bun 1.4.3 frozen installation and build now pass with the new workspace bun.lock; npm remains the setup/Wails fallback. See the continuation evidence for the current host and dependency security updates.
 - GitHub authorization completed and planning baseline pushed to `main`; use the task-local GitHub CLI configuration outside the repository for subsequent pushes.
-- Development implementation checkpoint: real CLI/core, SQLite, Windows providers, React/Wails shell, bounded capture/import prototype, tests, dormant workflow sources and Docker laboratory source exist. See docs/verification/0.1.0-alpha.1-dev.md for exact evidence and limitations.
+- Development implementation checkpoint: real CLI/core, SQLite, Windows providers, React/Wails shell, bounded capture/import prototype, tests, authorized CI/CD source and the private Docker laboratory exist. See docs/verification/0.1.0-alpha.1-dev.md for exact evidence and limitations.
 - Six setup scripts and a step-by-step README cover Windows/Linux/macOS, separately with and without Docker. Script syntax is verified; cross-platform native acceptance is still pending.
-- Next: finish native Wails bridge verification, authorized Windows Wi-Fi/capture acceptance, run the private Docker lab in an accessible engine, close Bun parity and complete the remaining alpha/beta/stable tasks. Do not mark the plan complete or tag a release.
+- Continuation evidence closes S06, S07, S08 and A04 and verifies the runnable S04 toolchain: native WebView2 bridge, desktop build, frozen Bun install, redacted discovery history, JSON/CSV exports and the private Docker CLI lab passed. Details are in docs/verification/0.1.0-alpha.1-dev.md. S04 lockfile commit/clean-checkout acceptance, S05 hook acceptance and S09 full static/release-workflow qualification remain open.
+- Next: finish the remaining diagnostics, raw capture export, advanced adapters and full UI error/permission/large-table acceptance; obtain native Windows Wi-Fi/capture acceptance; then complete beta/stable implementation and native qualification. Linux/macOS hardware, privilege architecture, license/signing decisions and workflow activation are not inferred from this checkpoint. Do not mark the plan complete or tag a release.
+
+### Session scope update (2026-10-19)
+
+The owner renamed the final project/repository to kali-tools, requested commits/push/changelog and a GitHub release with native binaries, delegated open-source housekeeping, and explicitly activated CI/CD. Origin is https://github.com/AlexGalhardo/kali-tools. The workspace directory remains unchanged. MIT is adopted; unsigned development artifacts and release drafts disclose remaining qualification gates.
+
+Current implementation includes DNS records/TLS fixtures, native Windows loopback ping/trace, raw PCAP/PCAPNG export, bounded optional Nmap execution, channel metadata, translated error states and 17 browser workflows. Hosted native-build/release acceptance is pending the first pushed workflow run; no hosted success is claimed in advance. Windows Wi-Fi/key/live-capture acceptance, real Nmap qualification, hot-plug/performance budgets, Linux/macOS feature parity and stable qualification remain open.

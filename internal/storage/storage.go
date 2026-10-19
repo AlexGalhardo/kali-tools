@@ -32,7 +32,23 @@ func DefaultPath() (string, error) {
 	if e != nil {
 		return "", e
 	}
-	return filepath.Join(base, "hacker-tools", "history.db"), nil
+	return dataPath(base)
+}
+func dataPath(base string) (string, error) {
+	preferred := filepath.Join(base, "kali-tools", "history.db")
+	if _, err := os.Stat(preferred); err == nil {
+		return preferred, nil
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return "", err
+	}
+	// Preserve existing development preferences without moving an open SQLite database.
+	legacy := filepath.Join(base, "hacker-tools", "history.db")
+	if _, err := os.Stat(legacy); err == nil {
+		return legacy, nil
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return "", err
+	}
+	return preferred, nil
 }
 func Open(path string) (*Store, error) {
 	if path != ":memory:" {
@@ -149,19 +165,30 @@ type Settings struct {
 func (s *Store) Settings(ctx context.Context) (Settings, error) {
 	v := Settings{"en", 30}
 	var raw string
-	e := s.db.QueryRowContext(ctx, "SELECT value FROM settings WHERE key='preferences'").Scan(&raw)
+	e := s.db.QueryRowContext(ctx, "SELECT substr(value,1,1025) FROM settings WHERE key='preferences'").Scan(&raw)
 	if errors.Is(e, sql.ErrNoRows) {
 		return v, nil
 	}
 	if e != nil {
 		return v, e
 	}
-	e = json.Unmarshal([]byte(raw), &v)
-	return v, e
+	if len(raw) > 1024 {
+		return v, fmt.Errorf("stored settings exceed 1024 bytes")
+	}
+	if e = json.Unmarshal([]byte(raw), &v); e != nil {
+		return v, fmt.Errorf("invalid stored settings")
+	}
+	return v, validateSettings(v)
 }
-func (s *Store) SaveSettings(ctx context.Context, v Settings) error {
+func validateSettings(v Settings) error {
 	if (v.Language != "en" && v.Language != "pt-BR") || v.RetentionDays < 1 || v.RetentionDays > 365 {
 		return fmt.Errorf("invalid settings")
+	}
+	return nil
+}
+func (s *Store) SaveSettings(ctx context.Context, v Settings) error {
+	if err := validateSettings(v); err != nil {
+		return err
 	}
 	raw, e := json.Marshal(v)
 	if e != nil {

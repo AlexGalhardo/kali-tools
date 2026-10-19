@@ -10,6 +10,7 @@ import {
 } from "react";
 import {
   backend,
+  type Capability,
   type Capture,
   connected,
   type DiagnosticResult,
@@ -63,16 +64,54 @@ export function App() {
       retention_days: 30,
     });
   const t = settings.language === "pt-BR" ? pt : en;
+  const labels: Record<string, string> = {
+    completed: t.completed,
+    failed: t.failed,
+    cancelled: t.cancelled,
+    queued: t.queued,
+    running: t.running,
+    available: t.available,
+    permission_required: t.restricted,
+    unsupported: t.unsupported,
+    dependency_missing: t.dependencyMissing,
+    open_network: t.openNetwork,
+    enterprise: t.enterprise,
+    no_saved_key: t.noSavedKey,
+    no_connection: t.noConnection,
+    connected: t.connected,
+    open: t.open,
+    unreachable: t.unreachable,
+  };
+  const stateText = (state: string) => labels[state] ?? state;
+  const errorLabels: Record<string, string> = {
+    permission_required: t.permissionDenied,
+    unsupported: t.unsupported,
+    dependency_missing: t.dependencyMissing,
+    no_connection: t.noConnection,
+    invalid_input: t.invalidInputError,
+    timeout: t.timeoutError,
+    not_found: t.notFoundError,
+    certificate_invalid: t.certificateError,
+    cancelled: t.cancelled,
+    failed: t.error,
+  };
+  const errorText = (value: string) => {
+    const code = value.match(/(?:^|\s)([a-z_]+):/)?.[1];
+    return code && errorLabels[code] ? errorLabels[code] : value;
+  };
   const [interfaces, setInterfaces] = useState<Interface[]>([]),
     [inventory, setInventory] = useState<Inventory>({
       adapters: [],
       counters: [],
     }),
+    [capabilities, setCapabilities] = useState<Capability[]>([]),
+    [sampleTime, setSampleTime] = useState(""),
     [rates, setRates] = useState<number[][]>([]),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState("");
   const [kind, setKind] = useState("tcp"),
+    [recordType, setRecordType] = useState(""),
     [target, setTarget] = useState("localhost"),
     [port, setPort] = useState(443),
     [timeout, setTimeoutMS] = useState(3000),
@@ -88,11 +127,21 @@ export function App() {
     [captureAddress, setCaptureAddress] = useState(""),
     [duration, setDuration] = useState(5),
     [limit, setLimit] = useState(1000),
-    [capturing, setCapturing] = useState(false);
+    [capturing, setCapturing] = useState(false),
+    [captureFormat, setCaptureFormat] = useState("pcapng");
   const [cidr, setCIDR] = useState("192.168.1.0/24"),
     [ports, setPorts] = useState("80,443"),
+    [discoveryPage, setDiscoveryPage] = useState(0),
+    [discoveryJob, setDiscoveryJob] = useState(""),
+    [inspectionProvider, setInspectionProvider] = useState(""),
     [discovery, setDiscovery] = useState<
-      { host: string; port: number; state: string }[]
+      {
+        host: string;
+        port: number;
+        state: string;
+        service?: string;
+        method?: string;
+      }[]
     >([]),
     [tools, setTools] = useState<Tool[]>([]);
   const revealEpoch = useRef(0);
@@ -109,12 +158,14 @@ export function App() {
     }
   }, []);
   const refresh = useCallback(async () => {
-    const [list, data] = await Promise.all([
+    const [list, data, supported] = await Promise.all([
       backend().Interfaces(),
       backend().Inventory(),
+      backend().Capabilities(),
     ]);
     setInterfaces(list);
     setInventory(data);
+    setCapabilities(supported);
   }, []);
   useEffect(() => {
     document.documentElement.lang = settings.language;
@@ -128,12 +179,16 @@ export function App() {
   }, [execute, refresh]);
   useEffect(
     () =>
-      onEvent<{ receive_bps: number; send_bps: number }>("metrics", (data) => {
-        setRates((values) => [
-          ...values.slice(-59),
-          [data.receive_bps, data.send_bps],
-        ]);
-      }),
+      onEvent<{ timestamp: string; receive_bps: number; send_bps: number }>(
+        "metrics",
+        (data) => {
+          setSampleTime(data.timestamp);
+          setRates((values) => [
+            ...values.slice(-59),
+            [data.receive_bps, data.send_bps],
+          ]);
+        },
+      ),
     [],
   );
   useEffect(() => {
@@ -142,22 +197,26 @@ export function App() {
       setJobs((v) =>
         [e.job, ...v.filter((j) => j.id !== e.job.id)].slice(0, 200),
       );
+      if (e.job.kind === "discovery" || e.job.kind === "nmap") {
+        setDiscoveryJob(e.job.state === "running" ? e.job.id : "");
+      }
       if (["completed", "failed", "cancelled"].includes(e.job.state))
         setActiveJob((v) => (v === e.job.id ? "" : v));
     });
   }, []);
   useEffect(
     () =>
-      onEvent<{ result: { packets: Packet[] }; error: string }>(
-        "capture",
-        (e) => {
-          setCapturing(false);
-          setPackets(e.result.packets ?? []);
-          setPacketPage(0);
-          if (e.error) setError(e.error);
-        },
-      ),
-    [],
+      onEvent<{
+        result: { packets: Packet[]; limited?: boolean };
+        error: string;
+      }>("capture", (e) => {
+        setCapturing(false);
+        setPackets(e.result.packets ?? []);
+        setPacketPage(0);
+        if (e.error) setError(e.error);
+        if (e.result.limited) setNotice(t.captureMemoryLimited);
+      }),
+    [t.captureMemoryLimited],
   );
   useEffect(() => {
     revealEpoch.current++;
@@ -201,7 +260,13 @@ export function App() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / 100));
   const diagnosticRun = () =>
     execute(async () => {
-      const request = { kind, target, port, timeout_ms: timeout };
+      const request = {
+        kind,
+        target,
+        port,
+        timeout_ms: timeout,
+        record_type: kind === "dns" ? recordType : "",
+      };
       const j = await backend().StartDiagnostic(request);
       setActiveJob(j.id);
       setJobs((v) => [j, ...v.filter((v) => v.id !== j.id)]);
@@ -220,14 +285,14 @@ export function App() {
       <aside>
         <Button className="brand" onClick={() => nav("dashboard")}>
           <span className="brand-mark">
-            h<span>_</span>
+            k<span>_</span>
           </span>
           <span>
-            hacker<span className="muted">tools</span>
-            <small>NETWORK WORKSPACE</small>
+            kali<span className="muted">-tools</span>
+            <small>{t.networkWorkspace}</small>
           </span>
         </Button>
-        <nav aria-label="Main navigation">
+        <nav aria-label={t.navigation}>
           {pages.map((p) => (
             <Button
               key={p}
@@ -253,7 +318,7 @@ export function App() {
       <div className="workspace">
         <header>
           <span className="breadcrumb">
-            Workspace <span>/</span> <strong>{t[page]}</strong>
+            {t.workspace} <span>/</span> <strong>{t[page]}</strong>
           </span>
           <div className="header-actions">
             <span className="local-badge">
@@ -302,7 +367,7 @@ export function App() {
           {!connected() && <div className="notice">{t.native}</div>}
           {error && (
             <div role="alert" className="error">
-              {t.error}: {error}
+              {t.error}: {errorText(error)}
             </div>
           )}
           {notice && (
@@ -381,7 +446,11 @@ export function App() {
                 <div className="graph-footer">
                   <span>−120 s</span>
                   <span>
-                    {new Date().toLocaleTimeString(settings.language)}
+                    {sampleTime
+                      ? new Date(sampleTime).toLocaleTimeString(
+                          settings.language,
+                        )
+                      : t.empty}
                   </span>
                 </div>
               </section>
@@ -416,14 +485,38 @@ export function App() {
                   <div className="card-title">
                     <h2>{t.capabilities}</h2>
                   </div>
-                  {[t.diagnostics, t.wifi, t.packets].map((name, i) => (
-                    <div className="capability-row" key={name}>
-                      <span>{name}</span>
-                      <span className={`pill ${i === 0 ? "green" : "amber"}`}>
-                        {i === 0 ? t.available : t.restricted}
-                      </span>
-                    </div>
-                  ))}
+                  {(
+                    [
+                      ["diagnostics", t.diagnostics],
+                      ["wifi", t.wifi],
+                      ["capture_live", t.packets],
+                    ] as const
+                  ).map(([id, name]) => {
+                    const capability = capabilities.find((c) => c.id === id);
+                    const labels: Record<string, string> = {
+                      available: t.available,
+                      permission_required: t.restricted,
+                      unsupported: t.unsupported,
+                      dependency_missing: t.dependencyMissing,
+                      failed: t.error,
+                    };
+                    return (
+                      <div
+                        className="capability-row"
+                        key={id}
+                        title={capability?.detail}
+                      >
+                        <span>{name}</span>
+                        <span
+                          className={`pill ${capability?.state === "available" ? "green" : capability?.state === "permission_required" ? "amber" : ""}`}
+                        >
+                          {capability
+                            ? (labels[capability.state] ?? t.unsupported)
+                            : t.empty}
+                        </span>
+                      </div>
+                    );
+                  })}
                   <p className="footnote">{t.permissions}</p>
                 </section>
               </div>
@@ -497,6 +590,21 @@ export function App() {
                       )}
                     </select>
                   </Field>
+                  {kind === "dns" && (
+                    <Field label={t.dnsRecordType}>
+                      <select
+                        value={recordType}
+                        onChange={(e) => setRecordType(e.target.value)}
+                      >
+                        <option value="">{t.dnsAddresses}</option>
+                        {["A", "AAAA", "CNAME", "MX", "NS", "TXT", "PTR"].map(
+                          (r) => (
+                            <option key={r}>{r}</option>
+                          ),
+                        )}
+                      </select>
+                    </Field>
+                  )}
                   <Field label={t.target}>
                     <input
                       value={target}
@@ -552,9 +660,18 @@ export function App() {
                 </div>
                 {diagnostic ? (
                   <div className="result">
-                    <span className="pill green">{diagnostic.status}</span>{" "}
+                    <span
+                      className={`pill ${diagnostic.status === "completed" ? "green" : ""}`}
+                    >
+                      {stateText(diagnostic.status)}
+                    </span>{" "}
                     <span>{diagnostic.elapsed_ms.toFixed(2)} ms</span>
                     <pre>{diagnostic.values.join("\n")}</pre>
+                    {diagnostic.error_code && (
+                      <p role="alert">
+                        {errorLabels[diagnostic.error_code] ?? t.error}
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <Empty text={activeJob ? t.loading : t.empty} />
@@ -567,7 +684,7 @@ export function App() {
               <div className="card-title">
                 <h2>{wifi?.ssid ?? t.wifi}</h2>
                 <span className="pill green">
-                  {wifi?.state ?? t.unsupported}
+                  {wifi ? stateText(wifi.state) : t.unsupported}
                 </span>
               </div>
               <div className="stats wifi-stats">
@@ -578,7 +695,7 @@ export function App() {
               <Field label={t.password}>
                 <output className="secret">{secret || "••••••••••••"}</output>
               </Field>
-              {secretState && <p role="status">{secretState}</p>}
+              {secretState && <p role="status">{stateText(secretState)}</p>}
               <div className="actions">
                 <Button
                   disabled={!wifi || busy}
@@ -613,11 +730,26 @@ export function App() {
               <section className="card form">
                 <div className="form-grid">
                   <Field label={t.captureAddress}>
-                    <input
+                    <select
                       value={captureAddress}
                       onChange={(e) => setCaptureAddress(e.target.value)}
-                      placeholder="192.168.1.10"
-                    />
+                    >
+                      <option value="">{t.selectCaptureAddress}</option>
+                      {interfaces
+                        .filter((i) => i.up && !i.loopback)
+                        .flatMap((i) =>
+                          i.addresses
+                            .filter((a) => !a.includes(":"))
+                            .map((a) => (
+                              <option
+                                key={`${i.index}:${a}`}
+                                value={a.split("/")[0]}
+                              >
+                                {i.name} ? {a}
+                              </option>
+                            )),
+                        )}
+                    </select>
                   </Field>
                   <Field label={t.duration}>
                     <input
@@ -640,15 +772,22 @@ export function App() {
                 </div>
                 <div className="actions">
                   <Button
-                    disabled={!connected() || capturing || busy}
+                    disabled={
+                      !connected() || capturing || busy || !captureAddress
+                    }
                     onClick={() =>
                       execute(async () => {
-                        await backend().StartCapture({
-                          address: captureAddress,
-                          duration_seconds: duration,
-                          packet_limit: limit,
-                        });
                         setCapturing(true);
+                        try {
+                          await backend().StartCapture({
+                            address: captureAddress,
+                            duration_seconds: duration,
+                            packet_limit: limit,
+                          });
+                        } catch (e) {
+                          setCapturing(false);
+                          throw e;
+                        }
                       })
                     }
                   >
@@ -668,6 +807,7 @@ export function App() {
                       execute(async () => {
                         const value: Capture = await backend().ImportCapture();
                         setPackets(value.packets);
+                        if (value.limited) setNotice(t.captureLimited);
                         setPacketPage(0);
                       })
                     }
@@ -681,9 +821,34 @@ export function App() {
                   >
                     {t.download}
                   </Button>
+                  <Field label={t.captureFormat}>
+                    <select
+                      value={captureFormat}
+                      onChange={(e) => setCaptureFormat(e.target.value)}
+                    >
+                      <option value="pcapng">PCAPNG</option>
+                      <option value="pcap">PCAP</option>
+                    </select>
+                  </Field>
+                  <Button
+                    className="secondary"
+                    disabled={
+                      !connected() || busy || capturing || packets.length === 0
+                    }
+                    onClick={() =>
+                      execute(async () => {
+                        if (await backend().SaveCapture(captureFormat))
+                          setNotice(t.captureSaved);
+                      })
+                    }
+                  >
+                    {t.saveCapture}
+                  </Button>
                 </div>
+                <p className="footnote">{t.captureSavePrivacy}</p>
               </section>
               <section className="card">
+                <p className="footnote">{t.filterIntro}</p>
                 <div className="table-toolbar">
                   <Field label={t.filter}>
                     <input
@@ -694,7 +859,9 @@ export function App() {
                       }}
                     />
                   </Field>
-                  <span>{filtered.length} packets</span>
+                  <span>
+                    {filtered.length} {t.packetCount}
+                  </span>
                 </div>
                 <div className="table-wrap">
                   <table>
@@ -781,33 +948,154 @@ export function App() {
                   <Button
                     disabled={!connected() || busy}
                     onClick={() =>
-                      execute(async () =>
-                        setDiscovery(
-                          await backend().Discover(
-                            cidr,
-                            ports.split(",").map(Number),
-                          ),
-                        ),
-                      )
+                      execute(async () => {
+                        setDiscoveryPage(0);
+                        setDiscovery([]);
+                        setInspectionProvider("");
+                        try {
+                          setDiscovery(
+                            await backend().Discover(
+                              cidr,
+                              ports.split(",").map(Number),
+                            ),
+                          );
+                        } finally {
+                          setDiscoveryJob("");
+                        }
+                      })
                     }
                   >
                     {busy ? t.loading : t.discover}
                   </Button>
                   <Button
                     className="secondary"
+                    disabled={
+                      !connected() ||
+                      busy ||
+                      !tools.some(
+                        (tool) =>
+                          tool.name === "nmap" && tool.state === "available",
+                      )
+                    }
+                    onClick={() =>
+                      execute(async () => {
+                        setDiscoveryPage(0);
+                        setDiscovery([]);
+                        setInspectionProvider("");
+                        try {
+                          const value = await backend().InspectServices(
+                            cidr,
+                            ports.split(",").map(Number),
+                          );
+                          setInspectionProvider(
+                            `${value.scanner} ${value.version}`,
+                          );
+                          setDiscovery(
+                            value.hosts.flatMap((host) =>
+                              host.ports.map((port) => ({
+                                host:
+                                  host.addresses.find((a) => a.type === "ipv4")
+                                    ?.address ?? "",
+                                port: port.port,
+                                state: port.state.state,
+                                service: [
+                                  port.service.name,
+                                  port.service.product,
+                                  port.service.version,
+                                ]
+                                  .filter(Boolean)
+                                  .join(" "),
+                                method: port.service.method,
+                              })),
+                            ),
+                          );
+                        } finally {
+                          setDiscoveryJob("");
+                        }
+                      })
+                    }
+                  >
+                    {t.inspectServices}
+                  </Button>
+                  <Button
+                    className="secondary"
+                    disabled={!discoveryJob}
+                    onClick={() => {
+                      backend()
+                        .CancelJob(discoveryJob)
+                        .catch((e) => setError(String(e)));
+                    }}
+                  >
+                    {t.cancel}
+                  </Button>
+                  <Button
+                    className="secondary"
                     disabled={discovery.length === 0}
-                    onClick={() => download(discovery)}
+                    onClick={() =>
+                      download(
+                        inspectionProvider
+                          ? { provider: inspectionProvider, results: discovery }
+                          : discovery,
+                      )
+                    }
                   >
                     {t.download}
                   </Button>
                 </div>
-                {discovery.length > 0 && (
-                  <pre>
-                    {discovery
-                      .map((r) => `${r.host}:${r.port}  ${r.state}`)
-                      .join("\n")}
-                  </pre>
+                {inspectionProvider && (
+                  <p className="footnote">{inspectionProvider}</p>
                 )}
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        {[
+                          t.target,
+                          t.port,
+                          t.state,
+                          t.service,
+                          t.detectionMethod,
+                        ].map((label) => (
+                          <th key={label}>{label}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {discovery
+                        .slice(discoveryPage * 100, discoveryPage * 100 + 100)
+                        .map((r) => (
+                          <tr key={`${r.host}:${r.port}`}>
+                            <td className="mono">{r.host}</td>
+                            <td>{r.port}</td>
+                            <td>{stateText(r.state)}</td>
+                            <td>{r.service || "?"}</td>
+                            <td>{r.method || "?"}</td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+                {discovery.length === 0 && <Empty text={t.empty} />}
+                <div className="pagination">
+                  <Button
+                    className="secondary"
+                    disabled={discoveryPage === 0}
+                    onClick={() => setDiscoveryPage((p) => p - 1)}
+                  >
+                    {t.previous}
+                  </Button>
+                  <span>
+                    {t.page} {discoveryPage + 1} /{" "}
+                    {Math.max(1, Math.ceil(discovery.length / 100))}
+                  </span>
+                  <Button
+                    className="secondary"
+                    disabled={(discoveryPage + 1) * 100 >= discovery.length}
+                    onClick={() => setDiscoveryPage((p) => p + 1)}
+                  >
+                    {t.more}
+                  </Button>
+                </div>
               </section>
               <section className="card">
                 <div className="card-title">
@@ -820,7 +1108,7 @@ export function App() {
                       <strong>{tool.name}</strong>
                       <small>{tool.version || "—"}</small>
                     </div>
-                    <span className="pill">{tool.state}</span>
+                    <span className="pill">{stateText(tool.state)}</span>
                   </div>
                 ))}
               </section>
@@ -862,7 +1150,7 @@ export function App() {
                         </td>
                         <td>{j.kind}</td>
                         <td>
-                          <span className="pill">{j.state}</span>
+                          <span className="pill">{stateText(j.state)}</span>
                         </td>
                         <td>{j.summary}</td>
                       </tr>
@@ -960,9 +1248,9 @@ function Field({
 }) {
   const id = useId();
   return (
-    <label className="field" htmlFor={id}>
-      <span>{label}</span>
+    <div className="field">
+      <label htmlFor={id}>{label}</label>
       {cloneElement(children, { id })}
-    </label>
+    </div>
   );
 }

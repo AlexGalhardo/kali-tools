@@ -34,6 +34,10 @@ export function ImportCapture() {
   return window['go']['main']['App']['ImportCapture']();
 }
 
+export function InspectServices(arg1, arg2) {
+  return window['go']['main']['App']['InspectServices'](arg1, arg2);
+}
+
 export function Interfaces() {
   return window['go']['main']['App']['Interfaces']();
 }
@@ -44,6 +48,10 @@ export function Inventory() {
 
 export function RevealWiFi() {
   return window['go']['main']['App']['RevealWiFi']();
+}
+
+export function SaveCapture(arg1) {
+  return window['go']['main']['App']['SaveCapture'](arg1);
 }
 
 export function SaveSettings(arg1) {

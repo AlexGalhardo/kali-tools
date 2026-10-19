@@ -94,7 +94,7 @@ Proposed layout (not yet implemented):
 
 ```text
 main.go                 Wails entry point
-cmd/hacker-tools/       headless CLI
+cmd/kali-tools/       headless CLI
 internal/app/           shared use cases and job lifecycle
 internal/network/       diagnostic domain and contracts
 internal/platform/      OS-specific adapters and build constraints

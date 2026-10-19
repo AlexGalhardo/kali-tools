@@ -1,5 +1,5 @@
 ---
-name: Hacker Tools
+name: kali-tools
 description: A focused local network workspace
 colors:
   background: "#0c1118"

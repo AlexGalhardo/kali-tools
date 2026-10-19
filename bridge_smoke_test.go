@@ -1,4 +1,4 @@
-//go:build windows && desktop && nativesmoke
+//go:build windows && desktop && production && nativesmoke
 
 package main
 
@@ -7,7 +7,12 @@ import (
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/windows"
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
+	syswindows "golang.org/x/sys/windows"
+	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 )
@@ -15,9 +20,11 @@ import (
 type SmokeBridge struct {
 	ctx    context.Context
 	result chan bool
+	ready  chan struct{}
 }
 
 func (s *SmokeBridge) Complete(ok bool) {
+	<-s.ready
 	select {
 	case s.result <- ok:
 	default:
@@ -25,22 +32,46 @@ func (s *SmokeBridge) Complete(ok bool) {
 	wruntime.Quit(s.ctx)
 }
 func TestNativeBridge(t *testing.T) {
-	t.Setenv("APPDATA", t.TempDir())
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+	if err := syswindows.CoInitializeEx(0, syswindows.COINIT_APARTMENTTHREADED); err != nil {
+		t.Fatal(err)
+	}
+	defer syswindows.CoUninitialize()
+	data := t.TempDir()
+	t.Setenv("APPDATA", filepath.Join(data, "appdata"))
+	t.Cleanup(func() {
+		// WebView2 can release its last file handles after the window has closed.
+		deadline := time.Now().Add(3 * time.Second)
+		for {
+			err := os.RemoveAll(data)
+			if err == nil {
+				return
+			}
+			if time.Now().After(deadline) {
+				t.Errorf("native data cleanup: %v", err)
+				return
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
+	})
 	app := NewApp()
-	smoke := &SmokeBridge{result: make(chan bool, 1)}
+	smoke := &SmokeBridge{result: make(chan bool, 1), ready: make(chan struct{})}
 	var timer *time.Timer
-	e := wails.Run(&options.App{Title: "Hacker Tools bridge verification", Width: 960, Height: 680, StartHidden: true, AssetServer: &assetserver.Options{Assets: assets}, Bind: []interface{}{app, smoke}, OnStartup: func(ctx context.Context) {
+	e := wails.Run(&options.App{Title: "kali-tools bridge verification", Width: 960, Height: 680, StartHidden: true, Windows: &windows.Options{WebviewUserDataPath: filepath.Join(data, "webview")}, AssetServer: &assetserver.Options{Assets: assets}, Bind: []interface{}{app, smoke}, OnStartup: func(ctx context.Context) {
 		smoke.ctx = ctx
 		app.startup(ctx)
 		timer = time.AfterFunc(20*time.Second, func() { smoke.Complete(false) })
+		close(smoke.ready)
 	}, OnDomReady: func(ctx context.Context) {
-		wruntime.WindowExecJS(ctx, `Promise.all([window.go.main.App.Interfaces(),window.go.main.App.Settings(),window.go.main.App.Version()]).then(([interfaces,settings,version])=>window.go.main.SmokeBridge.Complete(interfaces.length>0&&settings.language==='en'&&version==='0.1.0-alpha.1-dev')).catch(()=>window.go.main.SmokeBridge.Complete(false));`)
+		wruntime.WindowExecJS(ctx, `Promise.all([window.go.main.App.Interfaces(),window.go.main.App.Settings(),window.go.main.App.Version(),window.go.main.App.CancelJob("missing"),window.go.main.App.SaveCapture("invalid").then(()=>false,()=>true),window.go.main.App.InspectServices("0.0.0.0/0",[80]).then(()=>false,()=>true)]).then(([interfaces,settings,version,cancelled,invalidSave,invalidScope])=>window.go.main.SmokeBridge.Complete(interfaces.length>0&&settings.language==='en'&&version==='0.1.0-alpha.1-dev'&&cancelled===false&&invalidSave===true&&invalidScope===true)).catch(()=>window.go.main.SmokeBridge.Complete(false));`)
 	}, OnShutdown: app.shutdown})
-	if timer != nil {
-		timer.Stop()
-	}
 	if e != nil {
 		t.Fatal(e)
+	}
+	<-smoke.ready
+	if timer != nil {
+		timer.Stop()
 	}
 	select {
 	case ok := <-smoke.result:

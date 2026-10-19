@@ -4,7 +4,7 @@ package probe
 
 import (
 	"context"
-	"github.com/AlexGalhardo/hacker-tools/internal/domain"
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
 )
 
 const Provider = "unavailable"

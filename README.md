@@ -1,8 +1,23 @@
-# Hacker Tools
+# kali-tools
 
 A local desktop network toolkit built with Go, Wails, React, TypeScript, Base UI, Tailwind CSS v4 and SQLite. The interface supports English and Brazilian Portuguese.
 
-**Development alpha:** this is an implementation checkpoint, not a qualified release. Native hardware, Linux/macOS acceptance and packaging have open gates. See [PLAN.md](PLAN.md) and [verification evidence](docs/verification/0.1.0-alpha.1-dev.md).
+**Development preview:** core workflows are implemented and tested; hardware qualification is still open. Windows 11 leads development. Linux/macOS binaries do not imply Wi-Fi or capture parity. See [PLAN.md](PLAN.md) and [verification evidence](docs/verification/0.1.0-alpha.1-dev.md).
+
+## What it does
+
+- Lists interfaces, addresses, gateways and DNS; monitors native traffic counters.
+- Runs DNS record queries, bounded TCP/HTTP/TLS checks and Windows IPv4 ping/traceroute.
+- Discovers explicitly selected IPv4 scopes and optionally inspects service signatures with separately installed Nmap.
+- Inspects Windows Wi-Fi metadata and reveals the current saved key only on explicit request; the display clears automatically.
+- Imports PCAP/PCAPNG, summarizes packets and explicitly saves retained packet data in either format.
+- Keeps preferences and redacted operation history locally in SQLite. No cloud runtime or telemetry is required.
+
+## Development downloads
+
+[GitHub releases](https://github.com/AlexGalhardo/kali-tools/releases) contain development release drafts assembled only after CI passes. Archives target Windows x64, Ubuntu 24.04 x64, macOS Intel and macOS Apple Silicon. Each includes the desktop, CLI, license/notices, dependency inventory and build metadata. Verify downloads against `SHA256SUMS`.
+
+Windows uses Edge WebView2. Linux requires GTK3 and WebKitGTK 4.1. macOS previews are not notarized. Development builds have no trusted signing identity. Read the release notes before testing; a successful native build does not qualify hardware features.
 
 ## Choose your setup
 
@@ -21,17 +36,17 @@ Docker tests the headless CLI/core in a private laboratory. To open the native d
 ## 1. Get the source
 
 ```bash
-git clone https://github.com/AlexGalhardo/hacker-tools.git
-cd hacker-tools
+git clone https://github.com/AlexGalhardo/kali-tools.git
+cd kali-tools
 ```
 
 If GitHub requests authentication, use an account with access to the repository. Never save access tokens in project files.
 
 ## 2. Prepare your computer without Docker
 
-The development baseline is Go **1.27.2**, Node.js **24.20.0**, Bun **1.4.3** and Wails **2.17.0**. Install Go, Node.js and Git first. Reopen your terminal after installation to load PATH changes.
+The development baseline is Go **1.27.2**, Node.js **24.21.0**, Bun **1.4.3** and Wails **2.17.0**. Install Go, Node.js and Git first. Reopen your terminal after installation to load PATH changes.
 
-Setup installs pinned Wails, golangci-lint and govulncheck into the repository's ignored `.tools/bin` directory. It installs exact frontend dependencies from the npm lockfile and downloads Playwright Chromium. It does not change your global Go binary directory or activate GitHub Actions.
+Setup installs pinned Wails, golangci-lint and govulncheck into the repository's ignored `.tools/bin` directory. It installs exact frontend dependencies from the npm lockfile and downloads Playwright Chromium. It does not change your global Go binary directory. GitHub Actions is enabled separately in the repository.
 
 ### Windows 11
 
@@ -98,7 +113,7 @@ bash setups/setup-linux.sh test
 bash setups/setup-darwin.sh test
 ```
 
-The `test` action stops on failure and runs Go formatting/module checks, vet, unit tests with coverage, golangci-lint, govulncheck, race tests, parser fuzz smoke, frontend lint/typecheck/build, Playwright workflows/accessibility, dormant workflow checks and Markdown lint.
+The `test` action stops on failure and runs Go formatting/module checks, vet, unit tests with coverage, golangci-lint, govulncheck, race tests, parser fuzz smoke, frontend lint/typecheck/build, Playwright workflows/accessibility, workflow pin/static checks and Markdown lint.
 
 Tests use synthetic secrets and capture bytes. A skipped native check means hardware or permission acceptance is still pending, not that the capability was verified.
 
@@ -124,7 +139,7 @@ bash setups/setup-linux.sh build
 bash setups/setup-darwin.sh build
 ```
 
-Outputs are in `build/bin/`. The Windows desktop executable is `hacker-tools-desktop.exe`; the CLI is `hacker-tools.exe`. These are unsigned development artifacts.
+Outputs are in `build/bin/`. The Windows desktop executable is `kali-tools-desktop.exe`; the CLI is `kali-tools.exe`. These are unsigned development artifacts.
 
 For development with automatic frontend/backend rebuilds, use your script with `dev`:
 
@@ -164,9 +179,9 @@ bash setups/setup-linux-docker.sh test
 bash setups/setup-darwin-docker.sh test
 ```
 
-The first run downloads base images and builds the CLI, fixture and test images. A private network contains health-checked HTTP/TCP/DNS services. Tests assert HTTP status, TCP inventory, DNS answers and NXDOMAIN. Runtime and test services use a non-root account; no host ports are published.
+The first run downloads base images and builds the CLI, fixture and test images. A private network contains health-checked HTTP/TCP/DNS services. Tests assert HTTP status, TCP inventory, DNS answers and NXDOMAIN, and execute the built CLI to check JSON schemas, successful diagnostics and invalid-input exit codes. Runtime and test services use a non-root account; no host ports are published.
 
-The test script returns a nonzero exit code on failure and cleans up its lab containers/network on exit. It uses the Compose project name `hacker-tools-lab`.
+The test script returns a nonzero exit code on failure and cleans up its lab containers/network on exit. It uses the Compose project name `kali-tools-lab`.
 
 All three Docker scripts accept the same actions:
 
@@ -183,13 +198,15 @@ Docker builds Linux CLI images. It does not create native Windows/macOS desktop 
 ## 6. Try the CLI
 
 ```bash
-go run ./cmd/hacker-tools version
-go run ./cmd/hacker-tools doctor
-go run ./cmd/hacker-tools interfaces
-go run ./cmd/hacker-tools diagnose --kind dns --target example.com
-go run ./cmd/hacker-tools diagnose --kind tcp --target localhost --port 8080
-go run ./cmd/hacker-tools diagnose --kind http --target http://localhost:8080/health
-go run ./cmd/hacker-tools discover --target 127.0.0.1/32 --ports 8080,9090
+go run ./cmd/kali-tools version
+go run ./cmd/kali-tools doctor
+go run ./cmd/kali-tools interfaces
+go run ./cmd/kali-tools diagnose --kind dns --target example.com --record MX
+go run ./cmd/kali-tools diagnose --kind tcp --target localhost --port 8080
+go run ./cmd/kali-tools diagnose --kind http --target http://localhost:8080/health
+go run ./cmd/kali-tools discover --target 127.0.0.1/32 --ports 8080,9090
+go run ./cmd/kali-tools inspect --target 127.0.0.1/32 --ports 8080
+go run ./cmd/kali-tools import --file synthetic.pcap --output converted.pcapng --format pcapng
 ```
 
 Start a listening local service for the TCP/HTTP examples; otherwise a refused connection is an expected diagnostic failure. JSON includes `schema_version: 1`. Exit codes: 0 success, 1 operation failure, 2 invalid input. Discovery accepts IPv4 /24 or narrower and up to 32 unique ports.
@@ -202,7 +219,7 @@ Start a listening local service for the TCP/HTTP examples; otherwise a refused c
 | Missing WebView/GTK/WebKit | Install the OS prerequisites above, then run `doctor`. |
 | `-race` needs CGO/C compiler | Install GCC on Windows/Linux or Xcode tools on macOS. |
 | Docker daemon unavailable/denied | Start the engine; check context, Linux-container mode and daemon access. |
-| Bun reports `EBADF` in a sandbox | Use the committed npm lockfile and `npm ci`; frozen Bun parity remains pending. |
+| Bun reports `EBADF` in a sandbox | Use the committed npm lockfile and `npm ci`; the new Bun lockfile is now also verified with `bun install --frozen-lockfile`. |
 | Browser test port is occupied | Stop the previous development/test server and retry. |
 | Windows reports `EPERM` on a native npm module during build | Close running Vite/Playwright development processes before `npm ci` or a Wails rebuild; the DLL may still be loaded. |
 | Wi-Fi/capture denied or unsupported | Read the capability response; permissions and hardware need separate native acceptance. |
@@ -218,4 +235,14 @@ Windows raw capture is limited to IPv4, requires administrator authorization, re
 - [Security](SECURITY.md)
 - [Verification evidence](docs/verification/0.1.0-alpha.1-dev.md)
 
-Impeccable, Karpathy guidelines and Ponytail are installed in `.agents/skills`, with pinned upstream revisions. CI source remains inactive under `docs/ci/*.yml.disabled`. Project license, signing and stable distribution decisions remain open.
+## License and contribution
+
+Project code is licensed under [MIT](LICENSE.md). Bundled dependencies and vendored development skills retain their own licenses; see [the inventory](docs/dependencies.md). Nmap/TShark are optional separate installations and are not redistributed.
+
+Contributions follow [CONTRIBUTING.md](CONTRIBUTING.md). Report bugs through [GitHub issues](https://github.com/AlexGalhardo/kali-tools/issues) and security concerns through [SECURITY.md](SECURITY.md). Do not attach passwords, tokens or private packet contents.
+
+CI/CD is active under `.github/workflows/ci.yml`. It checks code, vulnerabilities, browser accessibility/workflows, Docker integration and native packaging. Only main-branch jobs can prepare release drafts. See [CI/CD details](docs/ci/README.md).
+
+New installations use the per-user `kali-tools/history.db` configuration path. Existing development data under the legacy `hacker-tools` path remains readable without moving an open database. Source and CLI paths changed to `cmd/kali-tools`; the working directory itself need not be renamed.
+
+Impeccable, Karpathy guidelines and Ponytail remain under `.agents/skills` with pinned source revisions. Signing, hardware qualification and stable distribution remain separate release gates.

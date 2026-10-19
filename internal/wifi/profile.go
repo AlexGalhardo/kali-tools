@@ -2,7 +2,7 @@ package wifi
 
 import (
 	"encoding/xml"
-	"github.com/AlexGalhardo/hacker-tools/internal/domain"
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
 )
 
 func secretFromProfile(raw []byte) (Secret, error) {

@@ -20,6 +20,6 @@ if(action==="setup"){
   run("go",["mod","download"]);run("npm",["ci"],path.join(root,"frontend"));run("npm",["exec","--","playwright","install","chromium"],path.join(root,"frontend"));run("wails",["doctor"]);console.log("Setup complete. Next: run the same script with test, build or dev.");
 }
 if(action==="doctor"){run("go",["version"]);run("node",["--version"]);run("wails",["doctor"]);}
-if(action==="test"){for(const task of ["go","race","fuzz","web","workflows"])run("node",["scripts/task.mjs",task]);run("node",["scripts/markdown.mjs"]);}
-if(action==="build"){run("go",["build","-trimpath","-o",`build/bin/hacker-tools${platform==="windows"?".exe":""}`,"./cmd/hacker-tools"]);run("wails",["build","-tags",tags]);}
+if(action==="test"){for(const task of ["scripts","go","race","fuzz","web","workflows"])run("node",["scripts/task.mjs",task]);run("node",["scripts/markdown.mjs"]);}
+if(action==="build"){run("go",["build","-trimpath","-o",`build/bin/kali-tools${platform==="windows"?".exe":""}`,"./cmd/kali-tools"]);run("wails",["build","-tags",tags]);}
 if(action==="dev")run("wails",["dev","-tags",tags]);

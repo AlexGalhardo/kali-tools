@@ -6,7 +6,7 @@ import (
 	"bufio"
 	"encoding/hex"
 	"fmt"
-	"github.com/AlexGalhardo/hacker-tools/internal/network"
+	"github.com/AlexGalhardo/kali-tools/internal/network"
 	"net"
 	"os"
 	"strconv"

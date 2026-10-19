@@ -1,0 +1,164 @@
+name: CI and development release
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality, security and browser workflows
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: 1.27.2
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.21.0
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0
+      - run: go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+      - run: npm --prefix frontend ci
+      - run: npm install --global bun@1.4.3
+      - run: bun install --frozen-lockfile
+        working-directory: frontend
+      - run: npm exec -- playwright install --with-deps chromium
+        working-directory: frontend
+      - run: node scripts/task.mjs check
+      - run: node scripts/task.mjs race
+      - run: node scripts/task.mjs fuzz
+      - run: node scripts/task.mjs workflows
+      - run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+      - run: node scripts/markdown.mjs
+      - run: npm audit --audit-level=high
+        working-directory: frontend
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: browser-failure-evidence
+          path: frontend/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  lab:
+    name: Private Docker CLI laboratory
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.21.0
+      - run: node scripts/task.mjs lab
+
+  native:
+    name: Native ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2025
+            target: windows-x64
+            tags: desktop
+          - os: ubuntu-24.04
+            target: linux-x64
+            tags: desktop,webkit2_41
+          - os: macos-15-intel
+            target: macos-x64
+            tags: desktop
+          - os: macos-15
+            target: macos-arm64
+            tags: desktop
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: 1.27.2
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.21.0
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update
+      - if: runner.os == 'Linux'
+        run: sudo apt-get install -y build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev
+      - run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.0
+      - run: go mod download all
+      - run: npm --prefix frontend ci
+      - run: npm --prefix frontend run build
+      - run: node scripts/task.mjs bindings
+      - run: go test -race -timeout 120s ./...
+      - run: go vet -tags ${{ matrix.tags }},production ./...
+      - run: wails build -tags ${{ matrix.tags }}
+      - if: runner.os == 'Windows'
+        run: go build -trimpath -o build/bin/kali-tools.exe ./cmd/kali-tools
+      - if: runner.os != 'Windows'
+        run: go build -trimpath -o build/bin/kali-tools ./cmd/kali-tools
+      - if: runner.os == 'Windows'
+        run: node scripts/task.mjs bridge
+      - run: node scripts/package.mjs
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-${{ matrix.target }}
+          path: |
+            build/release/*.zip
+            build/release/*.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+  release:
+    name: Assemble development release draft
+    needs: [quality, lab, native]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: 1.27.2
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.21.0
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: native-*
+          merge-multiple: true
+          path: build/release/
+      - run: go mod download all
+      - run: npm --prefix frontend ci
+      - run: node scripts/notices.mjs
+      - run: node scripts/release.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}

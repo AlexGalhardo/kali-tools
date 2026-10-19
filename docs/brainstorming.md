@@ -20,7 +20,7 @@ The earlier recommendations/questions below are retained as brainstorming histor
 - Research first, collaborative brainstorming second, then a detailed PLAN.md.
 - SemVer, Keep a Changelog, Conventional Commits and EditorConfig.
 - GitHub Actions code prepared but inactive; Docker for CLI tool tests.
-- Git remote: https://github.com/AlexGalhardo/hacker-tools.git
+- Git remote: https://github.com/AlexGalhardo/kali-tools.git
 
 ## Recommendations to discuss
 

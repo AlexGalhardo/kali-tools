@@ -5,12 +5,14 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
-	"github.com/AlexGalhardo/hacker-tools/internal/domain"
-	"github.com/AlexGalhardo/hacker-tools/internal/network"
-	"github.com/AlexGalhardo/hacker-tools/internal/storage"
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
+	"github.com/AlexGalhardo/kali-tools/internal/network"
+	"github.com/AlexGalhardo/kali-tools/internal/storage"
+	"github.com/AlexGalhardo/kali-tools/internal/tools"
 )
 
 type Event struct {
@@ -126,4 +128,92 @@ func (s *Service) Close() error {
 	s.mu.Unlock()
 	s.wg.Wait()
 	return s.Store.Close()
+}
+
+// Discover persists counts only; addresses and port results remain in memory.
+func (s *Service) Discover(parent context.Context, cidr string, ports []int, timeout time.Duration) (results []network.PortResult, err error) {
+	if err = network.ValidateDiscovery(cidr, ports, timeout); err != nil {
+		return nil, err
+	}
+	err = s.runOperation(parent, "discovery", func(ctx context.Context) (string, error) {
+		var e error
+		results, e = network.Discover(ctx, cidr, ports, timeout)
+		open := 0
+		for _, r := range results {
+			if r.State == "open" {
+				open++
+			}
+		}
+		return fmt.Sprintf("%d endpoints checked, %d open", len(results), open), e
+	})
+	return results, err
+}
+
+func (s *Service) InspectServices(parent context.Context, cidr string, ports []int) (result tools.Nmap, err error) {
+	if err = network.ValidateDiscovery(cidr, ports, time.Second); err != nil {
+		return result, err
+	}
+	err = s.runOperation(parent, "nmap", func(ctx context.Context) (string, error) {
+		var e error
+		result, e = tools.RunNmap(ctx, cidr, ports)
+		if e != nil {
+			return "", e
+		}
+		return fmt.Sprintf("Nmap %s: %d hosts", result.Version, len(result.Hosts)), nil
+	})
+	return result, err
+}
+
+func (s *Service) runOperation(parent context.Context, kind string, operation func(context.Context) (string, error)) error {
+	s.mu.Lock()
+	if s.closed || len(s.jobs) >= 8 {
+		s.mu.Unlock()
+		return domain.Invalid("service unavailable or maximum 8 concurrent operations")
+	}
+	var id [16]byte
+	if _, err := rand.Read(id[:]); err != nil {
+		s.mu.Unlock()
+		return err
+	}
+	j := storage.Job{ID: hex.EncodeToString(id[:]), Kind: kind, State: "running", Created: s.Clock.Now(), Summary: kind + " running"}
+	if err := s.Store.PutJob(parent, j); err != nil {
+		s.mu.Unlock()
+		return err
+	}
+	ctx, cancel := context.WithCancel(parent)
+	s.jobs[j.ID] = cancel
+	s.wg.Add(1)
+	s.mu.Unlock()
+	defer s.wg.Done()
+	defer cancel()
+	defer func() { s.mu.Lock(); delete(s.jobs, j.ID); s.mu.Unlock() }()
+	s.emit(j)
+	summary, err := operation(ctx)
+	j.State = "completed"
+	if err != nil {
+		j.State = "failed"
+	}
+	if errors.Is(ctx.Err(), context.Canceled) {
+		j.State = "cancelled"
+	}
+	label := "Discovery"
+	if kind == "nmap" {
+		label = "Service inspection"
+	}
+	j.Summary = label + " " + j.State
+	if summary != "" {
+		j.Summary += ": " + summary
+	}
+	finished := s.Clock.Now()
+	j.Finished = &finished
+	persist, stop := context.WithTimeout(context.Background(), 5*time.Second)
+	defer stop()
+	if writeErr := s.Store.PutJob(persist, j); writeErr != nil {
+		j.State = "failed"
+		j.Summary = "History write failed"
+		s.emit(j)
+		return errors.Join(err, writeErr)
+	}
+	s.emit(j)
+	return err
 }

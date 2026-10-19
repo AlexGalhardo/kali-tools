@@ -1,6 +1,6 @@
 package platform
 
-import "github.com/AlexGalhardo/hacker-tools/internal/network"
+import "github.com/AlexGalhardo/kali-tools/internal/network"
 
 type Adapter struct {
 	Index    uint32   `json:"index"`

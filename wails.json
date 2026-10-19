@@ -1,11 +1,19 @@
 {
   "$schema": "https://wails.io/schemas/config.v2.json",
-  "name": "hacker-tools",
-  "outputfilename": "hacker-tools-desktop",
+  "name": "kali-tools",
+  "outputfilename": "kali-tools-desktop",
   "frontend:install": "npm ci",
   "frontend:build": "npm run build",
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
-  "author": { "name": "Alex Galhardo" },
-  "info": { "productName": "Hacker Tools", "productVersion": "0.1.0", "comments": "Development alpha; see capability matrix" }
+  "author": {
+    "name": "Alex Galhardo"
+  },
+  "info": {
+    "productName": "kali-tools",
+    "productVersion": "0.1.0",
+    "comments": "Unsigned development preview; hardware qualification remains open",
+    "companyName": "Alex Galhardo",
+    "copyright": "Copyright 2026 Alex Galhardo"
+  }
 }

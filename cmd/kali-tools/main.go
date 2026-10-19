@@ -15,13 +15,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlexGalhardo/hacker-tools/internal/app"
-	"github.com/AlexGalhardo/hacker-tools/internal/capture"
-	"github.com/AlexGalhardo/hacker-tools/internal/domain"
-	"github.com/AlexGalhardo/hacker-tools/internal/network"
-	"github.com/AlexGalhardo/hacker-tools/internal/platform"
-	"github.com/AlexGalhardo/hacker-tools/internal/tools"
-	"github.com/AlexGalhardo/hacker-tools/internal/wifi"
+	"github.com/AlexGalhardo/kali-tools/internal/app"
+	"github.com/AlexGalhardo/kali-tools/internal/capture"
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
+	"github.com/AlexGalhardo/kali-tools/internal/network"
+	"github.com/AlexGalhardo/kali-tools/internal/platform"
+	"github.com/AlexGalhardo/kali-tools/internal/tools"
+	"github.com/AlexGalhardo/kali-tools/internal/wifi"
 )
 
 type envelope struct {
@@ -33,7 +33,7 @@ type envelope struct {
 
 func run(ctx context.Context, args []string, out, errout io.Writer) int {
 	if len(args) == 0 {
-		_, _ = fmt.Fprintln(errout, "Usage: hacker-tools <version|doctor|interfaces|inventory|diagnose|discover|wifi|capture|import> [flags]\nAll output is versioned JSON; discover also accepts --format csv. Wi-Fi secrets are available only through the explicit desktop reveal action.")
+		_, _ = fmt.Fprintln(errout, "Usage: kali-tools <version|doctor|interfaces|inventory|diagnose|discover|inspect|wifi|capture|import> [flags]\nAll output is versioned JSON; discover also accepts --format csv. Wi-Fi secrets are available only through the explicit desktop reveal action.")
 		return 2
 	}
 	var data any
@@ -41,12 +41,14 @@ func run(ctx context.Context, args []string, out, errout io.Writer) int {
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	flags.SetOutput(errout)
 	target := flags.String("target", "", "host, URL or CIDR")
-	kind := flags.String("kind", "tcp", "dns, tcp, http or tls")
+	recordType := flags.String("record", "", "DNS record type: A, AAAA, CNAME, MX, NS, TXT or PTR")
+	kind := flags.String("kind", "tcp", "dns, tcp, http, tls, ping or traceroute")
 	port := flags.Int("port", 443, "TCP port")
 	timeout := flags.Int("timeout", 3000, "timeout milliseconds")
 	file := flags.String("file", "", "capture path")
+	output := flags.String("output", "", "explicit packet-file destination; requires --format pcap or pcapng")
 	ports := flags.String("ports", "80,443", "comma separated ports")
-	format := flags.String("format", "json", "json or csv")
+	format := flags.String("format", "json", "json/csv discovery; pcap/pcapng with --output")
 	duration := flags.Int("duration", 5, "capture duration seconds")
 	limit := flags.Int("limit", 1000, "capture packet limit")
 	if e := flags.Parse(args[1:]); e != nil {
@@ -65,8 +67,16 @@ func run(ctx context.Context, args []string, out, errout io.Writer) int {
 		case "inventory":
 			data, err = platform.Inventory()
 		case "diagnose":
-			data, err = network.Diagnose(ctx, network.Request{Kind: *kind, Target: *target, Port: *port, TimeoutMS: *timeout})
-		case "discover":
+			data, err = network.Diagnose(ctx, network.Request{Kind: *kind, Target: *target, Port: *port, TimeoutMS: *timeout, RecordType: *recordType})
+		case "discover", "inspect":
+			if *format != "json" && *format != "csv" {
+				err = domain.Invalid("format must be json or csv")
+				break
+			}
+			if len(*ports) > 191 || strings.Count(*ports, ",") >= 32 {
+				err = domain.Invalid("1..32 ports required")
+				break
+			}
 			var numbers []int
 			for _, s := range strings.Split(*ports, ",") {
 				n, e := strconv.Atoi(s)
@@ -75,6 +85,14 @@ func run(ctx context.Context, args []string, out, errout io.Writer) int {
 					break
 				}
 				numbers = append(numbers, n)
+			}
+			if err == nil && args[0] == "inspect" {
+				if *format != "json" {
+					err = domain.Invalid("service inspection supports JSON only")
+					break
+				}
+				data, err = tools.RunNmap(ctx, *target, numbers)
+				break
 			}
 			if err == nil {
 				var results []network.PortResult
@@ -96,16 +114,36 @@ func run(ctx context.Context, args []string, out, errout io.Writer) int {
 					}
 					return 0
 				}
-				if *format != "json" && *format != "csv" {
-					err = domain.Invalid("format must be json or csv")
-				}
 			}
 		case "wifi":
 			data, err = wifi.Current()
-		case "capture":
-			data, err = capture.Live(ctx, capture.LiveRequest{Address: *target, DurationSeconds: *duration, PacketLimit: *limit})
-		case "import":
-			data, err = capture.ReadFile(*file)
+		case "capture", "import":
+			if *output != "" && *format != "pcap" && *format != "pcapng" {
+				err = domain.Invalid("packet export requires --format pcap or pcapng")
+				break
+			}
+			var artifact *capture.Artifact
+			if args[0] == "capture" {
+				request := capture.LiveRequest{Address: *target, DurationSeconds: *duration, PacketLimit: *limit}
+				if *output == "" {
+					data, err = capture.Live(ctx, request)
+				} else {
+					data, artifact, err = capture.LiveSession(ctx, request)
+				}
+			} else {
+				if *output == "" {
+					data, err = capture.ReadFile(*file)
+				} else {
+					data, artifact, err = capture.ReadArtifactFile(*file)
+				}
+			}
+			if err == nil && *output != "" {
+				if artifact == nil {
+					err = domain.Invalid("capture has no packets to export")
+				} else {
+					err = artifact.Save(ctx, *output, *format)
+				}
+			}
 		default:
 			err = domain.Invalid("unknown command %q", args[0])
 		}

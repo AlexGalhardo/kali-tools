@@ -27,6 +27,18 @@ func main() {
 		if resp.StatusCode != 204 {
 			os.Exit(1)
 		}
+		conn, e := (&net.Dialer{}).DialContext(ctx, "tcp", "127.0.0.1:9090")
+		if e != nil {
+			os.Exit(1)
+		}
+		conn.Close()
+		resolver := &net.Resolver{PreferGo: true, Dial: func(ctx context.Context, _, _ string) (net.Conn, error) {
+			return (&net.Dialer{}).DialContext(ctx, "udp", "127.0.0.1:5353")
+		}}
+		addresses, e := resolver.LookupHost(ctx, "fixture.test")
+		if e != nil || len(addresses) != 1 || addresses[0] != "192.0.2.42" {
+			os.Exit(1)
+		}
 		return
 	}
 	mux := http.NewServeMux()
