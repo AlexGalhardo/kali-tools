@@ -1,6 +1,17 @@
 # Brainstorming
 
-Status: awaiting the owner's first round. Research: `tools-research.md`.
+Status: first round completed on 2026-10-19. Research: `tools-research.md`. Execution plan: `../PLAN.md`.
+
+## Owner decisions
+
+1. Windows 11 first, with abstractions for Linux/macOS.
+2. Implement as much as practical in Go; integrate Nmap/TShark for remaining gaps. Use open-source tools and keep the project noncommercial.
+3. Include Wi-Fi password display and live packet capture in alpha.
+4. Use local SQLite for history and preferences.
+5. PT-BR and English interface; English code and documentation.
+6. After creating PLAN.md, configure GitHub authentication/access for ongoing pushes.
+
+The earlier recommendations/questions below are retained as brainstorming history. The decisions above supersede conflicting proposals, including postponing capture until beta.
 
 ## Confirmed requirements
 
