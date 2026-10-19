@@ -3,3 +3,5 @@
 *.ico binary
 *.pcap binary
 *.pcapng binary
+.agents/** -whitespace
+frontend/wailsjs/** -whitespace

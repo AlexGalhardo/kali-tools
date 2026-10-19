@@ -21,12 +21,14 @@ func TestPersistenceRecoveryAndRetention(t *testing.T) {
 	if e = s.PutJob(t.Context(), Job{ID: "1", Kind: "tcp", State: "running", Created: now.AddDate(0, 0, -60), Summary: "Running"}); e != nil {
 		t.Fatal(e)
 	}
-	s.Close()
+	if e = s.Close(); e != nil {
+		t.Fatal(e)
+	}
 	s, e = Open(path)
 	if e != nil {
 		t.Fatal(e)
 	}
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 	v, e := s.Settings(t.Context())
 	if e != nil || v.Language != "pt-BR" {
 		t.Fatal(v, e)
@@ -48,7 +50,7 @@ func TestConcurrentReadsAndCancelledWrite(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 	var wg sync.WaitGroup
 	for range 20 {
 		wg.Go(func() {
@@ -76,7 +78,7 @@ func TestMigrationRollback(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 	if _, e = s.db.Exec("UPDATE schema_migrations SET version=99; INSERT INTO jobs VALUES('x','tcp','running','2026-01-01T00:00:00Z',NULL,'unchanged')"); e != nil {
 		t.Fatal(e)
 	}

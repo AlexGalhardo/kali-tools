@@ -3,6 +3,7 @@
 package platform
 
 import (
+	"errors"
 	"fmt"
 	"github.com/AlexGalhardo/hacker-tools/internal/network"
 	"golang.org/x/sys/windows"
@@ -16,7 +17,7 @@ func Inventory() (Snapshot, error) {
 	for attempts := 0; attempts < 3; attempts++ {
 		buf = make([]byte, size)
 		e := windows.GetAdaptersAddresses(windows.AF_UNSPEC, windows.GAA_FLAG_INCLUDE_GATEWAYS, 0, (*windows.IpAdapterAddresses)(unsafe.Pointer(&buf[0])), &size)
-		if e == windows.ERROR_BUFFER_OVERFLOW {
+		if errors.Is(e, windows.ERROR_BUFFER_OVERFLOW) {
 			if size > 4<<20 {
 				return out, fmt.Errorf("adapter buffer limit")
 			}

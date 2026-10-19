@@ -1,3 +1,4 @@
+import * as generated from "../wailsjs/go/main/App";
 export type Interface = {
   index: number;
   name: string;
@@ -39,7 +40,7 @@ export type Job = {
   finished?: string;
   summary: string;
 };
-export type Settings = { language: "en" | "pt-BR"; retention_days: number };
+export type Settings = { language: string; retention_days: number };
 export type Packet = {
   number: number;
   timestamp: string;
@@ -103,7 +104,7 @@ export function backend(): Backend {
   const value = window.go?.main?.App;
   if (!value)
     throw new Error("Native bridge unavailable. Open the desktop application.");
-  return value;
+  return generated;
 }
 export function onEvent<T>(name: string, fn: (data: T) => void) {
   return (

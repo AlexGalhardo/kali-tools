@@ -11,7 +11,6 @@ import {
 import {
   backend,
   type Capture,
-  type Counter,
   connected,
   type DiagnosticResult,
   type Interface,
@@ -23,6 +22,7 @@ import {
   type Tool,
   type WiFi,
 } from "./bridge";
+import { NavIcon } from "./Icon";
 import { en, pt } from "./i18n";
 
 type Page =
@@ -44,7 +44,6 @@ const pages: Page[] = [
   "history",
   "settings",
 ];
-const icons = ["◉", "⇄", "⌁", "◔", "▤", "⌘", "◷", "⚙"];
 function download(value: unknown) {
   const blob = new Blob(
     [JSON.stringify({ schema_version: 1, data: value }, null, 2)],
@@ -96,9 +95,6 @@ export function App() {
       { host: string; port: number; state: string }[]
     >([]),
     [tools, setTools] = useState<Tool[]>([]);
-  const previous = useRef<{ time: number; counters: Counter[] } | undefined>(
-    undefined,
-  );
   const revealEpoch = useRef(0);
   const execute = useCallback(async (fn: () => Promise<void>) => {
     setError("");
@@ -130,47 +126,16 @@ export function App() {
       setSettings(await backend().Settings());
     });
   }, [execute, refresh]);
-  useEffect(() => {
-    if (!connected()) return;
-    let disposed = false;
-    let inFlight = false;
-    const tick = async () => {
-      if (inFlight) return;
-      inFlight = true;
-      try {
-        const data = await backend().Inventory();
-        if (disposed) return;
-        const now = performance.now(),
-          last = previous.current;
-        let rx = 0,
-          tx = 0;
-        if (last) {
-          const seconds = (now - last.time) / 1000;
-          if (seconds > 0 && seconds <= 30) {
-            for (const c of data.counters) {
-              const p = last.counters.find((v) => v.id === c.id);
-              if (p) {
-                rx += Math.max(0, c.received - p.received) / seconds;
-                tx += Math.max(0, c.sent - p.sent) / seconds;
-              }
-            }
-          }
-        }
-        previous.current = { time: now, counters: data.counters };
-        setInventory(data);
-        setRates((v) => [...v.slice(-59), [rx, tx]]);
-      } catch (e) {
-        if (!disposed) setError(String(e));
-      } finally {
-        inFlight = false;
-      }
-    };
-    const timer = setInterval(tick, 2000);
-    return () => {
-      disposed = true;
-      clearInterval(timer);
-    };
-  }, []);
+  useEffect(
+    () =>
+      onEvent<{ receive_bps: number; send_bps: number }>("metrics", (data) => {
+        setRates((values) => [
+          ...values.slice(-59),
+          [data.receive_bps, data.send_bps],
+        ]);
+      }),
+    [],
+  );
   useEffect(() => {
     if (!connected()) return;
     return onEvent<{ job: Job }>("job", (e) => {
@@ -262,16 +227,17 @@ export function App() {
             <small>NETWORK WORKSPACE</small>
           </span>
         </Button>
-        <p className="eyebrow">{t.local}</p>
         <nav aria-label="Main navigation">
-          {pages.map((p, i) => (
+          {pages.map((p) => (
             <Button
               key={p}
               className={`nav-item ${page === p ? "selected" : ""}`}
               aria-current={page === p ? "page" : undefined}
               onClick={() => nav(p)}
             >
-              <span aria-hidden="true">{icons[i]}</span>
+              <span aria-hidden="true">
+                <NavIcon page={p} />
+              </span>
               {t[p]}
               {p === "packets" && packets.length > 0 && (
                 <small>{packets.length}</small>
@@ -312,7 +278,6 @@ export function App() {
         <main>
           <div className="page-heading">
             <div>
-              <p className="eyebrow">HACKER TOOLS / {t.local}</p>
               <h1>{page === "dashboard" ? t.subtitle : t[page]}</h1>
               <p className="description">
                 {page === "dashboard"
@@ -433,7 +398,9 @@ export function App() {
                   </div>
                   {interfaces.slice(0, 4).map((i) => (
                     <div className="interface-row" key={i.index}>
-                      <span className="interface-icon">⇄</span>
+                      <span className="interface-icon">
+                        <NavIcon page="interfaces" />
+                      </span>
                       <div>
                         <strong>{i.name}</strong>
                         <small>{i.addresses[0] ?? t.none}</small>

@@ -43,13 +43,13 @@ export namespace capture {
 		    return a;
 		}
 	}
-	export class Import {
+	export class ImportResult {
 	    packets: Packet[];
 	    limited: boolean;
 	    format: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new Import(source);
+	        return new ImportResult(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -96,6 +96,29 @@ export namespace capture {
 
 }
 
+export namespace domain {
+	
+	export class Capability {
+	    id: string;
+	    state: string;
+	    detail: string;
+	    provider: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Capability(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.state = source["state"];
+	        this.detail = source["detail"];
+	        this.provider = source["provider"];
+	    }
+	}
+
+}
+
 export namespace network {
 	
 	export class Counter {
@@ -114,7 +137,7 @@ export namespace network {
 	        this.sent = source["sent"];
 	    }
 	}
-	export class Interface {
+	export class InterfaceInfo {
 	    index: number;
 	    name: string;
 	    mac: string;
@@ -124,7 +147,7 @@ export namespace network {
 	    addresses: string[];
 	
 	    static createFrom(source: any = {}) {
-	        return new Interface(source);
+	        return new InterfaceInfo(source);
 	    }
 	
 	    constructor(source: any = {}) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -103,7 +104,7 @@ func (s *Store) History(ctx context.Context) ([]Job, error) {
 	if e != nil {
 		return nil, e
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	all := []Job{}
 	for rows.Next() {
 		var j Job
@@ -149,7 +150,7 @@ func (s *Store) Settings(ctx context.Context) (Settings, error) {
 	v := Settings{"en", 30}
 	var raw string
 	e := s.db.QueryRowContext(ctx, "SELECT value FROM settings WHERE key='preferences'").Scan(&raw)
-	if e == sql.ErrNoRows {
+	if errors.Is(e, sql.ErrNoRows) {
 		return v, nil
 	}
 	if e != nil {

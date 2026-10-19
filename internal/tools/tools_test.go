@@ -13,5 +13,5 @@ func TestNmapParser(t *testing.T) {
 }
 func FuzzNmap(f *testing.F) {
 	f.Add([]byte("<nmaprun/>"))
-	f.Fuzz(func(t *testing.T, data []byte) { ParseNmap(data) })
+	f.Fuzz(func(t *testing.T, data []byte) { _, _ = ParseNmap(data) })
 }

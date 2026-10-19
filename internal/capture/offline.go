@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -132,7 +133,7 @@ func Read(input io.Reader) (ImportResult, error) {
 	}
 	for n := 1; n <= MaxPackets+1; n++ {
 		data, ci, e := read()
-		if e == io.EOF {
+		if errors.Is(e, io.EOF) {
 			return out, nil
 		}
 		if e != nil {

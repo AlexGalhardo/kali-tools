@@ -70,26 +70,26 @@ SQLite proposed schema: settings, jobs, diagnostic_results, tool_inventory and s
   - Assert: authenticated identity has repository write access and remote HEAD contains this plan.
   - Evidence: authenticated as AlexGalhardo with repository push permission; `main` tracks `origin/main`. GitHub API confirmed planning commit `223c4b06b7dcb764456a179ab349b373f9e54870` after push. Credentials are outside the repository; global Git configuration was not required.
 - [ ] S04 Reproducible Go and frontend toolchain.
-  - [ ] Install/verify Go and Wails v2 stable; record exact versions and `wails doctor` output.
+  - [x] Install/verify Go and Wails v2 stable; record exact versions and `wails doctor` output.
   - [ ] Create Go module and actual Wails React/TypeScript shell; pin versions after registry verification.
   - [ ] Configure Bun, committed lockfile, Vite, Base UI, Tailwind v4 and translation catalogs.
-  - [ ] Add Biome, golangci-lint, govulncheck, commitlint, Lefthook and Markdown checks.
-  - [ ] Supply dev/check/build commands for Windows and Unix hosts.
+  - [x] Add Biome, golangci-lint, govulncheck, commitlint, Lefthook and Markdown checks.
+  - [x] Supply dev/check/build commands for Windows and Unix hosts.
   - Assert: clean checkout installs frozen dependencies and opens native shell; no placeholder build reports success.
 - [ ] S05 Repository conventions and developer guides.
-  - [ ] EditorConfig and LF policy, contribution guide, security policy and agent instructions.
-  - [ ] Commit-message hook and release/changelog generation configuration.
-  - [ ] Document capability boundaries and dependency/license inventory.
+  - [x] EditorConfig and LF policy, contribution guide, security policy and agent instructions.
+  - [x] Commit-message hook and release/changelog generation configuration.
+  - [x] Document capability boundaries and dependency/license inventory.
   - Assert: formatting is consistent and invalid commit messages fail locally once hooks are installed.
 - [ ] S06 CLI and core contracts.
-  - [ ] Add version, doctor and interfaces commands; JSON mode with schema version.
-  - [ ] Define errors, job states, cancellation, clock abstraction and bounded event stream.
+  - [x] Add version, doctor and interfaces commands; JSON mode with schema version.
+  - [x] Define errors, job states, cancellation, clock abstraction and bounded event stream.
   - [ ] Share services with Wails; return a clear unsupported response for absent providers.
   - Assert: CLI and UI get equivalent interface data; malformed input produces a stable nonzero exit code.
 - [ ] S07 SQLite foundation.
-  - [ ] Compare eligible drivers, document decision and pin dependency.
-  - [ ] Create migration runner, schema and per-user application data path.
-  - [ ] Test empty install, upgrade, failed migration rollback, concurrent reads and retention.
+  - [x] Compare eligible drivers, document decision and pin dependency.
+  - [x] Create migration runner, schema and per-user application data path.
+  - [x] Test empty install, upgrade, failed migration rollback, concurrent reads and retention.
   - Assert: restart preserves preferences/history; failed writes do not leave partial jobs; secrets never enter DB.
 - [ ] S08 Docker CLI laboratory.
   - [ ] Multi-stage CLI build and non-root runtime; separate test stage with required test toolchain.
@@ -114,8 +114,8 @@ Structure exit: S01–S09 pass; a clean checkout runs the native shell and CLI l
   - [ ] Handle disconnected devices, VPNs, loopback and multiple default routes.
   - Assert: compare against OS data; hot-plug/reconnect does not duplicate stale interfaces.
 - [ ] A02 Passive traffic monitoring.
-  - [ ] Sample native interface counters with monotonic elapsed time.
-  - [ ] Handle counter reset, suspend/resume and interface replacement.
+  - [x] Sample native interface counters with monotonic elapsed time.
+  - [x] Handle counter reset, suspend/resume and interface replacement.
   - [ ] Bounded history and batched UI events; graph units and sample timestamp visible.
   - Assert: controlled fixture traffic yields expected positive rates; reset never produces a negative spike.
 - [ ] A03 Go diagnostics.
@@ -125,15 +125,15 @@ Structure exit: S01–S09 pass; a clean checkout runs the native shell and CLI l
   - [ ] Rate limits, target validation, IPv6 scope handling and cancellable worker pool.
   - Assert: local fixtures distinguish success, refusal, timeout, NXDOMAIN and cancellation without goroutine leaks.
 - [ ] A04 LAN discovery and basic service inventory.
-  - [ ] Explicit CIDR/host scope, host/port limits and deterministic result ordering.
-  - [ ] Native TCP discovery first; label inference and unknown states honestly.
+  - [x] Explicit CIDR/host scope, host/port limits and deterministic result ordering.
+  - [x] Native TCP discovery first; label inference and unknown states honestly.
   - [ ] Store summaries and export versioned JSON/CSV.
   - Assert: lab service inventory matches fixture ground truth; no scan expands beyond requested scope.
 - [ ] A05 Wi-Fi inspector and current-network password.
   - [ ] Windows WLAN metadata: current profile, SSID/BSSID, signal/channel when available.
   - [ ] Explicit reveal action for the current saved network; native authorization as required.
   - [ ] Distinguish open network, enterprise authentication, no saved key, denied and unsupported.
-  - [ ] Mask by default; automatically clear displayed secret; no logs, database or default clipboard writes.
+  - [x] Mask by default; automatically clear displayed secret; no logs, database or default clipboard writes.
   - [ ] Add Linux/macOS provider contracts and document implementation milestones in beta.
   - Assert: native Windows acceptance verifies reveal and denial with owner's test network; automated tests use synthetic secrets and check redaction.
 - [ ] A06 Live packet capture and offline import.
@@ -158,7 +158,7 @@ Structure exit: S01–S09 pass; a clean checkout runs the native shell and CLI l
   - [ ] SQLite preferences and history; opt-in capture save and clear-history action.
   - Assert: UI has real service connections; Playwright tests with contract-faithful providers pass; native smoke verifies the actual Wails bridge.
 - [ ] A09 Alpha validation and release candidate.
-  - [ ] Go unit/integration/race checks; fuzz packet and tool parser boundaries.
+  - [ ] Go unit/integration/race checks; fuzz packet and tool parser boundaries. Unit/race and parser fuzz smoke have evidence; Docker integration and final qualification remain open.
   - [ ] React typecheck/lint/build, accessibility smoke and critical workflow tests.
   - [ ] Record Windows native evidence for Wi-Fi and capture, with dependency/setup instructions.
   - [ ] Measure idle memory/CPU and capture workload; establish numeric beta regression budgets.
@@ -244,6 +244,8 @@ Third-party downloaded plugins, firewall modification, traffic shaping, Wi-Fi mo
 ## 10. Current evidence and next task
 
 - Research baseline committed as `c4bf7fe`.
-- Go executable is not currently on PATH; Bun, Node, Docker CLI and GitHub CLI are present. Docker daemon and toolchain functionality still need verification.
+- Go 1.27.2 and Wails 2.17.0 were installed in the task workspace; Wails doctor passed on Windows 11 Pro 25H2. Bun temporary-file operations fail in this sandbox; the verified frontend fallback uses a committed npm lockfile.
 - GitHub authorization completed and planning baseline pushed to `main`; use the task-local GitHub CLI configuration outside the repository for subsequent pushes.
-- Next: execute S04 onward. App implementation tasks remain unchecked.
+- Development implementation checkpoint: real CLI/core, SQLite, Windows providers, React/Wails shell, bounded capture/import prototype, tests, dormant workflow sources and Docker laboratory source exist. See docs/verification/0.1.0-alpha.1-dev.md for exact evidence and limitations.
+- Six setup scripts and a step-by-step README cover Windows/Linux/macOS, separately with and without Docker. Script syntax is verified; cross-platform native acceptance is still pending.
+- Next: finish native Wails bridge verification, authorized Windows Wi-Fi/capture acceptance, run the private Docker lab in an accessible engine, close Bun parity and complete the remaining alpha/beta/stable tasks. Do not mark the plan complete or tag a release.

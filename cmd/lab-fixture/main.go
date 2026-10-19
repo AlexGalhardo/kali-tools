@@ -55,7 +55,7 @@ func serveDNS() {
 	if e != nil {
 		log.Fatal(e)
 	}
-	defer socket.Close()
+	defer func() { _ = socket.Close() }()
 	buffer := make([]byte, 4096)
 	for {
 		n, addr, e := socket.ReadFrom(buffer)

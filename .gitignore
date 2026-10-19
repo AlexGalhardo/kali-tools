@@ -3,7 +3,9 @@
 /frontend/dist/*
 !/frontend/dist/.gitkeep
 /tools/bin/
+/.tools/
 /coverage.out
+/coverage
 /frontend/test-results/
 /frontend/playwright-report/
 /.impeccable/review/

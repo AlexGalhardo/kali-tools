@@ -33,7 +33,7 @@ type envelope struct {
 
 func run(ctx context.Context, args []string, out, errout io.Writer) int {
 	if len(args) == 0 {
-		fmt.Fprintln(errout, "Usage: hacker-tools <version|doctor|interfaces|inventory|diagnose|discover|wifi|capture|import> [flags]\nAll output is versioned JSON; discover also accepts --format csv. Wi-Fi secrets are available only through the explicit desktop reveal action.")
+		_, _ = fmt.Fprintln(errout, "Usage: hacker-tools <version|doctor|interfaces|inventory|diagnose|discover|wifi|capture|import> [flags]\nAll output is versioned JSON; discover also accepts --format csv. Wi-Fi secrets are available only through the explicit desktop reveal action.")
 		return 2
 	}
 	var data any
@@ -82,9 +82,13 @@ func run(ctx context.Context, args []string, out, errout io.Writer) int {
 				data = results
 				if err == nil && *format == "csv" {
 					writer := csv.NewWriter(out)
-					writer.Write([]string{"schema_version", "host", "port", "state"})
+					if e := writer.Write([]string{"schema_version", "host", "port", "state"}); e != nil {
+						return 1
+					}
 					for _, r := range results {
-						writer.Write([]string{"1", r.Host, strconv.Itoa(r.Port), r.State})
+						if e := writer.Write([]string{"1", r.Host, strconv.Itoa(r.Port), r.State}); e != nil {
+							return 1
+						}
 					}
 					writer.Flush()
 					if writer.Error() != nil {

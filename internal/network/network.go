@@ -78,7 +78,8 @@ func ValidateHost(host string) error {
 			return domain.Invalid("invalid host")
 		}
 		for _, r := range label {
-			if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-') {
+			valid := r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-'
+			if !valid {
 				return domain.Invalid("invalid host")
 			}
 		}

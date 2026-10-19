@@ -58,7 +58,9 @@ func TestPCAPAndPCAPNG(t *testing.T) {
 func TestOversizedDeclaredRecord(t *testing.T) {
 	var b bytes.Buffer
 	writer := pcapgo.NewWriter(&b)
-	writer.WriteFileHeader(65536, layers.LinkTypeRaw)
+	if e := writer.WriteFileHeader(65536, layers.LinkTypeRaw); e != nil {
+		t.Fatal(e)
+	}
 	raw := append(b.Bytes(), make([]byte, 16)...)
 	binary.LittleEndian.PutUint32(raw[32:36], 0x7fffffff)
 	if _, e := Read(bytes.NewReader(raw)); e == nil {
@@ -72,6 +74,6 @@ func FuzzCapture(f *testing.F) {
 		if len(data) > 2<<20 {
 			t.Skip()
 		}
-		Read(bytes.NewReader(data))
+		_, _ = Read(bytes.NewReader(data))
 	})
 }

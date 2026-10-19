@@ -1,0 +1,12 @@
+{
+  "name": "Hacker Tools",
+  "source": "frontend/src/style.css",
+  "mode": "operate",
+  "colors": {"background":"#0c1118","sidebar":"#10161e","surface":"#111923","border":"#24303c","text":"#dbe4ec","muted":"#94a6b8","primary":"#61e6af","primaryInk":"#062a20"},
+  "typography": {"body":{"family":"Segoe UI, system-ui, sans-serif","size":"14px","weight":400},"title":{"size":"30px","weight":550},"metadata":{"minimum":"11px"}},
+  "radius": {"control":"7px","panel":"10px"},
+  "motion": {"controlTransition":"150ms","decorativeEntrances":false},
+  "focus": {"color":"#61e6af","width":"2px","offset":"4px"},
+  "elevation": "border and tonal layers",
+  "viewports": {"desktop":{"width":1320,"height":900},"minimum":{"width":960,"height":680}}
+}
