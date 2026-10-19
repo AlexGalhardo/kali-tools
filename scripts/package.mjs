@@ -21,11 +21,11 @@ if(process.platform==="darwin"){
  cpSync(path.join(root,"build/bin",apps[0]),path.join(stage,apps[0]),{recursive:true});
 }else{cpSync(path.join(root,"build/bin/kali-tools-desktop"+suffix),path.join(stage,"kali-tools-desktop"+suffix));}
 const commit=spawnSync("git",["rev-parse","HEAD"],{cwd:root,encoding:"utf8",timeout:10000});if(commit.status!==0)throw Error("Cannot identify source commit");
-const status=spawnSync("git",["status","--porcelain"],{cwd:root,encoding:"utf8",timeout:10000});if(status.status!==0)throw Error("Cannot inspect source state");
+const status=spawnSync("git",["-c","core.fileMode=false","status","--porcelain"],{cwd:root,encoding:"utf8",timeout:10000});if(status.status!==0)throw Error("Cannot inspect source state");
 writeFileSync(path.join(stage,"BUILD.json"),JSON.stringify({version,source_commit:commit.stdout.trim(),source_dirty:Boolean(status.stdout.trim()),platform,architecture:process.arch,signed:false,qualification:"development preview; see PLAN.md"},null,2)+"\n");
 const stem=`kali-tools-${version}-${platform}-${process.arch}`;
 const archive=path.join(output,stem+(process.platform==="linux"?".tar.gz":".zip"));
 if(process.platform==="darwin")run("ditto",["-c","-k",stage,archive]);
-else if(process.platform==="win32")run("tar",["-a","-c","-f",archive,"-C",stage,"."]);
+else if(process.platform==="win32")run(path.join(process.env.SystemRoot??"C:/Windows","System32","tar.exe"),["-a","-c","-f",archive,"-C",stage,"."]);
 else run("tar",["-czf",archive,"-C",stage,"."]);
 console.log(archive);
