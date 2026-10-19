@@ -1,5 +1,5 @@
 import {spawnSync} from "node:child_process";
-import {readdirSync,readFileSync} from "node:fs";
+import {chmodSync,readdirSync,readFileSync} from "node:fs";
 import {fileURLToPath} from "node:url";
 import path from "node:path";
 const root=fileURLToPath(new URL("../",import.meta.url));
@@ -32,5 +32,7 @@ if(task==="bridge"){
 }
 if(task==="bindings"){
   run("wails",["generate","module","-tags","desktop"]);
+  // Wails writes generated JavaScript as executable on Unix; keep source modes portable.
+  for(const file of ["go/main/App.d.ts","go/main/App.js","go/models.ts","runtime/package.json","runtime/runtime.d.ts","runtime/runtime.js"])chmodSync(path.join(root,"frontend/wailsjs",file),0o644);
   run("git",["diff","--exit-code","--","frontend/wailsjs"]);
 }

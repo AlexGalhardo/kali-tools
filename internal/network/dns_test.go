@@ -84,12 +84,12 @@ func TestDNSRecordFixtures(t *testing.T) {
 			}
 		})
 	}
-	if _, err := lookupDNS(t.Context(), resolver, "missing.test", "A"); err == nil {
+	if _, err := lookupDNS(t.Context(), resolver, "missing.test.", "A"); err == nil {
 		t.Fatal("NXDOMAIN accepted")
 	}
 	ctx, cancel := context.WithTimeout(t.Context(), 100*time.Millisecond)
 	defer cancel()
-	if _, err := lookupDNS(ctx, resolver, "silent.test", "TXT"); err == nil {
+	if _, err := lookupDNS(ctx, resolver, "silent.test.", "TXT"); err == nil {
 		t.Fatal("timeout accepted")
 	}
 	cancelled, stop := context.WithCancel(t.Context())
