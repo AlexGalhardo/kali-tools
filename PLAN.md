@@ -63,11 +63,12 @@ SQLite proposed schema: settings, jobs, diagnostic_results, tool_inventory and s
   - Assert: both documents distinguish confirmed decisions from proposals. Verify: document review.
 - [x] S02 Initialize local Git and configure the requested origin.
   - Assert: origin resolves to the owner's hacker-tools URL. Verify: `git remote -v`.
-- [ ] S03 Establish GitHub access and push the planning baseline.
-  - [ ] Reauthenticate GitHub CLI using the owner's browser authorization.
-  - [ ] Configure Git credential helper; inspect remote state before pushing.
-  - [ ] Reconcile any existing branch without force push; push and verify remote SHA.
+- [x] S03 Establish GitHub access and push the planning baseline.
+  - [x] Reauthenticate GitHub CLI using the owner's browser authorization.
+  - [x] Configure scoped Git authentication; inspect remote state before pushing.
+  - [x] Confirm remote is empty; push without force and verify remote SHA.
   - Assert: authenticated identity has repository write access and remote HEAD contains this plan.
+  - Evidence: authenticated as AlexGalhardo with repository push permission; `main` tracks `origin/main`. GitHub API confirmed planning commit `223c4b06b7dcb764456a179ab349b373f9e54870` after push. Credentials are outside the repository; global Git configuration was not required.
 - [ ] S04 Reproducible Go and frontend toolchain.
   - [ ] Install/verify Go and Wails v2 stable; record exact versions and `wails doctor` output.
   - [ ] Create Go module and actual Wails React/TypeScript shell; pin versions after registry verification.
@@ -244,5 +245,5 @@ Third-party downloaded plugins, firewall modification, traffic shaping, Wi-Fi mo
 
 - Research baseline committed as `c4bf7fe`.
 - Go executable is not currently on PATH; Bun, Node, Docker CLI and GitHub CLI are present. Docker daemon and toolchain functionality still need verification.
-- GitHub CLI reports an invalid saved token for AlexGalhardo; authentication is pending.
-- Next: establish GitHub access, push this plan, then execute S04 onward. App implementation tasks remain unchecked.
+- GitHub authorization completed and planning baseline pushed to `main`; use the task-local GitHub CLI configuration outside the repository for subsequent pushes.
+- Next: execute S04 onward. App implementation tasks remain unchecked.
