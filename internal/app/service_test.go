@@ -20,7 +20,11 @@ func TestCancellationAndRedaction(t *testing.T) {
 		t.Fatal(e)
 	}
 	s := New(store)
-	defer s.Close()
+	defer func() {
+		if e := s.Close(); e != nil {
+			t.Error(e)
+		}
+	}()
 	j, e := s.Start(t.Context(), network.Request{Kind: "http", Target: server.URL + "?secret=synthetic-psk", TimeoutMS: 30000})
 	if e != nil {
 		t.Fatal(e)
