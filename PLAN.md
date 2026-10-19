@@ -70,10 +70,10 @@ SQLite proposed schema: settings, jobs, diagnostic_results, tool_inventory and s
   - [x] Confirm remote is empty; push without force and verify remote SHA.
   - Assert: authenticated identity has repository write access and remote HEAD contains this plan.
   - Evidence: authenticated as AlexGalhardo with repository push permission; `main` tracks `origin/main`. GitHub API confirmed planning commit `223c4b06b7dcb764456a179ab349b373f9e54870` after push. Credentials are outside the repository; global Git configuration was not required.
-- [ ] S04 Reproducible Go and frontend toolchain.
+- [x] S04 Reproducible Go and frontend toolchain.
   - [x] Install/verify Go and Wails v2 stable; record exact versions and `wails doctor` output.
   - [x] Create Go module and actual Wails React/TypeScript shell; pin versions after registry verification.
-  - [ ] Configure Bun, committed lockfile, Vite, Base UI, Tailwind v4 and translation catalogs. Frozen Bun installation/build passed; bun.lock is added to the workspace and awaits commit.
+  - [x] Configure Bun, committed lockfile, Vite, Base UI, Tailwind v4 and translation catalogs. Committed in c902560; a clean source archive installed frozen Bun dependencies, built the frontend and passed the actual native race/bridge test.
   - [x] Add Biome, golangci-lint, govulncheck, commitlint, Lefthook and Markdown checks.
   - [x] Supply dev/check/build commands for Windows and Unix hosts.
   - Assert: clean checkout installs frozen dependencies and opens native shell; no placeholder build reports success.

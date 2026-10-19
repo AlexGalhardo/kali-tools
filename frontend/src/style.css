@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import "tailwindcss" source("./");
 :root {
   font-family: Inter, "Segoe UI", system-ui, sans-serif;
   color: #dbe4ec;
