@@ -22,17 +22,17 @@ Development checkpoint; qualification remains open. Release assets are unsigned 
 
 ### Changed
 
-- Renamed the project and CLI to `kali-tools`; existing development data remains readable.
+- Renamed the project and CLI to `kali-tools`; existing development data remains readable. ([#8435a1f](https://github.com/AlexGalhardo/kali-tools/commit/8435a1f))
 - Updated Go to 1.27.2 and patched x/net, x/crypto and x/text dependencies.
 - Added a frozen Bun lockfile alongside the npm fallback.
 - Paginated packet/discovery tables and translated status/permission failures.
 
 ### Fixed
 
-- Desktop initialization/shutdown races and late Wi-Fi secret reveal after blur/navigation.
-- Unbounded subprocess output through promoted buffer methods; cancellation now stops descendants.
-- Corrupt/oversized stored preferences and discovery history privacy.
-- Capture save failure preserves the destination; packet timestamps retain nanosecond precision.
+- Desktop initialization/shutdown races and late Wi-Fi secret reveal after blur/navigation. ([c902560](https://github.com/AlexGalhardo/kali-tools/commit/c902560))
+- Unbounded subprocess output through promoted buffer methods; cancellation now stops descendants. ([b497003](https://github.com/AlexGalhardo/kali-tools/commit/b497003))
+- Corrupt/oversized stored preferences and discovery history privacy. ([5a89c71](https://github.com/AlexGalhardo/kali-tools/commit/5a89c71))
+- Capture save failure preserves the destination; packet timestamps retain nanosecond precision. ([c005e7e](https://github.com/AlexGalhardo/kali-tools/commit/c005e7e))
 
 ### Known limitations
 
