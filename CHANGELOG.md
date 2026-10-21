@@ -6,6 +6,8 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ### Changed
 
+- Added shared port suites, contract-tested in-memory fakes and direct/CLI/headless Wails acceptance drivers. The H07 checkpoint keeps the discovered ICMP validation gap and native data-branch qualification open. ([5b15aac](https://github.com/AlexGalhardo/kali-tools/commit/5b15aac), [H07 evidence](docs/verification/specs/H07.md))
+
 - Separated shared transport DTOs from application models, centralized bounded safe error mapping and added bilingual location-consent labels; CLI golden output remains unchanged. Native IPC acceptance remains open. ([cf5f4dc](https://github.com/AlexGalhardo/kali-tools/commit/cf5f4dc), [H06 evidence](docs/verification/specs/H06.md))
 
 - Extracted CLI parsing/output and Wails bindings into dedicated driving adapters; roots now only compose and clean up. The bridge and headless workflows use `wailsui.Bindings`, with unchanged pre-extraction CLI fixture bytes and job sequence fields. ([5954c1a](https://github.com/AlexGalhardo/kali-tools/commit/5954c1a), [H05 evidence](docs/verification/specs/H05.md))
