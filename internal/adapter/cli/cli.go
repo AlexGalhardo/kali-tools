@@ -50,6 +50,9 @@ func Run(ctx context.Context, application *app.Application, args []string, out, 
 		ctx, cancel = context.WithTimeout(ctx, call.g.Timeout)
 		defer cancel()
 	}
+	if data, err, handled := runReadOnly(ctx, application, call); handled {
+		return writeEnvelope(out, data, err)
+	}
 	return runLegacy(ctx, application, call.legacy, out, errout)
 }
 

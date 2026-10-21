@@ -32,6 +32,8 @@ type invocation struct {
 	legacy      []string
 	help        bool
 	flagFailure bool
+	arg         string
+	values      map[string]string
 }
 
 func parseTimeout(value string) (time.Duration, error) {
@@ -108,12 +110,23 @@ func parseInvocation(args []string) (invocation, error) {
 			return call, nil
 		}
 	}
-	index := slices.IndexFunc(commands, func(c command) bool { return c.path == args[0] })
+	index, consumed := -1, 1
+	for i, c := range commands {
+		if c.path == args[0] && consumed == 1 {
+			index = i
+		}
+		if len(args) > 1 && c.path == args[0]+" "+args[1] {
+			index, consumed = i, 2
+		}
+	}
 	if index < 0 {
 		return call, domain.Invalid("unknown command %q", args[0])
 	}
 	call.command = commands[index]
-	args = args[1:]
+	args = args[consumed:]
+	if call.command.path == "jobs show" && len(args) > 0 && !strings.HasPrefix(args[0], "-") {
+		call.arg, args = args[0], args[1:]
+	}
 	positionalKind := ""
 	if call.command.path == "diagnose" && len(args) > 0 && !strings.HasPrefix(args[0], "-") {
 		positionalKind, args = args[0], args[1:]
@@ -126,6 +139,8 @@ func parseInvocation(args []string) (invocation, error) {
 	registerGlobals(fs, &call.g)
 	for _, name := range call.command.flags {
 		switch name {
+		case "all":
+			fs.Bool(name, false, "include completed jobs")
 		case "port":
 			fs.Int(name, 443, "TCP port")
 		case "duration":
@@ -159,6 +174,13 @@ func parseInvocation(args []string) (invocation, error) {
 	if call.g.Lang != "en" && call.g.Lang != "pt-BR" {
 		return call, domain.Invalid("language must be en or pt-BR")
 	}
+	if call.command.path == "jobs show" && !call.help && !validJobID.MatchString(call.arg) {
+		return call, domain.Invalid("job ID must be 32 lowercase hexadecimal characters")
+	}
+	call.values = make(map[string]string, len(call.command.flags))
+	for _, name := range call.command.flags {
+		call.values[name] = fs.Lookup(name).Value.String()
+	}
 	call.legacy = []string{call.command.path}
 	var parseErr error
 	fs.Visit(func(f *flag.Flag) {
@@ -188,6 +210,8 @@ func parseInvocation(args []string) (invocation, error) {
 	}
 	return call, parseErr
 }
+
+var validJobID = regexp.MustCompile(`^[0-9a-f]{32}$`)
 
 // NeedsApp avoids opening storage for help, version and rejected invocations.
 func NeedsApp(args []string) bool {

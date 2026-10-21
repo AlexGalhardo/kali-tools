@@ -73,12 +73,12 @@ func TestHelpListsEveryCommand(t *testing.T) {
 	if code := cli.Run(t.Context(), nil, []string{"help"}, &list, &stderr); code != 0 {
 		t.Fatal(code, stderr.String())
 	}
-	for _, name := range []string{"version", "doctor", "interfaces", "inventory", "diagnose", "discover", "inspect", "wifi", "capture", "import"} {
+	for _, name := range []string{"version", "doctor", "interfaces", "inventory", "diagnose", "discover", "inspect", "wifi", "capture", "import", "capabilities", "tools", "neighbors", "wifi show", "jobs list", "jobs show", "history list", "settings get"} {
 		t.Run(name, func(t *testing.T) {
 			if !strings.Contains(list.String(), name) {
 				t.Fatal("missing command", name)
 			}
-			for _, args := range [][]string{{name, "--help"}, {"help", name}} {
+			for _, args := range [][]string{append(strings.Fields(name), "--help"), append([]string{"help"}, strings.Fields(name)...)} {
 				var out bytes.Buffer
 				if cli.NeedsApp(args) || cli.Run(t.Context(), nil, args, &out, &stderr) != 0 || !strings.Contains(out.String(), name) {
 					t.Fatal("invalid command help", args)
@@ -127,6 +127,69 @@ func TestLegacyInvocationsStillParse(t *testing.T) {
 		}
 		if fields[1] != "-" && (response.Error == nil || response.Error.Code != fields[1]) {
 			t.Fatal("legacy error code changed", line)
+		}
+	}
+}
+
+func TestJSONModeAlwaysEnvelope(t *testing.T) {
+	for _, args := range [][]string{
+		{"capabilities"}, {"tools"}, {"neighbors"}, {"wifi", "show"},
+		{"jobs", "list"}, {"jobs", "list", "--all"}, {"jobs", "show", fixtureJobID},
+		{"history", "list"}, {"settings", "get"},
+	} {
+		t.Run(strings.Join(args, "_"), func(t *testing.T) {
+			var out, stderr bytes.Buffer
+			got := cli.Run(t.Context(), newTestApp(t), append([]string{"--json"}, args...), &out, &stderr)
+			var response envelope
+			if err := json.Unmarshal(out.Bytes(), &response); err != nil {
+				t.Fatal(err)
+			}
+			want := 0
+			if args[0] == "neighbors" {
+				want = 3
+			}
+			if got != want || response.SchemaVersion != 1 || strings.Contains(stderr.String(), "schema_version") {
+				t.Fatalf("exit=%d, stdout=%s, stderr=%s", got, out.String(), stderr.String())
+			}
+		})
+	}
+}
+
+func TestJobIDValidation(t *testing.T) {
+	for _, test := range []struct {
+		id   string
+		want int
+	}{
+		{fixtureJobID, 0}, {strings.Repeat("0", 32), 6},
+		{strings.Repeat("0", 31), 2}, {strings.Repeat("0", 33), 2},
+		{strings.ToUpper(fixtureJobID), 2},
+	} {
+		t.Run(test.id, func(t *testing.T) {
+			var out, stderr bytes.Buffer
+			if got := cli.Run(t.Context(), newTestApp(t), []string{"--json", "jobs", "show", test.id}, &out, &stderr); got != test.want {
+				t.Fatalf("exit=%d, want %d; out=%s", got, test.want, out.String())
+			}
+		})
+	}
+}
+
+func TestJobsListFiltersTerminalHistory(t *testing.T) {
+	a := newTestApp(t)
+	for _, test := range []struct {
+		args []string
+		want int
+	}{
+		{[]string{"jobs", "list"}, 0},
+		{[]string{"jobs", "list", "--all"}, 1},
+		{[]string{"history", "list"}, 1},
+	} {
+		var out, stderr bytes.Buffer
+		if cli.Run(t.Context(), a, append([]string{"--json"}, test.args...), &out, &stderr) != 0 {
+			t.Fatal(out.String(), stderr.String())
+		}
+		var response struct{ Data []struct{ ID string } }
+		if err := json.Unmarshal(out.Bytes(), &response); err != nil || len(response.Data) != test.want {
+			t.Fatalf("result=%s, error=%v", out.String(), err)
 		}
 	}
 }
