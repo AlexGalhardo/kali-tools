@@ -25,7 +25,7 @@ func (cliDriver) Name() string                       { return "cli" }
 func cliResult[T any](d cliDriver, ctx context.Context, args []string) (T, error) {
 	d.t.Helper()
 	var out, stderr bytes.Buffer
-	code := cli.Run(ctx, d.app, args, &out, &stderr)
+	code := cli.Run(ctx, d.app, append([]string{"--json"}, args...), &out, &stderr)
 	var response struct {
 		SchemaVersion int             `json:"schema_version"`
 		Version       string          `json:"version"`
@@ -40,10 +40,7 @@ func cliResult[T any](d cliDriver, ctx context.Context, args []string) (T, error
 	}
 	wantCode := 0
 	if response.Error != nil {
-		wantCode = 1
-		if response.Error.Code == "invalid_input" {
-			wantCode = 2
-		}
+		wantCode = cli.ExitCode(response.Error.Code)
 	}
 	if code != wantCode {
 		d.t.Fatalf("exit=%d, want=%d", code, wantCode)

@@ -1,0 +1,222 @@
+package cli
+
+import (
+	"errors"
+	"flag"
+	"fmt"
+	"io"
+	"regexp"
+	"slices"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
+)
+
+const (
+	minTimeout = 100 * time.Millisecond
+	maxTimeout = 10 * time.Minute
+)
+
+type globals struct {
+	JSON    bool
+	Timeout time.Duration
+	NoColor bool
+	Lang    string
+}
+
+type invocation struct {
+	command     command
+	g           globals
+	legacy      []string
+	help        bool
+	flagFailure bool
+}
+
+func parseTimeout(value string) (time.Duration, error) {
+	if milliseconds, err := strconv.ParseInt(value, 10, 64); err == nil {
+		if milliseconds < minTimeout.Milliseconds() || milliseconds > maxTimeout.Milliseconds() {
+			return 0, domain.Invalid("timeout must be 100ms..10m")
+		}
+		return time.Duration(milliseconds) * time.Millisecond, nil
+	}
+	duration, err := time.ParseDuration(value)
+	if err != nil || duration < minTimeout || duration > maxTimeout {
+		return 0, domain.Invalid("timeout must be 100ms..10m")
+	}
+	return duration, nil
+}
+
+func registerGlobals(fs *flag.FlagSet, g *globals) {
+	fs.BoolVar(&g.JSON, "json", g.JSON, "versioned JSON output")
+	fs.BoolVar(&g.NoColor, "no-color", g.NoColor, "disable ANSI colors")
+	fs.StringVar(&g.Lang, "lang", g.Lang, "result language: en or pt-BR")
+	fs.Func("timeout", "operation timeout: milliseconds or Go duration", func(value string) error {
+		var err error
+		g.Timeout, err = parseTimeout(value)
+		return err
+	})
+}
+
+func jsonRequested(args []string) bool {
+	for _, arg := range args {
+		if arg == "--" {
+			break
+		}
+		if slices.Contains([]string{"--json", "-json", "--json=true", "-json=true"}, arg) {
+			return true
+		}
+	}
+	return false
+}
+
+var unknownFlag = regexp.MustCompile(`flag provided but not defined: -([a-zA-Z][a-zA-Z0-9-]{0,40})$`)
+var invalidFlag = regexp.MustCompile(`(?:for flag -|flag needs an argument: -)([a-zA-Z][a-zA-Z0-9-]{0,40})(?::|$)`)
+
+func safeFlagError(err error) error {
+	if match := unknownFlag.FindStringSubmatch(err.Error()); len(match) == 2 {
+		return domain.Invalid("unknown flag --%s", match[1])
+	}
+	if match := invalidFlag.FindStringSubmatch(err.Error()); len(match) == 2 {
+		return domain.Invalid("invalid value for --%s", match[1])
+	}
+	return domain.Invalid("invalid command flags")
+}
+
+func parseInvocation(args []string) (invocation, error) {
+	call := invocation{g: globals{JSON: jsonRequested(args), Lang: "en"}}
+	root := flag.NewFlagSet("kali-tools", flag.ContinueOnError)
+	root.SetOutput(io.Discard)
+	registerGlobals(root, &call.g)
+	if err := root.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			call.help = true
+			return call, nil
+		}
+		call.flagFailure = true
+		return call, safeFlagError(err)
+	}
+	args = root.Args()
+	if len(args) == 0 {
+		return call, domain.Invalid("command required")
+	}
+	if args[0] == "help" {
+		call.help = true
+		args = args[1:]
+		if len(args) == 0 {
+			return call, nil
+		}
+	}
+	index := slices.IndexFunc(commands, func(c command) bool { return c.path == args[0] })
+	if index < 0 {
+		return call, domain.Invalid("unknown command %q", args[0])
+	}
+	call.command = commands[index]
+	args = args[1:]
+	positionalKind := ""
+	if call.command.path == "diagnose" && len(args) > 0 && !strings.HasPrefix(args[0], "-") {
+		positionalKind, args = args[0], args[1:]
+		if positionalKind == "trace" {
+			positionalKind = "traceroute"
+		}
+	}
+	fs := flag.NewFlagSet(call.command.path, flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+	registerGlobals(fs, &call.g)
+	for _, name := range call.command.flags {
+		switch name {
+		case "port":
+			fs.Int(name, 443, "TCP port")
+		case "duration":
+			fs.Int(name, 5, "capture seconds")
+		case "limit":
+			fs.Int(name, 1000, "packet limit")
+		default:
+			value := ""
+			switch name {
+			case "kind":
+				value = "tcp"
+			case "ports":
+				value = "80,443"
+			case "format":
+				value = "json"
+			}
+			fs.String(name, value, name)
+		}
+	}
+	if err := fs.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			call.help = true
+			return call, nil
+		}
+		call.flagFailure = true
+		return call, safeFlagError(err)
+	}
+	if fs.NArg() != 0 {
+		return call, domain.Invalid("unexpected positional arguments")
+	}
+	if call.g.Lang != "en" && call.g.Lang != "pt-BR" {
+		return call, domain.Invalid("language must be en or pt-BR")
+	}
+	call.legacy = []string{call.command.path}
+	var parseErr error
+	fs.Visit(func(f *flag.Flag) {
+		if !slices.Contains(call.command.flags, f.Name) {
+			return
+		}
+		value := f.Value.String()
+		if f.Name == "kind" && value == "trace" {
+			value = "traceroute"
+		}
+		if f.Name == "kind" && positionalKind != "" && value != positionalKind {
+			parseErr = domain.Invalid("kind given twice")
+		}
+		if f.Name == "format" && value == "csv" && call.g.JSON {
+			parseErr = domain.Invalid("CSV cannot be combined with --json")
+		}
+		call.legacy = append(call.legacy, "--"+f.Name, value)
+	})
+	if positionalKind != "" {
+		call.legacy = append(call.legacy, "--kind", positionalKind)
+	}
+	if call.g.Timeout != 0 && call.command.path != "version" {
+		if call.command.path == "capture" {
+			return call, domain.Invalid("capture live uses --duration")
+		}
+		call.legacy = append(call.legacy, "--timeout", strconv.FormatInt(call.g.Timeout.Milliseconds(), 10))
+	}
+	return call, parseErr
+}
+
+// NeedsApp avoids opening storage for help, version and rejected invocations.
+func NeedsApp(args []string) bool {
+	call, err := parseInvocation(args)
+	return err == nil && !call.help && call.command.needsApp
+}
+
+func writeHelp(w io.Writer, call invocation) error {
+	if call.command.path != "" {
+		_, err := fmt.Fprintf(w, "Usage: kali-tools %s [flags]\n%s\nFlags: --json --timeout --no-color --lang", call.command.path, call.command.synopsis)
+		if err != nil {
+			return err
+		}
+		for _, name := range call.command.flags {
+			if _, err := fmt.Fprintf(w, " --%s", name); err != nil {
+				return err
+			}
+		}
+		_, err = fmt.Fprintln(w)
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "Usage: kali-tools [global flags] <command> [flags]\nCommands:"); err != nil {
+		return err
+	}
+	for _, c := range commands {
+		if _, err := fmt.Fprintf(w, "  %-16s %s\n", c.path, c.synopsis); err != nil {
+			return err
+		}
+	}
+	_, err := fmt.Fprintln(w, "Global flags: --json --timeout --no-color --lang")
+	return err
+}

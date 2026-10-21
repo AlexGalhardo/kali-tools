@@ -88,6 +88,8 @@ func (a *Application) Close() error
 
 ## 4. Design
 
+Checkout corrections (2026-10-21): the H07 CLI acceptance driver must prepend `--json` and use `cli.ExitCode` as soon as stricter parsing arrives, rather than waiting for the human-default step. Update `tests/acceptance/cli_driver_test.go` in this spec and retain its history skip until history commands are implemented. Application signatures use domain values and `job.ID`/boolean status (as delivered by H04); map through the existing H06 functions, without adding application methods or DTO dependencies. Interface inventory and generated job IDs remain native/random; normalize those fields in golden fixtures rather than adding production test seams.
+
 ### 4.1 Package layout
 
 All code is in `internal/adapter/cli` except the `serve` wiring (cmd root, see §4.11).

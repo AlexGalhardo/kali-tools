@@ -31,6 +31,29 @@ func Run(ctx context.Context, application *app.Application, args []string, out, 
 		_, _ = fmt.Fprintln(errout, "Usage: kali-tools <version|doctor|interfaces|inventory|diagnose|discover|inspect|wifi|capture|import> [flags]\nAll output is versioned JSON; discover also accepts --format csv. Wi-Fi secrets are available only through the explicit desktop reveal action.")
 		return exitInvalid
 	}
+	call, err := parseInvocation(args)
+	if err != nil {
+		if call.flagFailure && !call.g.JSON {
+			_, _ = fmt.Fprintln(errout, err)
+			return ExitUsage
+		}
+		return writeEnvelope(out, nil, err)
+	}
+	if call.help {
+		if err := writeHelp(out, call); err != nil {
+			return ExitFailed
+		}
+		return ExitOK
+	}
+	if call.g.Timeout != 0 && call.command.path != "diagnose" && call.command.path != "discover" && call.command.path != "version" {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, call.g.Timeout)
+		defer cancel()
+	}
+	return runLegacy(ctx, application, call.legacy, out, errout)
+}
+
+func runLegacy(ctx context.Context, application *app.Application, args []string, out, errout io.Writer) int {
 	var data any
 	var err error
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
@@ -138,6 +161,10 @@ func Run(ctx context.Context, application *app.Application, args []string, out, 
 			err = domain.Invalid("unknown command %q", args[0])
 		}
 	}
+	return writeEnvelope(out, data, err)
+}
+
+func writeEnvelope(out io.Writer, data any, err error) int {
 	response := envelope{SchemaVersion: domain.SchemaVersion, Version: domain.Version, Data: data}
 	code := exitOK
 	if err != nil {

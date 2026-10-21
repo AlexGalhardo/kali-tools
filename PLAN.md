@@ -284,10 +284,10 @@ These are reusable delivery requirements, not a separate completed milestone. De
 - [x] H08 Enforce the dependency rule.
   - Eight depguard cases, wrong-version guard, cleanup and actual commit-hook rejection pass. Positive hosted run 39669810016 passes; negative PR #1 fails specifically on the application depguard rule, then was closed and deleted without merging. [Evidence](docs/verification/specs/H08.md).
   - Spec: [H08-dependency-rule](docs/specs/H08-dependency-rule.md)
-  - [ ] Configure depguard in `.golangci.yml` (or pinned go-arch-lint) with the matrix in architecture §3. Run it in CI and in Lefthook.
-  - [ ] Use the spec's pinned depguard configuration, including test-only porttest and composition-root restrictions.
-  - [ ] Add `scripts/depguard-check.mjs` and `node scripts/task.mjs arch`; prove each of the eight rules rejects a deliberate violation and cleans up.
-  - [ ] Wire the architecture check into the existing pinned CI job; record QG/AC/DA evidence in `docs/verification/specs/H08.md`.
+  - [x] Configure depguard in `.golangci.yml` (or pinned go-arch-lint) with the matrix in architecture §3. Run it in CI and in Lefthook.
+  - [x] Use the spec's pinned depguard configuration, including test-only porttest and composition-root restrictions.
+  - [x] Add `scripts/depguard-check.mjs` and `node scripts/task.mjs arch`; prove each of the eight rules rejects a deliberate violation and cleans up.
+  - [x] Wire the architecture check into the existing pinned CI job; record QG/AC/DA evidence in `docs/verification/specs/H08.md`.
   - Assert: a deliberately forbidden import fails the check locally and in CI.
 - [ ] H09 Decide the CLI parser.
   - ADR 004 selects stdlib using the specified rule, with verified alternative licenses/pins and concrete revisit triggers. Status stays proposed pending owner approval. [ADR](docs/adr/004-cli-parser.md).
