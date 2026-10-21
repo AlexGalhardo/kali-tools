@@ -197,6 +197,10 @@ func TestDrivingRootsImportOnlyApplication(t *testing.T) {
 				continue
 			}
 			allowed := false
+			// W01 shares static assets through a pure package outside internal/.
+			if root.path == "../../main.go" && name == prefix+"frontend" {
+				allowed = true
+			}
 			for _, pkg := range root.allowed {
 				if name == prefix+"internal/"+pkg {
 					allowed = true

@@ -406,6 +406,7 @@ Create:
 Modify:
 
 - `main.go`, `bridge_smoke_test.go`: `frontend.Dist()`.
+- `internal/bootstrap/roots_test.go`: permit the pure shared frontend asset package only in desktop composition (checkout correction discovered by the full suite).
 - `frontend/src/shared/api/bridge.ts`, `frontend/src/main.tsx`, `frontend/src/app/App.tsx`, `frontend/src/shared/i18n/i18n.ts` (`native`, `serverMode`, session strings).
 - `frontend/package.json` (`lint` script), `frontend/playwright.config.ts`, `frontend/tests/workflows.spec.ts` (imports `test` from `support.ts`; tags).
 - `docs/architecture.md`, `README.md`, `docs/development.md`, `CHANGELOG.md`, `PLAN.md`.
