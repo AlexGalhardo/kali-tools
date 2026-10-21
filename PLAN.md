@@ -275,7 +275,7 @@ These are reusable delivery requirements, not a separate completed milestone. De
   - [x] `tests/acceptance` diagnostics/discovery for direct application, CLI and headless Wails; history for direct/Wails. [Evidence](docs/verification/specs/H07.md).
   - [x] Verify the real ICMP regression after rejecting invalid targets before DNS/native delegation. `TestProberContract` passes; probe coverage 75.8% → 78.1%. [Evidence](docs/verification/specs/H07.md#continuation-2026-10-21).
   - [x] Rerun H07 race checks after installing GCC 16.2.0: `go test -race -timeout 120s ./internal/porttest/... ./internal/adapter/... ./tests/acceptance/...` passes. [Evidence](docs/verification/specs/H07.md#continuation-2026-10-21).
-  - [ ] H07 native OS-port data branches AC-10/DA-7, with Wi-Fi, capture privileges and documented hardware.
+  - [x] H07 native OS-port data branches AC-10/DA-7: Wi-Fi, ICMP, host inventory and elevated capture pass on Windows build 26300 after the suite selects an active interface. [Native evidence](docs/verification/specs/H07.md#native-capture-correction-2026-10-21).
   - [ ] C01: implement CLI history and remove the single explicit acceptance skip.
   - [ ] W01/W03: add the HTTP driver and run the unchanged shared acceptance specifications.
   - Progress: [H07 evidence](docs/verification/specs/H07.md). The ICMP correction, seven real/fake suites, race checks and direct/CLI/Wails acceptance matrix pass. H07 remains open for native qualification. HTTP remains W01; CLI history remains C01.

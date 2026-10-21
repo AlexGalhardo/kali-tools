@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | H07 |
-| Status | Implementation and non-native acceptance complete 2026-10-21; native AC-10/DA-7 pending ([evidence](../verification/specs/H07.md#continuation-2026-10-21)) |
+| Status | Native AC-10/DA-7 passed 2026-10-21 after selecting an active capture interface ([evidence](../verification/specs/H07.md#native-capture-correction-2026-10-21)) |
 | Depends on | H03, H04, H05, H06 |
 | Risk | Low: tests and test-only packages; production code changes only where a fake reveals a real contract gap, and then STOP and report |
 
@@ -21,6 +21,8 @@ Fakes cannot drift from real adapters, and behavior is proven once for every int
 - Do not add third-party test libraries.
 
 Continuation scope (2026-10-21): the owner requested resuming from the latest commits and reconciling PLAN with SDD. The previously reported ICMP gap is the resumption point: permit `internal/adapter/probe/probe.go` to call the existing `network.ValidateHost` before native delegation, and wire the specified real `TestProberContract`. No port or native implementation changes are needed. The original stop-and-report requirement was fulfilled by the H07 checkpoint; this correction is recorded explicitly rather than extending other adapter behavior.
+
+Native continuation authorized 2026-10-21: the first elevated capture contract chose a disconnected interface. Select the first non-loopback IPv4 on an **active** interface in `internal/porttest/capture.go`. Keep the provider and contract assertions unchanged. The owner requested continued implementation after the failure report; the corrected native run must pass before AC-10/DA-7 closes.
 
 ## 3. Current state
 

@@ -4,6 +4,10 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+### Changed
+
+- Corrected H07 capture contract selection to use an active interface; Wi-Fi, ICMP, host inventory and elevated live capture now pass with real data on Windows build 26300. [Evidence](docs/verification/specs/H07.md#native-capture-correction-2026-10-21).
+
 ## [0.3.0] - 2026-10-21
 
 Published at the owner's explicit request with unsigned development binaries and open native qualification gates. Earlier development release entries are now presented as 0.1.0 and 0.2.0; their source commits and artifact contents are preserved.

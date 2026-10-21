@@ -169,6 +169,8 @@ H07 suite wiring:
 
 Only test files outside `internal/porttest` import the suites or fakes. `tests/acceptance` creates a fresh application per scenario; diagnostics and discovery run through direct, CLI and Wails drivers, while history runs through direct and Wails until C01. The HTTP driver remains W01. No Wails runtime or native dialogs are launched by these drivers.
 
+H07 native OS-port suites passed on Windows build 26300 with active Wi-Fi and administrator capture on 2026-10-21. The capture suite selects an active non-loopback interface; disconnected interfaces may retain addresses that Windows cannot bind. This qualifies H07 OS-port data branches only, not desktop IPC or other platform acceptance.
+
 ## 5. Runtime flows
 
 ### 5.1 Starting a diagnostic job (current desktop path)
