@@ -6,6 +6,8 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ### Changed
 
+- C01 step 1 adds documented exit statuses for unsupported (3), permission (4), missing dependency (5), not found (6), timeout (7), conflict (8), authentication (9), and cancellation (130). Success, generic failure and invalid input remain 0/1/2. The complete CLI migration is still in progress. [C01 evidence](docs/verification/specs/C01.md).
+
 - Enforced the architecture dependency matrix with eight depguard rules, deliberate-violation checks and CI wiring; documented the stdlib CLI parser decision and revisit triggers. [H08/H09 evidence](docs/verification/specs/H08.md).
 
 - Applied a shared black/neon-green terminal theme with bundled JetBrains Mono, responsive navigation and accessible SVG actions. [Theme evidence](docs/verification/specs/A08-theme.md).

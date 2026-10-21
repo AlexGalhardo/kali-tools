@@ -11,6 +11,25 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/cli"
 )
 
+func TestExitCodeTable(t *testing.T) {
+	for _, test := range []struct {
+		code string
+		want int
+	}{
+		{"", 0}, {"failed", 1}, {"no_connection", 1}, {"certificate_invalid", 1},
+		{"invalid_input", 2}, {"unsupported", 3}, {"permission_required", 4},
+		{"location_consent_required", 4}, {"dependency_missing", 5}, {"not_found", 6},
+		{"timeout", 7}, {"conflict", 8}, {"unauthorized", 9}, {"forbidden", 9},
+		{"cancelled", 130}, {"unknown", 1},
+	} {
+		t.Run(test.code, func(t *testing.T) {
+			if got := cli.ExitCode(test.code); got != test.want {
+				t.Fatalf("exit=%d, want %d", got, test.want)
+			}
+		})
+	}
+}
+
 func TestCLIMapsUnknownErrorsGenerically(t *testing.T) {
 	var out, stderr bytes.Buffer
 	path := filepath.Join(t.TempDir(), "missing-capture.pcap")

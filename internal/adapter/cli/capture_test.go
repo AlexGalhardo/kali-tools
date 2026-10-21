@@ -149,7 +149,7 @@ func TestCLICaptureReportsProviderState(t *testing.T) {
 	if err := json.Unmarshal(out.Bytes(), &result); err != nil {
 		t.Fatal(err)
 	}
-	if exitCode != 1 || result.Error == nil || result.Error.Code != code {
+	if exitCode != cli.ExitCode(code) || result.Error == nil || result.Error.Code != code {
 		t.Fatalf("exit=%d, out=%s", exitCode, out.String())
 	}
 }

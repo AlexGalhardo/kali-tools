@@ -211,7 +211,7 @@ func TestCLICancelledContext(t *testing.T) {
 		if err := json.Unmarshal(out.Bytes(), &result); err != nil {
 			t.Fatal(err)
 		}
-		if code != 1 || result.Error == nil || result.Error.Code != "cancelled" || result.Error.Message != "Operation cancelled" {
+		if code != cli.ExitCancelled || result.Error == nil || result.Error.Code != "cancelled" || result.Error.Message != "Operation cancelled" {
 			t.Fatalf("exit=%d, out=%s", code, out.String())
 		}
 	case <-time.After(3 * time.Second):

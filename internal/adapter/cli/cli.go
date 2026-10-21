@@ -154,14 +154,50 @@ func Run(ctx context.Context, application *app.Application, args []string, out, 
 }
 
 const (
-	exitOK      = 0
-	exitFailure = 1
-	exitInvalid = 2
+	ExitOK          = 0
+	ExitFailed      = 1
+	ExitUsage       = 2
+	ExitUnsupported = 3
+	ExitPermission  = 4
+	ExitDependency  = 5
+	ExitNotFound    = 6
+	ExitTimeout     = 7
+	ExitConflict    = 8
+	ExitAuth        = 9
+	ExitCancelled   = 130
+	exitOK          = ExitOK
+	exitFailure     = ExitFailed
+	exitInvalid     = ExitUsage
 )
 
 func exitCode(e contract.Error) int {
-	if e.Code == domain.CodeInvalidInput {
-		return exitInvalid
+	return ExitCode(e.Code)
+}
+
+// ExitCode maps a stable error code to the documented process exit status.
+func ExitCode(code string) int {
+	switch code {
+	case "":
+		return ExitOK
+	case domain.CodeInvalidInput:
+		return ExitUsage
+	case domain.CodeUnsupported:
+		return ExitUnsupported
+	case domain.CodePermissionRequired, domain.CodeLocationConsentRequired:
+		return ExitPermission
+	case domain.CodeDependencyMissing:
+		return ExitDependency
+	case domain.CodeNotFound:
+		return ExitNotFound
+	case domain.CodeTimeout:
+		return ExitTimeout
+	case domain.CodeConflict:
+		return ExitConflict
+	case domain.CodeUnauthorized, domain.CodeForbidden:
+		return ExitAuth
+	case domain.CodeCancelled:
+		return ExitCancelled
+	default:
+		return ExitFailed
 	}
-	return exitFailure
 }

@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | C01, C02, C03, C04 |
-| Status | Ready |
+| Status | In progress 2026-10-21; step 1 exit mapping |
 | Depends on | H01, H02, H03, H04, H05, H06, H07, H08 (H08 includes the H09 parser ADR) |
 | Risk | Medium: the default output format and per-command flag strictness change for existing invocations; a documented migration is part of this spec |
 
