@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "version": "0.1.0-alpha.2-dev",
+  "data": {
+    "error_code": "invalid_input",
+    "kind": "tcp",
+    "target": "a;whoami",
+    "status": "failed",
+    "elapsed_ms": 0,
+    "values": [],
+    "provider": "go/net"
+  },
+  "error": {
+    "code": "invalid_input",
+    "message": "invalid host"
+  }
+}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/csv"
 	"encoding/json"
+	"flag"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -21,6 +22,92 @@ import (
 )
 
 func noEnv(string) string { return "" }
+
+var updateGolden = flag.Bool("update", false, "update CLI golden fixtures")
+
+func TestCLIGolden(t *testing.T) {
+	fixture := filepath.Join(t.TempDir(), "synthetic.pcapng")
+	artifact := capture.NewArtifact(layers.LinkTypeRaw)
+	ip := &layers.IPv4{Version: 4, IHL: 5, TTL: 64, SrcIP: []byte{192, 0, 2, 1}, DstIP: []byte{192, 0, 2, 2}, Protocol: layers.IPProtocolTCP}
+	tcp := &layers.TCP{SrcPort: 12345, DstPort: 80, DataOffset: 5}
+	buffer := gopacket.NewSerializeBuffer()
+	if err := gopacket.SerializeLayers(buffer, gopacket.SerializeOptions{FixLengths: true}, ip, tcp, gopacket.Payload("synthetic-private")); err != nil {
+		t.Fatal(err)
+	}
+	if err := artifact.Add(buffer.Bytes(), gopacket.CaptureInfo{Timestamp: time.Unix(100, 0), CaptureLength: len(buffer.Bytes()), Length: len(buffer.Bytes())}); err != nil {
+		t.Fatal(err)
+	}
+	if err := artifact.Save(t.Context(), fixture, "pcapng"); err != nil {
+		t.Fatal(err)
+	}
+	for _, test := range []struct {
+		name string
+		args []string
+		code int
+	}{
+		{"version", []string{"version"}, 0},
+		{"unknown", []string{"unknown"}, 2},
+		{"invalid-target", []string{"diagnose", "--target", "a;whoami"}, 2},
+		{"invalid-scope", []string{"discover", "--target", "0.0.0.0/0"}, 2},
+		{"invalid-format", []string{"discover", "--target", "127.0.0.1/32", "--format", "invalid"}, 2},
+		{"too-many-ports", []string{"discover", "--target", "127.0.0.1/32", "--ports", strings.Repeat("80,", 32) + "80"}, 2},
+		{"inspection-csv", []string{"inspect", "--format", "csv", "--target", "127.0.0.1/32"}, 2},
+		{"import", []string{"import", "--file", fixture}, 0},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			var out, stderr bytes.Buffer
+			if code := run(t.Context(), test.args, noEnv, &out, &stderr); code != test.code {
+				t.Fatalf("exit=%d, want=%d, out=%s, stderr=%s", code, test.code, out.String(), stderr.String())
+			}
+			actual := out.Bytes()
+			if test.name == "version" {
+				var result map[string]any
+				if err := json.Unmarshal(actual, &result); err != nil {
+					t.Fatal(err)
+				}
+				data, ok := result["data"].(map[string]any)
+				if !ok {
+					t.Fatal("missing version data")
+				}
+				data["go"], data["os"], data["arch"] = "<go>", "<os>", "<arch>"
+				encoded, err := json.MarshalIndent(result, "", "  ")
+				if err != nil {
+					t.Fatal(err)
+				}
+				actual = append(encoded, '\n')
+			}
+			compareGolden(t, test.name+".json", actual)
+		})
+	}
+}
+
+func compareGolden(t *testing.T, name string, actual []byte) {
+	t.Helper()
+	path := filepath.Join("testdata", "golden", name)
+	if *updateGolden {
+		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, actual, 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	want, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(actual, want) {
+		t.Fatalf("%s mismatch\ngot:\n%s\nwant:\n%s", name, actual, want)
+	}
+}
+
+func TestCLIUsageWithoutArgs(t *testing.T) {
+	var out, stderr bytes.Buffer
+	if code := run(t.Context(), nil, noEnv, &out, &stderr); code != 2 || out.Len() != 0 {
+		t.Fatalf("exit=%d, out=%s", code, out.String())
+	}
+	compareGolden(t, "usage.txt", stderr.Bytes())
+}
 
 func TestRunDoesNotWriteUserConfig(t *testing.T) {
 	dir := t.TempDir()

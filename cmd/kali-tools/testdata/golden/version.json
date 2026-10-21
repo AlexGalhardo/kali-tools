@@ -1,0 +1,10 @@
+{
+  "data": {
+    "arch": "\u003carch\u003e",
+    "go": "\u003cgo\u003e",
+    "os": "\u003cos\u003e",
+    "version": "0.1.0-alpha.2-dev"
+  },
+  "schema_version": 1,
+  "version": "0.1.0-alpha.2-dev"
+}

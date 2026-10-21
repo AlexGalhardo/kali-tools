@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "version": "0.1.0-alpha.2-dev",
+  "error": {
+    "code": "invalid_input",
+    "message": "format must be json or csv"
+  }
+}

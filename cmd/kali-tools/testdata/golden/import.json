@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "version": "0.1.0-alpha.2-dev",
+  "data": {
+    "packets": [
+      {
+        "number": 1,
+        "timestamp": "1970-01-01T00:01:40Z",
+        "length": 57,
+        "source": "192.0.2.1",
+        "destination": "192.0.2.2",
+        "protocol": "TCP",
+        "info": "12345-\u003e80"
+      }
+    ],
+    "limited": false,
+    "format": "pcapng"
+  }
+}
