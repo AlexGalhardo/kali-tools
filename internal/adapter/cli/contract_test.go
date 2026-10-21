@@ -11,7 +11,29 @@ import (
 	"testing"
 
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/cli"
+	"github.com/AlexGalhardo/kali-tools/internal/app"
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
+	"github.com/AlexGalhardo/kali-tools/internal/porttest/fake"
 )
+
+func TestExitCodePerErrorCode(t *testing.T) {
+	for _, code := range domain.ErrorCodes() {
+		t.Run(code, func(t *testing.T) {
+			store := fake.NewStore()
+			a := app.New(app.Deps{Jobs: store, Settings: store, WiFi: fake.WiFi{Err: &domain.Error{Code: code, Message: "synthetic provider state"}}})
+			defer func() { _ = a.Close() }()
+			var out, stderr bytes.Buffer
+			got := runJSON(t.Context(), a, []string{"wifi", "show"}, &out, &stderr)
+			var env envelope
+			if err := json.Unmarshal(out.Bytes(), &env); err != nil {
+				t.Fatal(err)
+			}
+			if got != cli.ExitCode(code) || env.Error == nil || env.Error.Code != code {
+				t.Fatalf("exit=%d stdout=%s stderr=%s", got, &out, &stderr)
+			}
+		})
+	}
+}
 
 func TestExitCodeTable(t *testing.T) {
 	for _, test := range []struct {
@@ -32,11 +54,43 @@ func TestExitCodeTable(t *testing.T) {
 	}
 }
 
+func TestCLIDocCoversCommands(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "docs", "cli.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, command := range cli.CommandPathsForTest() {
+		if !strings.Contains(strings.ReplaceAll(string(raw), "\r\n", "\n"), "\n## "+command+"\n") {
+			t.Error("missing command heading", command)
+		}
+	}
+}
+
+func TestNoColorWithoutTerminal(t *testing.T) {
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = r.Close() }()
+	var stderr bytes.Buffer
+	code := cli.Run(t.Context(), newTestApp(t), []string{"wifi", "show"}, w, &stderr)
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	if _, err := out.ReadFrom(r); err != nil {
+		t.Fatal(err)
+	}
+	if code != 0 || strings.Contains(out.String()+stderr.String(), "\x1b") {
+		t.Fatalf("exit=%d out=%s stderr=%s", code, &out, &stderr)
+	}
+}
+
 func TestFlagErrorsDoNotEchoValues(t *testing.T) {
 	for _, flag := range []string{"--port", "--timeout"} {
 		t.Run(flag, func(t *testing.T) {
 			var out, stderr bytes.Buffer
-			code := cli.Run(t.Context(), nil, []string{"--json", "diagnose", flag, "synthetic-secret"}, &out, &stderr)
+			code := runJSON(t.Context(), nil, []string{"--json", "diagnose", flag, "synthetic-secret"}, &out, &stderr)
 			var result envelope
 			if err := json.Unmarshal(out.Bytes(), &result); err != nil {
 				t.Fatal(err)
@@ -46,6 +100,13 @@ func TestFlagErrorsDoNotEchoValues(t *testing.T) {
 				t.Fatalf("exit=%d, stdout=%s, stderr=%s", code, out.String(), stderr.String())
 			}
 		})
+	}
+	for _, args := range [][]string{{"discover", "--ports", "synthetic-secret"}, {"diagnose", "http", "--target", "http://user:synthetic-secret@localhost/"}} {
+		var out, stderr bytes.Buffer
+		code := runJSON(t.Context(), newTestApp(t), args, &out, &stderr)
+		if code != 2 || strings.Contains(out.String()+stderr.String(), "synthetic-secret") {
+			t.Fatalf("exit=%d stdout=%s stderr=%s", code, &out, &stderr)
+		}
 	}
 }
 
@@ -62,15 +123,29 @@ func TestPerCommandFlagsAndHelp(t *testing.T) {
 		{[]string{"diagnose", "--detach"}, 2},
 	} {
 		var out, stderr bytes.Buffer
-		if got := cli.Run(t.Context(), nil, test.args, &out, &stderr); got != test.want {
+		if got := runJSON(t.Context(), nil, test.args, &out, &stderr); got != test.want {
 			t.Fatalf("%v: exit=%d, want=%d; stderr=%s", test.args, got, test.want, stderr.String())
 		}
 	}
 }
 
+func TestDetachRejected(t *testing.T) {
+	for _, command := range []string{"version", "doctor", "capabilities", "interfaces", "inventory", "neighbors", "diagnose tcp", "discover", "inspect", "wifi show", "wifi reveal", "capture live", "capture import", "capture export", "jobs list", "jobs show", "jobs cancel", "history list", "history clear", "settings get", "settings set", "tools", "serve"} {
+		t.Run(command, func(t *testing.T) {
+			var out, stderr bytes.Buffer
+			args := append([]string{"--json"}, strings.Fields(command)...)
+			args = append(args, "--detach")
+			code := cli.Run(t.Context(), nil, args, &out, &stderr)
+			if code != 2 || !strings.Contains(out.String(), "no daemon mode") {
+				t.Fatalf("exit=%d out=%s stderr=%s", code, &out, &stderr)
+			}
+		})
+	}
+}
+
 func TestHelpListsEveryCommand(t *testing.T) {
 	var list, stderr bytes.Buffer
-	if code := cli.Run(t.Context(), nil, []string{"help"}, &list, &stderr); code != 0 {
+	if code := runJSON(t.Context(), nil, []string{"help"}, &list, &stderr); code != 0 {
 		t.Fatal(code, stderr.String())
 	}
 	for _, name := range []string{"version", "doctor", "interfaces", "inventory", "diagnose", "discover", "inspect", "wifi", "capture", "import", "capabilities", "tools", "neighbors", "wifi show", "jobs list", "jobs show", "history list", "settings get", "jobs cancel", "history clear", "settings set", "wifi reveal", "capture live", "capture import", "capture export", "serve"} {
@@ -80,7 +155,7 @@ func TestHelpListsEveryCommand(t *testing.T) {
 			}
 			for _, args := range [][]string{append(strings.Fields(name), "--help"), append([]string{"help"}, strings.Fields(name)...)} {
 				var out bytes.Buffer
-				if cli.NeedsApp(args) || cli.Run(t.Context(), nil, args, &out, &stderr) != 0 || !strings.Contains(out.String(), name) {
+				if cli.NeedsApp(args) || runJSON(t.Context(), nil, args, &out, &stderr) != 0 || !strings.Contains(out.String(), name) {
 					t.Fatal("invalid command help", args)
 				}
 			}
@@ -99,7 +174,7 @@ func TestTimeoutParsing(t *testing.T) {
 	} {
 		t.Run(test.value, func(t *testing.T) {
 			var out, stderr bytes.Buffer
-			if got := cli.Run(t.Context(), nil, []string{"version", "--timeout", test.value}, &out, &stderr); got != test.want {
+			if got := runJSON(t.Context(), nil, []string{"version", "--timeout", test.value}, &out, &stderr); got != test.want {
 				t.Fatalf("exit=%d, want %d", got, test.want)
 			}
 		})
@@ -118,7 +193,7 @@ func TestLegacyInvocationsStillParse(t *testing.T) {
 			t.Fatal(err)
 		}
 		var out, stderr bytes.Buffer
-		if got := cli.Run(t.Context(), newTestApp(t), fields[2:], &out, &stderr); got != want {
+		if got := runJSON(t.Context(), newTestApp(t), fields[2:], &out, &stderr); got != want {
 			t.Fatalf("%s: exit=%d, want=%d", line, got, want)
 		}
 		var response envelope
@@ -147,7 +222,7 @@ func TestJSONModeAlwaysEnvelope(t *testing.T) {
 	} {
 		t.Run(strings.Join(args, "_"), func(t *testing.T) {
 			var out, stderr bytes.Buffer
-			got := cli.Run(t.Context(), newTestApp(t), append([]string{"--json"}, args...), &out, &stderr)
+			got := runJSON(t.Context(), newTestApp(t), append([]string{"--json"}, args...), &out, &stderr)
 			var response envelope
 			if err := json.Unmarshal(out.Bytes(), &response); err != nil {
 				t.Fatal(err)
@@ -174,7 +249,7 @@ func TestJobIDValidation(t *testing.T) {
 	} {
 		t.Run(test.id, func(t *testing.T) {
 			var out, stderr bytes.Buffer
-			if got := cli.Run(t.Context(), newTestApp(t), []string{"--json", "jobs", "show", test.id}, &out, &stderr); got != test.want {
+			if got := runJSON(t.Context(), newTestApp(t), []string{"--json", "jobs", "show", test.id}, &out, &stderr); got != test.want {
 				t.Fatalf("exit=%d, want %d; out=%s", got, test.want, out.String())
 			}
 		})
@@ -192,7 +267,7 @@ func TestJobsListFiltersTerminalHistory(t *testing.T) {
 		{[]string{"history", "list"}, 1},
 	} {
 		var out, stderr bytes.Buffer
-		if cli.Run(t.Context(), a, append([]string{"--json"}, test.args...), &out, &stderr) != 0 {
+		if runJSON(t.Context(), a, append([]string{"--json"}, test.args...), &out, &stderr) != 0 {
 			t.Fatal(out.String(), stderr.String())
 		}
 		var response struct{ Data []struct{ ID string } }
@@ -205,7 +280,7 @@ func TestJobsListFiltersTerminalHistory(t *testing.T) {
 func TestWiFiRevealRequiresConfirm(t *testing.T) {
 	a, provider := revealApplication(t)
 	var out, stderr bytes.Buffer
-	code := cli.Run(t.Context(), a, []string{"--json", "wifi", "reveal"}, &out, &stderr)
+	code := runJSON(t.Context(), a, []string{"--json", "wifi", "reveal"}, &out, &stderr)
 	if code != 2 || provider.reveals.Load() != 0 || strings.Contains(out.String()+stderr.String(), "synthetic-test-key") {
 		t.Fatalf("exit=%d, reveals=%d", code, provider.reveals.Load())
 	}
@@ -214,7 +289,7 @@ func TestWiFiRevealRequiresConfirm(t *testing.T) {
 func TestWiFiRevealWarnsAndNeverPersists(t *testing.T) {
 	a, provider := revealApplication(t)
 	var out, stderr bytes.Buffer
-	code := cli.Run(t.Context(), a, []string{"--json", "wifi", "reveal", "--confirm"}, &out, &stderr)
+	code := runJSON(t.Context(), a, []string{"--json", "wifi", "reveal", "--confirm"}, &out, &stderr)
 	rows, err := a.History(t.Context())
 	if code != 0 || provider.reveals.Load() != 1 || !strings.Contains(out.String(), "synthetic-test-key") ||
 		!strings.Contains(stderr.String(), "Terminal scrollback") || strings.Contains(stderr.String(), "synthetic-test-key") || err != nil || len(rows) != 0 {
@@ -229,7 +304,7 @@ func TestSettingsAndHistoryMutations(t *testing.T) {
 		{"history", "clear"},
 	} {
 		var out, stderr bytes.Buffer
-		if code := cli.Run(t.Context(), a, append([]string{"--json"}, args...), &out, &stderr); code != 0 {
+		if code := runJSON(t.Context(), a, append([]string{"--json"}, args...), &out, &stderr); code != 0 {
 			t.Fatalf("%v: exit=%d, out=%s", args, code, out.String())
 		}
 	}
@@ -250,7 +325,7 @@ func TestCaptureOutputRequiresFormatFirst(t *testing.T) {
 			args := append([]string{"--json"}, strings.Fields(path)...)
 			args = append(args, "--output", destination)
 			var out, stderr bytes.Buffer
-			if code := cli.Run(t.Context(), newTestApp(t), args, &out, &stderr); code != 2 {
+			if code := runJSON(t.Context(), newTestApp(t), args, &out, &stderr); code != 2 {
 				t.Fatalf("exit=%d, out=%s", code, out.String())
 			}
 			if _, err := os.Stat(destination); !os.IsNotExist(err) {
@@ -263,7 +338,7 @@ func TestCaptureOutputRequiresFormatFirst(t *testing.T) {
 func TestCLIMapsUnknownErrorsGenerically(t *testing.T) {
 	var out, stderr bytes.Buffer
 	path := filepath.Join(t.TempDir(), "missing-capture.pcap")
-	code := cli.Run(t.Context(), newApp(t), []string{"import", "--file", path}, &out, &stderr)
+	code := runJSON(t.Context(), newApp(t), []string{"import", "--file", path}, &out, &stderr)
 	var result envelope
 	if err := json.Unmarshal(out.Bytes(), &result); err != nil {
 		t.Fatal(err)
@@ -279,7 +354,7 @@ func TestCLIContractCommandMappings(t *testing.T) {
 	cancel()
 	for _, args := range [][]string{{"doctor"}, {"inventory"}, {"wifi"}, {"inspect", "--target", "192.0.2.0/24"}, {"discover", "--ports", "bad"}} {
 		var out, stderr bytes.Buffer
-		code := cli.Run(ctx, application, args, &out, &stderr)
+		code := runJSON(ctx, application, args, &out, &stderr)
 		var response envelope
 		if err := json.Unmarshal(out.Bytes(), &response); err != nil {
 			t.Fatal(err)

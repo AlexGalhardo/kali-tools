@@ -1,0 +1,8 @@
+exit=0
+stdout:
+ping fixture.invalid: concluído (0 ms, fake)
+  echo reply
+stderr:
+job <id> ping: na fila
+job <id> ping: executando
+job <id> ping: concluído

@@ -1,0 +1,21 @@
+exit=0
+stdout:
+{
+  "data": [
+    {
+      "addresses": [
+        "\u003cnative\u003e"
+      ],
+      "index": 1,
+      "loopback": false,
+      "mac": "\u003cnative\u003e",
+      "mtu": 1500,
+      "name": "\u003cnative\u003e",
+      "up": true
+    }
+  ],
+  "schema_version": 1,
+  "version": "0.4.0"
+}
+stderr:
+<native interfaces>

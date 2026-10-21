@@ -1,0 +1,28 @@
+exit=0
+stdout:
+{
+  "data": {
+    "adapters": [
+      {
+        "dns": [
+          "192.0.2.53"
+        ],
+        "gateways": [
+          "192.0.2.1"
+        ],
+        "index": 1,
+        "name": "Fixture Ethernet"
+      }
+    ],
+    "counters": [
+      {
+        "id": "1",
+        "received": 200,
+        "sent": 100
+      }
+    ]
+  },
+  "schema_version": 1,
+  "version": "0.4.0"
+}
+stderr:

@@ -1,0 +1,9 @@
+exit=0
+stdout:
+id: 0123456789abcdef0123456789abcdef
+tipo: tcp
+estado: concluído
+criado: 2026-10-19T12:00:00Z
+finalizado: 2026-10-19T12:00:00Z
+resumo: Diagnostic completed
+stderr:

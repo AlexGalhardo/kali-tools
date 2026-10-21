@@ -9,7 +9,6 @@ import (
 	"io"
 	"runtime"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/contract"
@@ -33,11 +32,7 @@ func Run(ctx context.Context, application *app.Application, args []string, out, 
 	}
 	call, err := parseInvocation(args)
 	if err != nil {
-		if call.flagFailure && !call.g.JSON {
-			_, _ = fmt.Fprintln(errout, err)
-			return ExitUsage
-		}
-		return writeEnvelope(out, nil, err)
+		return writeResponse(call, out, errout, nil, err)
 	}
 	if call.help {
 		if err := writeHelp(out, call); err != nil {
@@ -47,7 +42,7 @@ func Run(ctx context.Context, application *app.Application, args []string, out, 
 	}
 	if old, replacement := deprecation(call); old != "" {
 		if _, err := fmt.Fprintf(errout, "warning: %q is deprecated; use %q\n", old, replacement); err != nil {
-			return writeEnvelope(out, nil, err)
+			return writeResponse(call, out, errout, nil, err)
 		}
 	}
 	if call.g.Timeout != 0 && call.command.path != "diagnose" && call.command.path != "discover" && call.command.path != "version" {
@@ -55,13 +50,19 @@ func Run(ctx context.Context, application *app.Application, args []string, out, 
 		ctx, cancel = context.WithTimeout(ctx, call.g.Timeout)
 		defer cancel()
 	}
+	finishProgress := startProgress(ctx, application, call, errout)
+	defer func() { _ = finishProgress() }()
 	if data, err, handled := runAdditional(ctx, application, call, errout); handled {
-		return writeEnvelope(out, data, err)
+		if progressErr := finishProgress(); progressErr != nil {
+			return ExitFailed
+		}
+		return writeResponse(call, out, errout, data, err)
 	}
-	return runLegacy(ctx, application, call.legacy, out, errout)
+	return runLegacy(ctx, application, call, out, errout, finishProgress)
 }
 
-func runLegacy(ctx context.Context, application *app.Application, args []string, out, errout io.Writer) int {
+func runLegacy(ctx context.Context, application *app.Application, call invocation, out, errout io.Writer, finishProgress func() error) int {
+	args := call.legacy
 	var data any
 	var err error
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
@@ -103,19 +104,8 @@ func runLegacy(ctx context.Context, application *app.Application, args []string,
 				err = domain.Invalid("format must be json or csv")
 				break
 			}
-			if len(*ports) > 191 || strings.Count(*ports, ",") >= 32 {
-				err = domain.Invalid("1..32 ports required")
-				break
-			}
-			var numbers []int
-			for _, s := range strings.Split(*ports, ",") {
-				n, e := strconv.Atoi(s)
-				if e != nil {
-					err = domain.Invalid("invalid port list")
-					break
-				}
-				numbers = append(numbers, n)
-			}
+			numbers, parseErr := parsePorts(*ports)
+			err = parseErr
 			if err == nil && args[0] == "inspect" {
 				if *format != "json" {
 					err = domain.Invalid("service inspection supports JSON only")
@@ -169,7 +159,10 @@ func runLegacy(ctx context.Context, application *app.Application, args []string,
 			err = domain.Invalid("unknown command %q", args[0])
 		}
 	}
-	return writeEnvelope(out, data, err)
+	if progressErr := finishProgress(); progressErr != nil {
+		return ExitFailed
+	}
+	return writeResponse(call, out, errout, data, err)
 }
 
 func writeEnvelope(out io.Writer, data any, err error) int {

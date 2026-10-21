@@ -1,0 +1,512 @@
+# CLI contract
+
+## Synopsis
+
+```text
+kali-tools [global flags] <command> [<subcommand>] [<positional>] [flags]
+```
+
+Human output is the default. Scripts must pass `--json`. Positional kinds and job IDs precede flags. Help is English and exits 0; no command exits 2. `serve` is reserved for W01/W04 and opens no listener at this checkpoint.
+
+## Global flags
+
+| Flag | Default | Meaning |
+| --- | --- | --- |
+| `--json` | false | One versioned JSON envelope on stdout. |
+| `--timeout` | unset | Integer milliseconds or Go duration, 100ms..10m. Diagnose defaults to 3000ms, with an application maximum of 30s; discovery defaults to 3000ms, with an application maximum of 5s. Capture live uses duration. Other commands use a context deadline. |
+| `--no-color` | false | Disable state colors. Redirected output never receives ANSI sequences. |
+| `--lang` | en | Human labels, states, warnings and errors: `en` or `pt-BR`. Help stays English. |
+| `--detach` | false | Rejected: there is no daemon mode. |
+
+Global flags work before the command or after its positional arguments. Boolean values use `--flag=false`. A `--` terminator ends flag recognition. Parse errors never echo rejected values.
+
+Command defaults: port 443, ports 80,443, duration 5 seconds, limit 1000 packets, format json for discovery, all false, confirm false; other strings are empty. Export requires explicit output and format pcap or pcapng. Capture accepts duration 1..60 and limit 1..10000. Port lists contain 1..32 ports, at most 191 bytes. Job IDs are exactly 32 lowercase hexadecimal characters. Unset settings flags preserve current values.
+
+## version
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/version.json).
+
+`kali-tools version [flags]`
+
+Flags / positional: none.
+
+JSON `data`: `{"version","go","os","arch"}` (unchanged keys). The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+
+Human example (fixture values):
+
+```text
+kali-tools 0.4.0 (goX OS/ARCH)
+```
+
+## doctor
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/doctor.json).
+
+`kali-tools doctor [flags]`
+
+Flags / positional: none.
+
+JSON `data`: `{"os","arch","capabilities","tools","capture","wifi"}` (unchanged keys; `wifi` text updated, see §4.9). The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+
+Human example (fixture values):
+
+```text
+System: OS/ARCH
+
+CAPABILITY STATE PROVIDER DETAIL
+interfaces available go/net Go interface inventory
+diagnostics available go/net DNS, bounded TCP, HTTP and TLS; redirects are not followed
+discovery available go/net IPv4 TCP connect, /24 or narrower, at most 32 ports
+capture_import available gopacket PCAP and PCAPNG, 64 MiB and 10000 decoded packets
+
+NAME    STATE               VERSION  PATH
+nmap    available           fixture  /fixture/nmap
+tshark  dependency_missing
+```
+
+## capabilities
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/capabilities.json).
+
+`kali-tools capabilities [flags]`
+
+Flags / positional: none.
+
+JSON `data`: `[]Capability`. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+
+Human example (fixture values):
+
+```text
+CAPABILITY STATE PROVIDER DETAIL
+interfaces available go/net Go interface inventory
+diagnostics available go/net DNS, bounded TCP, HTTP and TLS; redirects are not followed
+discovery available go/net IPv4 TCP connect, /24 or narrower, at most 32 ports
+capture_import available gopacket PCAP and PCAPNG, 64 MiB and 10000 decoded packets
+```
+
+## interfaces
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/interfaces.json).
+
+`kali-tools interfaces [flags]`
+
+Flags / positional: none.
+
+JSON `data`: `[]Interface`. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+
+Human example (fixture values):
+
+```text
+<native interfaces>
+```
+
+## inventory
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/inventory.json).
+
+`kali-tools inventory [flags]`
+
+Flags / positional: none.
+
+JSON `data`: `Inventory`. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+
+Human example (fixture values):
+
+```text
+ADAPTER           GATEWAYS   DNS
+Fixture Ethernet  192.0.2.1  192.0.2.53
+
+COUNTER  RECEIVED  SENT
+1        200       100
+```
+
+## neighbors
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/neighbors.json).
+
+`kali-tools neighbors [flags]`
+
+Flags / positional: none.
+
+JSON `data`: error `unsupported` "neighbor inventory is not implemented yet". The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+
+Human example (stderr for errors):
+
+```text
+error: unsupported: neighbor inventory is not implemented yet
+```
+
+## diagnose
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/diagnose.json).
+
+`kali-tools diagnose [flags]`
+
+Flags / positional: kind ∈ `dns tcp http tls ping trace traceroute`; `--target` (required), `--port` int default 443, `--record` string, `--kind` (deprecated).
+
+JSON `data`: `DiagnosticResult`. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+
+Human example (fixture values):
+
+```text
+ping fixture.invalid: completed (0 ms, fake)
+  echo reply
+```
+
+## discover
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/discover.json).
+
+`kali-tools discover [flags]`
+
+Flags / positional: `--target` CIDR, `--ports` default `80,443`, `--format json\|csv` default `json`.
+
+JSON `data`: `[]PortResult`. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+
+Human example (stderr for errors):
+
+```text
+HOST       PORT   STATE
+127.0.0.1  443  open
+```
+
+## inspect
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/inspect.json).
+
+`kali-tools inspect [flags]`
+
+Flags / positional: `--target` CIDR, `--ports` default `80,443`, `--format json` (deprecated).
+
+JSON `data`: `ServiceInspection`. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+
+Human example (stderr for errors):
+
+```text
+nmap fixture
+HOST       PORT  STATE  SERVICE  METHOD
+192.0.2.1  443   open   https    probed
+```
+
+## wifi show
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/wifi-show.json).
+
+`kali-tools wifi show [flags]`
+
+Flags / positional: none.
+
+JSON `data`: `WiFi`. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+
+Human example (fixture values):
+
+```text
+SSID: Fixture Network
+BSSID: 02:00:00:00:00:02
+profile: Fixture
+signal: 80%
+authentication: 7
+state: connected
+```
+
+## wifi reveal
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/wifi-reveal.json).
+
+`kali-tools wifi reveal [flags]`
+
+Flags / positional: `--confirm` bool (required).
+
+JSON `data`: `{"state","value"}`. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+
+Human example (fixture values):
+
+```text
+state: available
+key: synthetic-test-key
+```
+
+## capture live
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/capture-live.json).
+
+`kali-tools capture live [flags]`
+
+Flags / positional: `--target` local IPv4, `--duration` int 1..60 default 5, `--limit` int 1..10000 default 1000, `--output`, `--format pcap\|pcapng`.
+
+JSON `data`: capture result. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+
+Human example (fixture values):
+
+```text
+0 packets, format live
+NO  TIME  LENGTH  SOURCE  DESTINATION  PROTOCOL  INFO
+```
+
+## capture import
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/capture-import.json).
+
+`kali-tools capture import [flags]`
+
+Flags / positional: `--file` (required), `--output`, `--format pcap\|pcapng`.
+
+JSON `data`: `Capture`. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+
+Human example (fixture values):
+
+```text
+1 packets, format pcap
+NO  TIME                  LENGTH  SOURCE     DESTINATION  PROTOCOL  INFO
+1   1970-01-01T00:01:40Z  20      192.0.2.1  192.0.2.2    IPv4
+```
+
+## capture export
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/capture-export.json).
+
+`kali-tools capture export [flags]`
+
+Flags / positional: `--file`, `--output`, `--format` (all required).
+
+JSON `data`: `{"path","format"}`. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+
+Human example (fixture values):
+
+```text
+saved <fixture> (pcapng)
+```
+
+## jobs list
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/jobs-list.json).
+
+`kali-tools jobs list [flags]`
+
+Flags / positional: `--all` bool.
+
+JSON `data`: `[]Job`. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+
+Human example (fixture values):
+
+```text
+ID                                CREATED               STATE      KIND  SUMMARY
+0123456789abcdef0123456789abcdef  2026-10-19T12:00:00Z  completed  tcp   Diagnostic completed
+```
+
+## jobs show
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/jobs-show.json).
+
+`kali-tools jobs show [flags]`
+
+Flags / positional: id = 32 lowercase hex.
+
+JSON `data`: `Job`. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+
+Human example (fixture values):
+
+```text
+id: 0123456789abcdef0123456789abcdef
+kind: tcp
+state: completed
+created: 2026-10-19T12:00:00Z
+finished: 2026-10-19T12:00:00Z
+summary: Diagnostic completed
+```
+
+## jobs cancel
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/jobs-cancel.json).
+
+`kali-tools jobs cancel [flags]`
+
+Flags / positional: id = 32 lowercase hex.
+
+JSON `data`: `{"id","cancelled":true}`. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+
+Human example (stderr for errors):
+
+```text
+cancellation requested: 0123456789abcdef0123456789abcdef
+```
+
+## history list
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/history-list.json).
+
+`kali-tools history list [flags]`
+
+Flags / positional: none.
+
+JSON `data`: `[]Job`. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+
+Human example (fixture values):
+
+```text
+ID                                CREATED               STATE      KIND  SUMMARY
+0123456789abcdef0123456789abcdef  2026-10-19T12:00:00Z  completed  tcp   Diagnostic completed
+```
+
+## history clear
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/history-clear.json).
+
+`kali-tools history clear [flags]`
+
+Flags / positional: none.
+
+JSON `data`: `{"cleared":true}`. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+
+Human example (fixture values):
+
+```text
+history cleared (queued and running jobs are kept)
+```
+
+## settings get
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/settings-get.json).
+
+`kali-tools settings get [flags]`
+
+Flags / positional: none.
+
+JSON `data`: `Settings`. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+
+Human example (fixture values):
+
+```text
+language: en
+retention_days: 30
+```
+
+## settings set
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/settings-set.json).
+
+`kali-tools settings set [flags]`
+
+Flags / positional: `--language en\|pt-BR`, `--retention-days` int.
+
+JSON `data`: `Settings` (after save). The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+
+Human example (fixture values):
+
+```text
+language: pt-BR
+retention_days: 7
+```
+
+## tools
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/tools.json).
+
+`kali-tools tools [flags]`
+
+Flags / positional: none.
+
+JSON `data`: `[]Tool`. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+
+Human example (fixture values):
+
+```text
+NAME    STATE               VERSION  PATH
+nmap    available           fixture  /fixture/nmap
+tshark  dependency_missing
+```
+
+## serve
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/serve.json).
+
+`kali-tools serve [flags]`
+
+Flags / positional: see W01 §4.6.
+
+JSON `data`: see W01. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+
+Human example (stderr for errors):
+
+```text
+error: invalid_input: serve is handled by the kali-tools binary
+```
+
+## help
+
+`kali-tools help [flags]`
+
+Flags / positional: command path.
+
+Help prints plain text on stdout even with `--json`; it does not emit an envelope.
+
+```text
+Usage: kali-tools [global flags] <command> [flags]
+Commands:
+```
+
+## wifi
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/wifi.json).
+
+Deprecated alias for `wifi show`. Flags, JSON data and human output match that command; one warning goes to stderr.
+
+## capture
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/capture.json).
+
+Deprecated alias for `capture live`. Flags, JSON data and human output match that command; one warning goes to stderr.
+
+## import
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/import.json).
+
+Deprecated alias for `capture import`. Flags, JSON data and human output match that command; one warning goes to stderr.
+
+## Legacy aliases
+
+`wifi` means `wifi show`; `capture` means `capture live`; `import` means `capture import`. `diagnose --kind <kind>` still works and `trace` aliases `traceroute`. Explicit discovery/inspection format json is deprecated in favor of `--json`. Each deprecated form emits exactly one stderr warning. Aliases preserve canonical flags and results.
+
+## Exit codes
+
+| Exit | Meaning |
+| --- | --- |
+| 0 | Success or help |
+| 1 | failed, no_connection, certificate_invalid, unknown errors or output failure |
+| 2 | invalid_input, usage error or no command |
+| 3 | unsupported |
+| 4 | permission_required, location_consent_required |
+| 5 | dependency_missing |
+| 6 | not_found |
+| 7 | timeout |
+| 8 | conflict |
+| 9 | unauthorized, forbidden |
+| 130 | cancelled |
+
+## Output streams
+
+stdout carries only results, help or discovery CSV. `discover --format csv` keeps the header `schema_version,host,port,state` and cannot be combined with `--json`. stderr carries warnings, human errors and human job progress. JSON mode emits one envelope and no progress. Progress is capped at 1000 lines per invocation. Times are RFC 3339 UTC. Ctrl-C and SIGTERM cancel work; a second signal restores normal termination. Cancelled capture returns partial data, exits 130 and never exports.
+
+## Environment
+
+Non-empty `NO_COLOR` disables color. Settings and redacted history share the desktop SQLite database in the OS user configuration directory. Version, help and rejected invocations never open it. The CLI never reads stdin or prompts, including over SSH without a TTY.
+
+## Security
+
+Wi-Fi reveal requires `--confirm`, warns on stderr before revealing, writes the key only to stdout and creates no history row. Terminal recordings may retain the key. Diagnostic history stores state and safe summaries, never Wi-Fi keys or packet payloads. Packet export writes only to an explicit path. Jobs can be cancelled only by the process that owns them; a new CLI process cannot cancel another invocation or the desktop. Retained jobs are queryable with jobs show; jobs list --all includes terminal history. Capture artifacts are process-local: capture export imports --file first. History clear preserves active jobs.
+
+## Compatibility policy
+
+Within one `schema_version`, JSON changes are additive only (new keys or commands). Removing or retyping a key, renaming a command or flag, or changing an exit code requires a schema_version bump, an entry here and in CHANGELOG.md, and a deprecation period of at least one minor release with a stderr warning. Fixtures in internal/adapter/cli/testdata/contract enforce JSON paths and types. Native inventory values, elapsed times and generated IDs are normalized only in golden tests.
+
+## Migration from 0.1.0-alpha.1-dev
+
+1. Output defaults to human text. Add `--json` to scripts.
+2. Flags are command-specific: `version --port 1` now fails instead of being ignored.
+3. Errors use the distinct exit codes above, beyond the previous 0/1/2 mapping.
+4. `-h` and `--help` exit 0 instead of 2.
+5. Parse errors produce an envelope with `--json` and never echo rejected values.
+6. `diagnose` runs as a cancellable job and records redacted state/summary history.
+7. `doctor` describes key reveal as `Windows WLAN API; key reveal requires wifi reveal --confirm or the desktop reveal action`.
+
+Development artifacts remain unsigned. Native SSH, Wi-Fi, capture and desktop acceptance require real-host evidence; unit tests, Docker and cross compilation do not qualify them.

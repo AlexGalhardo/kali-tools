@@ -2,6 +2,9 @@ package cli
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"sync"
 	"time"
 
 	"github.com/AlexGalhardo/kali-tools/internal/app"
@@ -11,11 +14,98 @@ import (
 )
 
 const cancelGrace = 3 * time.Second
+const maxProgressLines = 1000
+
+type progressPrinter struct {
+	out   io.Writer
+	lang  string
+	lines int
+	err   error
+}
+
+func (p *progressPrinter) print(status job.Status) {
+	if p.lines >= maxProgressLines || p.err != nil {
+		return
+	}
+	id := string(status.ID)
+	if len(id) > 8 {
+		id = id[:8]
+	}
+	_, p.err = fmt.Fprintf(p.out, "job %s %s: %s\n", id, status.Kind, label(p.lang, string(status.State)))
+	p.lines++
+}
+
+func startProgress(ctx context.Context, a *app.Application, call invocation, stderr io.Writer) func() error {
+	if call.g.JSON {
+		return func() error { return nil }
+	}
+	switch call.command.path {
+	case "diagnose", "discover", "inspect", "capture", "capture live", "capture import", "capture export", "import":
+	default:
+		return func() error { return nil }
+	}
+	subCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	events, _ := a.Subscribe(subCtx)
+	stop := make(chan struct{})
+	done := make(chan struct{})
+	printer := progressPrinter{out: stderr, lang: call.g.Lang}
+	go func() {
+		defer close(done)
+		active := make(map[job.ID]struct{})
+		interrupted := ctx.Done()
+		observe := func(event job.Event) {
+			if event.Topic != job.TopicJob || event.Job == nil {
+				return
+			}
+			status := *event.Job
+			if status.State.Terminal() {
+				delete(active, status.ID)
+			} else if len(active) < job.MaxConcurrentLimit {
+				active[status.ID] = struct{}{}
+			}
+			printer.print(status)
+		}
+		for {
+			select {
+			case event, ok := <-events:
+				if !ok {
+					return
+				}
+				observe(event)
+			case <-interrupted:
+				for id := range active {
+					a.CancelJob(subCtx, id)
+				}
+				interrupted = nil
+			case <-stop:
+				for {
+					select {
+					case event, ok := <-events:
+						if !ok {
+							return
+						}
+						observe(event)
+					default:
+						for id := range active {
+							if snapshot, ok := a.JobSnapshot(subCtx, id); ok && snapshot.State.Terminal() {
+								printer.print(snapshot)
+							}
+						}
+						return
+					}
+				}
+			}
+		}
+	}()
+	return sync.OnceValue(func() error { close(stop); <-done; cancel(); return printer.err })
+}
 
 func runDiagnostic(ctx context.Context, a *app.Application, request network.Request) (network.Result, error) {
 	if network.Validate(request) != nil {
-		// Keep the legacy failed-result shape for rejected requests; no job is started.
-		return a.Diagnose(ctx, request)
+		// Keep the failed-result shape without reflecting rejected flag values or credentials.
+		result, err := a.Diagnose(ctx, request)
+		result.Kind, result.Target = "", ""
+		return result, err
 	}
 	subCtx, unsubscribe := context.WithCancel(context.WithoutCancel(ctx))
 	defer unsubscribe()

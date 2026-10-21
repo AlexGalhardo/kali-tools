@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "command": "settings get",
+  "paths": {
+    "data.language": "string",
+    "data.retention_days": "number",
+    "schema_version": "number",
+    "version": "string"
+  }
+}

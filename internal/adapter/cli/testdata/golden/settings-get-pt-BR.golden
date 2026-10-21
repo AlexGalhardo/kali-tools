@@ -1,0 +1,5 @@
+exit=0
+stdout:
+idioma: en
+dias_de_retenção: 30
+stderr:

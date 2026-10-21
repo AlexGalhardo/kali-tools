@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -25,9 +26,92 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/job"
+	"github.com/AlexGalhardo/kali-tools/internal/porttest"
+	"github.com/AlexGalhardo/kali-tools/internal/porttest/fake"
 )
 
 var updateGolden = flag.Bool("update", false, "update CLI golden fixtures")
+
+type interruptTools struct {
+	fake.Tools
+	started chan struct{}
+}
+
+func (f interruptTools) RunNmap(ctx context.Context, cidr string, ports []int) (app.Nmap, error) {
+	result, err := f.Tools.RunNmap(ctx, cidr, ports)
+	if err != nil || f.started == nil {
+		return result, err
+	}
+	close(f.started)
+	<-ctx.Done()
+	return result, ctx.Err()
+}
+
+func TestInterruptToolsContract(t *testing.T) {
+	porttest.ToolRunnerContract(t, func(t *testing.T) app.ToolRunner {
+		return interruptTools{Tools: fake.Tools{Tools: []app.Tool{{Name: "nmap", State: "dependency_missing"}, {Name: "tshark", State: "dependency_missing"}}}}
+	})
+}
+
+func TestInterruptCancelsInspection(t *testing.T) {
+	before := runtime.NumGoroutine()
+	started := make(chan struct{})
+	store := fake.NewStore()
+	a := app.New(app.Deps{Jobs: store, Settings: store, Tools: interruptTools{started: started}})
+	t.Cleanup(func() { _ = a.Close() })
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	var out, stderr bytes.Buffer
+	done := make(chan int, 1)
+	go func() { done <- runJSON(ctx, a, []string{"inspect", "--target", "127.0.0.1/32"}, &out, &stderr) }()
+	select {
+	case <-started:
+	case <-time.After(3 * time.Second):
+		t.Fatal("inspection did not start")
+	}
+	cancel()
+	select {
+	case code := <-done:
+		if code != cli.ExitCancelled || !strings.Contains(out.String(), `"code": "cancelled"`) {
+			t.Fatalf("exit=%d out=%s stderr=%s", code, &out, &stderr)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("inspection did not cancel")
+	}
+	if err := a.Close(); err != nil {
+		t.Fatal(err)
+	}
+	assertGoroutinesReturn(t, before)
+}
+
+func TestHumanDiagnosticProgress(t *testing.T) {
+	var out, stderr bytes.Buffer
+	a := newTestApp(t)
+	if code := cli.Run(t.Context(), a, []string{"diagnose", "ping", "--target", "fixture.invalid"}, &out, &stderr); code != 0 {
+		t.Fatalf("exit=%d out=%s stderr=%s", code, &out, &stderr)
+	}
+	if !strings.Contains(stderr.String(), "ping: completed") || strings.Contains(stderr.String(), "schema_version") {
+		t.Fatal(stderr.String())
+	}
+}
+
+func TestHumanDefaultAndLanguage(t *testing.T) {
+	for _, test := range []struct {
+		args []string
+		want string
+	}{
+		{[]string{"version"}, "kali-tools " + domain.Version + " ("},
+		{[]string{"settings", "get"}, "language: en"},
+		{[]string{"--lang", "pt-BR", "settings", "get"}, "idioma: en"},
+		{[]string{"wifi", "show"}, "SSID: Fixture Network"},
+		{[]string{"capabilities"}, "CAPABILITY"},
+	} {
+		var out, stderr bytes.Buffer
+		if code := cli.Run(t.Context(), newTestApp(t), test.args, &out, &stderr); code != 0 || !strings.Contains(out.String(), test.want) || strings.Contains(out.String(), "schema_version") || strings.Contains(out.String(), "\x1b") {
+			t.Fatalf("%v: exit=%d stdout=%s stderr=%s", test.args, code, &out, &stderr)
+		}
+	}
+}
 
 func TestDiagnosticJobResultAndHistory(t *testing.T) {
 	for _, test := range []struct {
@@ -44,7 +128,7 @@ func TestDiagnosticJobResultAndHistory(t *testing.T) {
 			}))
 			defer server.Close()
 			var out, stderr bytes.Buffer
-			code := cli.Run(t.Context(), a, []string{"--json", "diagnose", "http", "--target", server.URL}, &out, &stderr)
+			code := runJSON(t.Context(), a, []string{"--json", "diagnose", "http", "--target", server.URL}, &out, &stderr)
 			if code != 0 || !strings.Contains(out.String(), `"kind": "http"`) || stderr.Len() != 0 {
 				t.Fatalf("exit=%d stdout=%s stderr=%s", code, &out, &stderr)
 			}
@@ -77,7 +161,7 @@ func TestInterruptCancelsDiagnostic(t *testing.T) {
 	var code int
 	go func() {
 		defer close(done)
-		code = cli.Run(ctx, a, []string{"--json", "diagnose", "http", "--target", server.URL, "--timeout", "2s"}, &out, &stderr)
+		code = runJSON(ctx, a, []string{"--json", "diagnose", "http", "--target", server.URL, "--timeout", "2s"}, &out, &stderr)
 	}()
 	select {
 	case <-started:
@@ -143,7 +227,7 @@ func TestCLIGolden(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			var out, stderr bytes.Buffer
-			if code := cli.Run(t.Context(), newApp(t), test.args, &out, &stderr); code != test.code {
+			if code := runJSON(t.Context(), newApp(t), test.args, &out, &stderr); code != test.code {
 				t.Fatalf("exit=%d, want=%d, out=%s, stderr=%s", code, test.code, out.String(), stderr.String())
 			}
 			actual := out.Bytes()
@@ -190,7 +274,7 @@ func compareGolden(t *testing.T, name string, actual []byte) {
 
 func TestCLIUsageWithoutArgs(t *testing.T) {
 	var out, stderr bytes.Buffer
-	if code := cli.Run(t.Context(), newApp(t), nil, &out, &stderr); code != 2 || out.Len() != 0 {
+	if code := runJSON(t.Context(), newApp(t), nil, &out, &stderr); code != 2 || out.Len() != 0 {
 		t.Fatalf("exit=%d, out=%s", code, out.String())
 	}
 	compareGolden(t, "usage.txt", stderr.Bytes())
@@ -202,7 +286,7 @@ func TestRunDoesNotWriteUserConfig(t *testing.T) {
 		t.Setenv(name, dir)
 	}
 	var out, stderr bytes.Buffer
-	if code := cli.Run(t.Context(), newApp(t), []string{"version"}, &out, &stderr); code != 0 {
+	if code := runJSON(t.Context(), newApp(t), []string{"version"}, &out, &stderr); code != 0 {
 		t.Fatalf("exit = %d, output = %s, stderr = %s", code, out.String(), stderr.String())
 	}
 	entries, err := os.ReadDir(dir)
@@ -222,7 +306,7 @@ func TestCLIUsageBeforeBootstrap(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			var out, stderr bytes.Buffer
-			if code := cli.Run(t.Context(), newApp(t), test.args, &out, &stderr); code != 2 {
+			if code := runJSON(t.Context(), newApp(t), test.args, &out, &stderr); code != 2 {
 				t.Fatalf("exit = %d, output = %s, stderr = %s; want 2", code, out.String(), stderr.String())
 			}
 		})
@@ -236,7 +320,7 @@ func TestCLIContract(t *testing.T) {
 		errorCode string
 	}{{[]string{"version"}, 0, ""}, {[]string{"interfaces"}, 0, ""}, {[]string{"diagnose", "--target", "a;whoami"}, 2, "invalid_input"}, {[]string{"discover", "--target", "0.0.0.0/0"}, 2, "invalid_input"}, {[]string{"unknown"}, 2, "invalid_input"}} {
 		var out, stderr bytes.Buffer
-		code := cli.Run(t.Context(), newApp(t), test.args, &out, &stderr)
+		code := runJSON(t.Context(), newApp(t), test.args, &out, &stderr)
 		if code != test.code {
 			t.Fatal(test.args, code, out.String(), stderr.String())
 		}
@@ -256,7 +340,7 @@ func TestCLIHTTPAndMalformedFlags(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(204) }))
 	defer server.Close()
 	var out, stderr bytes.Buffer
-	if code := cli.Run(t.Context(), newApp(t), []string{"diagnose", "--kind", "http", "--target", server.URL}, &out, &stderr); code != 0 {
+	if code := runJSON(t.Context(), newApp(t), []string{"diagnose", "--kind", "http", "--target", server.URL}, &out, &stderr); code != 0 {
 		t.Fatal(code, out.String())
 	}
 	if !bytes.Contains(out.Bytes(), []byte("204 No Content")) {
@@ -281,7 +365,7 @@ func TestCLICancelledContext(t *testing.T) {
 	var out, stderr bytes.Buffer
 	done := make(chan int, 1)
 	go func() {
-		done <- cli.Run(ctx, a, []string{"diagnose", "--kind", "http", "--target", server.URL, "--timeout", "3000"}, &out, &stderr)
+		done <- runJSON(ctx, a, []string{"diagnose", "--kind", "http", "--target", server.URL, "--timeout", "3000"}, &out, &stderr)
 	}()
 	select {
 	case <-started:
@@ -309,7 +393,7 @@ func TestDiscoveryRejectsInvalidOptionsBeforeScanning(t *testing.T) {
 		{"discover", "--target", "127.0.0.1/32", "--ports", strings.Repeat("80,", 32) + "80"},
 	} {
 		var out, stderr bytes.Buffer
-		if code := cli.Run(t.Context(), newApp(t), args, &out, &stderr); code != 2 {
+		if code := runJSON(t.Context(), newApp(t), args, &out, &stderr); code != 2 {
 			t.Fatalf("%v: exit %d: %s", args, code, out.String())
 		}
 		if !bytes.Contains(out.Bytes(), []byte(`"invalid_input"`)) || bytes.Contains(out.Bytes(), []byte(`"host"`)) {
@@ -327,7 +411,7 @@ func TestDiscoveryExports(t *testing.T) {
 	port := strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)
 	for _, format := range []string{"json", "csv"} {
 		var out, stderr bytes.Buffer
-		if code := cli.Run(t.Context(), newApp(t), []string{"discover", "--target", "127.0.0.1/32", "--ports", port, "--format", format}, &out, &stderr); code != 0 {
+		if code := runJSON(t.Context(), newApp(t), []string{"discover", "--target", "127.0.0.1/32", "--ports", port, "--format", format}, &out, &stderr); code != 0 {
 			t.Fatal(code, out.String())
 		}
 		if format == "csv" {
@@ -372,7 +456,7 @@ func TestCLICaptureConversion(t *testing.T) {
 			destination := filepath.Join(dir, "output."+format)
 			var out, stderr bytes.Buffer
 			args := append(command, "--file", source, "--output", destination, "--format", format)
-			if code := cli.Run(t.Context(), newApp(t), args, &out, &stderr); code != 0 {
+			if code := runJSON(t.Context(), newApp(t), args, &out, &stderr); code != 0 {
 				t.Fatalf("%d %s", code, out.String())
 			}
 			if bytes.Contains(out.Bytes(), []byte("synthetic-private")) {
@@ -386,7 +470,7 @@ func TestCLICaptureConversion(t *testing.T) {
 	}
 	destination := filepath.Join(dir, "invalid.pcap")
 	var out, stderr bytes.Buffer
-	if code := cli.Run(t.Context(), newApp(t), []string{"capture", "--output", destination}, &out, &stderr); code != 2 {
+	if code := runJSON(t.Context(), newApp(t), []string{"capture", "--output", destination}, &out, &stderr); code != 2 {
 		t.Fatalf("invalid format not rejected first: %d %s", code, out.String())
 	}
 	if _, err := os.Stat(destination); !os.IsNotExist(err) {

@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | C01, C02, C03, C04 |
-| Status | Steps 1–4 implemented 2026-10-21; step 5 diagnostic job/cancellation path implemented, progress and remaining acceptance open |
+| Status | Implementation and non-native acceptance complete 2026-10-21; native SSH AC-16 / DA-11 pending |
 | Depends on | H01, H02, H03, H04, H05, H06, H07, H08 (H08 includes the H09 parser ADR) |
 | Risk | Medium: the default output format and per-command flag strictness change for existing invocations; a documented migration is part of this spec |
 
@@ -431,6 +431,7 @@ Create:
 
 Modify:
 
+- `internal/adapter/cli/export_test.go`: existing test-only helpers, command enumeration and bounds tests.
 - `cmd/kali-tools/main.go`: SIGTERM, `stop()` on first signal, `NO_COLOR` → `--no-color`, `NeedsApp` gating, `serve` dispatch hook (implemented by W01).
 - `cmd/kali-tools/main_test.go`: add `--json` to every invocation; keep all assertions; move behavior tests that now belong in `internal/adapter/cli` only if H05 has not already.
 - `tests/integration/lab_test.go`: add `--json`; add a `wifi reveal` without `--confirm` case expecting exit 2.

@@ -1,0 +1,6 @@
+exit=0
+stdout:
+state: available
+key: synthetic-test-key
+stderr:
+warning: the saved Wi-Fi key will be printed to standard output. Terminal scrollback, shell logs and SSH session recordings may retain it.

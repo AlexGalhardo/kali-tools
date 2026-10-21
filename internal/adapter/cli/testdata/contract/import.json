@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "command": "import",
+  "paths": {
+    "data.format": "string",
+    "data.limited": "boolean",
+    "data.packets": "array",
+    "data.packets[].destination": "string",
+    "data.packets[].info": "string",
+    "data.packets[].length": "number",
+    "data.packets[].number": "number",
+    "data.packets[].protocol": "string",
+    "data.packets[].source": "string",
+    "data.packets[].timestamp": "string",
+    "schema_version": "number",
+    "version": "string"
+  }
+}

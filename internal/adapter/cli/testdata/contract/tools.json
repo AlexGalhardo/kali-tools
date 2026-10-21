@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "command": "tools",
+  "paths": {
+    "data": "array",
+    "data[].name": "string",
+    "data[].path": "string",
+    "data[].state": "string",
+    "data[].version": "string",
+    "schema_version": "number",
+    "version": "string"
+  }
+}

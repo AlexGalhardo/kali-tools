@@ -1,0 +1,11 @@
+exit=0
+stdout:
+{
+  "data": {
+    "format": "pcapng",
+    "path": "\u003cfixture\u003e"
+  },
+  "schema_version": 1,
+  "version": "0.4.0"
+}
+stderr:

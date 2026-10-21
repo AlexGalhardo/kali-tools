@@ -1,0 +1,9 @@
+exit=0
+stdout:
+nmap fixture
+HOST       PORTA  ESTADO  SERVIÇO  MÉTODO
+192.0.2.1  443    aberta  https    probed
+stderr:
+job <id> nmap: na fila
+job <id> nmap: executando
+job <id> nmap: concluído

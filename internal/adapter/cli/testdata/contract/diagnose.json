@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "command": "diagnose",
+  "paths": {
+    "data.elapsed_ms": "number",
+    "data.kind": "string",
+    "data.provider": "string",
+    "data.status": "string",
+    "data.target": "string",
+    "data.values": "array",
+    "data.values[]": "string",
+    "schema_version": "number",
+    "version": "string"
+  }
+}

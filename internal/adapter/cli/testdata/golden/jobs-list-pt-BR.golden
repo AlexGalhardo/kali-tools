@@ -1,0 +1,5 @@
+exit=0
+stdout:
+ID                                CRIADO                ESTADO     TIPO  RESUMO
+0123456789abcdef0123456789abcdef  2026-10-19T12:00:00Z  concluído  tcp   Diagnostic completed
+stderr:

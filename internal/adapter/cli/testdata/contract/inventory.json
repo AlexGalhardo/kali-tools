@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "command": "inventory",
+  "paths": {
+    "data.adapters": "array",
+    "data.adapters[].dns": "array",
+    "data.adapters[].dns[]": "string",
+    "data.adapters[].gateways": "array",
+    "data.adapters[].gateways[]": "string",
+    "data.adapters[].index": "number",
+    "data.adapters[].name": "string",
+    "data.counters": "array",
+    "data.counters[].id": "string",
+    "data.counters[].received": "number",
+    "data.counters[].sent": "number",
+    "schema_version": "number",
+    "version": "string"
+  }
+}

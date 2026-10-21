@@ -1,0 +1,8 @@
+exit=0
+stdout:
+ADAPTADOR         GATEWAYS   DNS
+Fixture Ethernet  192.0.2.1  192.0.2.53
+
+CONTADOR  RECEBIDO  ENVIADO
+1         200       100
+stderr:

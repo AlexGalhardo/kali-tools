@@ -124,7 +124,7 @@ func runAdditional(ctx context.Context, a *app.Application, call invocation, std
 		if call.values["confirm"] != "true" {
 			return nil, domain.Invalid("wifi reveal prints the saved network key; re-run with --confirm"), true
 		}
-		if _, err := fmt.Fprintln(stderr, "warning: the saved Wi-Fi key will be printed to standard output. Terminal scrollback, shell logs and SSH session recordings may retain it."); err != nil {
+		if _, err := fmt.Fprintln(stderr, label(call.g.Lang, "warning: the saved Wi-Fi key will be printed to standard output. Terminal scrollback, shell logs and SSH session recordings may retain it.")); err != nil {
 			return nil, err, true
 		}
 		value, err := a.RevealWiFi(ctx)

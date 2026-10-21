@@ -1,0 +1,19 @@
+exit=2
+stdout:
+{
+  "data": {
+    "dropped": null,
+    "finished": "0001-01-01T00:00:00Z",
+    "limited": false,
+    "packets": null,
+    "provider": "",
+    "started": "0001-01-01T00:00:00Z"
+  },
+  "error": {
+    "code": "invalid_input",
+    "message": "select a local non-loopback IPv4, duration 1..60 and packet limit 1..10000"
+  },
+  "schema_version": 1,
+  "version": "0.4.0"
+}
+stderr:

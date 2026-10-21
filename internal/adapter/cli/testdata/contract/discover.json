@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "command": "discover",
+  "paths": {
+    "data": "array",
+    "data[].host": "string",
+    "data[].port": "number",
+    "data[].state": "string",
+    "schema_version": "number",
+    "version": "string"
+  }
+}

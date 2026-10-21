@@ -1,0 +1,14 @@
+exit=0
+stdout:
+{
+  "data": [
+    {
+      "host": "127.0.0.1",
+      "port": 443,
+      "state": "open"
+    }
+  ],
+  "schema_version": 1,
+  "version": "0.4.0"
+}
+stderr:

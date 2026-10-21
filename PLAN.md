@@ -401,10 +401,9 @@ These start after H04 and can run in parallel with late alpha work. Parity is de
 
 ### 7.1 Complete CLI
 
-- [ ] C01 Command tree and conventions.
-  - Steps 1–4 checkpoint: strict root/per-command flags, help, stable exits, capabilities/tools, jobs/history/settings, confirmed reveal and capture paths implemented; direct/CLI/Wails history acceptance passes. JSON default, in-memory CLI lifetime and incomplete human/progress/SSH/schema work remain explicit. [Evidence](docs/verification/specs/C01.md).
+- [x] C01 Command tree and conventions. [Evidence](docs/verification/specs/C01.md).
   - Spec: [C01-cli](docs/specs/C01-cli.md)
-  - [ ] Commands:
+  - [x] Commands (neighbors and serve are explicit reserved stubs until their specs):
     - `version`
     - `doctor`
     - `capabilities`
@@ -421,21 +420,20 @@ These start after H04 and can run in parallel with late alpha work. Parity is de
     - `settings <get|set>`
     - `tools`
     - `serve`
-  - [ ] Global flags `--json`, `--timeout`, `--no-color` and `--lang`. Stable exit codes documented per error code. Help text for every command.
+  - [x] Global flags `--json`, `--timeout`, `--no-color` and `--lang`. Stable exit codes documented per error code. Help text for every command.
   - Assert: golden tests for human and JSON output; malformed input returns documented exit codes without echoing secrets.
-- [ ] C02 Long-running jobs in a terminal.
+- [x] C02 Long-running jobs in a terminal. [Evidence](docs/verification/specs/C01.md).
 
-  - Job-backed CLI diagnostics and cancelled snapshot/history regression verified; SIGTERM and three-second capture cancellation implemented. Human progress and full C02 acceptance remain open. [Evidence](docs/verification/specs/C01.md).
   - Spec: [C01-cli](docs/specs/C01-cli.md)
-  - [ ] Progress streaming from the job manager; Ctrl-C cancels through `Cancel`; `--detach` is rejected until a daemon mode exists (no hidden background processes).
+  - [x] Progress streaming from the job manager; Ctrl-C cancels through `Cancel`; `--detach` is rejected until a daemon mode exists (no hidden background processes).
   - Assert: cancellation leaves no child process or capture handle; output stays bounded.
-- [ ] C03 Headless/SSH ergonomics.
+- [ ] C03 Headless/SSH ergonomics. Implementation and Docker pass; native SSH acceptance pending. [Evidence](docs/verification/specs/C01.md).
   - Spec: [C01-cli](docs/specs/C01-cli.md)
-  - [ ] Non-interactive defaults; no TTY assumptions; `wifi reveal` requires an explicit flag and prints a warning; capture export writes only to an explicit path.
+  - [x] Non-interactive defaults; no TTY assumptions; `wifi reveal` requires an explicit flag and prints a warning; capture export writes only to an explicit path.
   - Assert: commands run under `ssh -T` and in the Docker lab; secrets are never written to history.
-- [ ] C04 CLI contract freeze for 1.0.
+- [x] C04 CLI contract freeze for 1.0. [Evidence](docs/verification/specs/C01.md).
   - Spec: [C01-cli](docs/specs/C01-cli.md)
-  - [ ] Document commands, flags, JSON schemas and exit codes in `docs/cli.md`; add compatibility fixtures.
+  - [x] Document commands, flags, JSON schemas and exit codes in `docs/cli.md`; add compatibility fixtures.
   - Assert: schema fixtures fail on an unannounced breaking change.
 
 ### 7.2 Web server: same UI in a browser
@@ -680,7 +678,7 @@ The plan does not claim feature parity with every Kali package.
 
 **Next tasks, in order** (each is a spec in [docs/specs](docs/specs/README.md)):
 
-1. C01 steps 5–10: finish job-backed diagnosis/cancellation, human/progress output, persistent root composition, golden/schema freeze, docs and SSH acceptance. Steps 1–4 and CLI history acceptance are implemented.
+1. W01/W04: shared frontend assets, HTTP/SSE transport and mandatory web security. C01 implementation and non-native acceptance are complete; native SSH acceptance remains open.
 2. H09 owner approval: ADR 004 is proposed; H08 mechanical enforcement and hosted positive/negative proofs pass.
 3. W01–W06: shared UI and HTTP/SSE; implement W04 security with W01 before committing `serve` to main.
 4. A05, A06, A01, B08–B11: follow the remaining SDD execution order. Keep H01–H07 native checks and the A07 NPSL owner decision visible; do not treat them as headless passes.

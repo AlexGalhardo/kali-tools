@@ -2,9 +2,14 @@ package cli_test
 
 import (
 	"context"
+	"io"
+	"runtime"
+	"slices"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/cli"
 
 	"github.com/AlexGalhardo/kali-tools/internal/app"
 	"github.com/AlexGalhardo/kali-tools/internal/job"
@@ -62,7 +67,7 @@ func newTestApp(t *testing.T) *app.Application {
 			Network: wifi.Network{SSID: "Fixture Network", Profile: "Fixture", BSSID: "02:00:00:00:00:02", Signal: 80, Authentication: 7, State: "connected"},
 			Secret:  wifi.Secret{State: "available", Value: "synthetic-test-key"},
 		},
-		Tools:       fake.Tools{Tools: []app.Tool{{Name: "nmap", State: "dependency_missing"}, {Name: "tshark", State: "dependency_missing"}}},
+		Tools:       fake.Tools{Tools: []app.Tool{{Name: "nmap", State: "available", Version: "fixture", Path: "/fixture/nmap"}, {Name: "tshark", State: "dependency_missing"}}, Result: app.Nmap{Scanner: "nmap", Version: "fixture", Finished: app.NmapFinished{Exit: "success"}, Hosts: []app.NmapHost{{Status: app.NmapState{State: "up"}, Addresses: []app.NmapAddress{{Address: "192.0.2.1", Type: "ipv4"}}, Ports: []app.NmapPort{{Port: 443, Protocol: "tcp", State: app.NmapState{State: "open"}, Service: app.NmapService{Name: "https", Method: "probed"}}}}}}},
 		Diagnostics: network.Diagnostics{Prober: fake.Prober{Values: []string{"echo reply"}}},
 	})
 	t.Cleanup(func() {
@@ -71,4 +76,26 @@ func newTestApp(t *testing.T) *app.Application {
 		}
 	})
 	return a
+}
+
+func runJSON(ctx context.Context, a *app.Application, args []string, stdout, stderr io.Writer) int {
+	if len(args) > 0 && (!slices.Contains(args, "discover") || !slices.Contains(args, "csv")) {
+		args = append([]string{"--json"}, args...)
+	}
+	return cli.Run(ctx, a, args, stdout, stderr)
+}
+
+func assertGoroutinesReturn(t *testing.T, before int) {
+	t.Helper()
+	deadline := time.NewTimer(3 * time.Second)
+	defer deadline.Stop()
+	poll := time.NewTicker(10 * time.Millisecond)
+	defer poll.Stop()
+	for runtime.NumGoroutine() > before {
+		select {
+		case <-poll.C:
+		case <-deadline.C:
+			t.Fatalf("goroutines before=%d after=%d", before, runtime.NumGoroutine())
+		}
+	}
 }

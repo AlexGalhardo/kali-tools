@@ -1,0 +1,4 @@
+exit=0
+stdout:
+histórico limpo (jobs na fila e em execução são mantidos)
+stderr:

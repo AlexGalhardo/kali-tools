@@ -1,0 +1,5 @@
+exit=0
+stdout:
+language: pt-BR
+retention_days: 7
+stderr:

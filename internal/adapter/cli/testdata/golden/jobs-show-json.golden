@@ -1,0 +1,15 @@
+exit=0
+stdout:
+{
+  "data": {
+    "created": "2026-10-19T12:00:00Z",
+    "finished": "2026-10-19T12:00:00Z",
+    "id": "0123456789abcdef0123456789abcdef",
+    "kind": "tcp",
+    "state": "completed",
+    "summary": "Diagnostic completed"
+  },
+  "schema_version": 1,
+  "version": "0.4.0"
+}
+stderr:

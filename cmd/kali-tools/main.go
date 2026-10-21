@@ -13,14 +13,22 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/bootstrap"
 )
 
-const cliDataPath = ":memory:"
-
 func run(ctx context.Context, args []string, getenv func(string) string, stdout, stderr io.Writer) int {
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	stopReset := context.AfterFunc(ctx, stop)
+	defer stopReset()
+	if getenv("NO_COLOR") != "" {
+		args = append([]string{"--no-color"}, args...)
+	}
 	return runWithBootstrap(ctx, args, stdout, stderr, bootstrap.New)
 }
 
 func runWithBootstrap(ctx context.Context, args []string, stdout, stderr io.Writer, boot func(context.Context, bootstrap.Config) (*app.Application, func() error, error)) int {
-	a, cleanup, err := boot(ctx, bootstrap.Config{DataPath: cliDataPath})
+	if !cli.NeedsApp(args) {
+		return cli.Run(ctx, nil, args, stdout, stderr)
+	}
+	a, cleanup, err := boot(ctx, bootstrap.Config{})
 	if err != nil {
 		_, _ = fmt.Fprintln(stderr, err)
 		return 1
@@ -34,10 +42,5 @@ func runWithBootstrap(ctx context.Context, args []string, stdout, stderr io.Writ
 }
 
 func main() {
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	stopReset := context.AfterFunc(ctx, cancel)
-	code := run(ctx, os.Args[1:], os.Getenv, os.Stdout, os.Stderr)
-	stopReset()
-	cancel()
-	os.Exit(code)
+	os.Exit(run(context.Background(), os.Args[1:], os.Getenv, os.Stdout, os.Stderr))
 }

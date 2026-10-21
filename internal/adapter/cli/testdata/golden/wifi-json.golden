@@ -1,0 +1,16 @@
+exit=0
+stdout:
+{
+  "data": {
+    "authentication": 7,
+    "bssid": "02:00:00:00:00:02",
+    "profile": "Fixture",
+    "signal": 80,
+    "ssid": "Fixture Network",
+    "state": "connected"
+  },
+  "schema_version": 1,
+  "version": "0.4.0"
+}
+stderr:
+warning: "wifi" is deprecated; use "wifi show"

@@ -1,0 +1,6 @@
+exit=0
+stdout:
+estado: disponível
+chave: synthetic-test-key
+stderr:
+aviso: a chave Wi-Fi salva será impressa na saída padrão. O histórico do terminal, logs do shell e gravações de sessões SSH podem retê-la.

@@ -1,0 +1,6 @@
+exit=0
+stdout:
+NAME    STATE               VERSION  PATH
+nmap    available           fixture  /fixture/nmap
+tshark  dependency_missing           
+stderr:

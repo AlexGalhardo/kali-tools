@@ -1,0 +1,4 @@
+exit=0
+stdout:
+history cleared (queued and running jobs are kept)
+stderr:

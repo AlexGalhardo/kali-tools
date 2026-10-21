@@ -1,0 +1,42 @@
+exit=0
+stdout:
+{
+  "data": {
+    "finished": {
+      "exit": "success"
+    },
+    "hosts": [
+      {
+        "addresses": [
+          {
+            "address": "192.0.2.1",
+            "type": "ipv4"
+          }
+        ],
+        "ports": [
+          {
+            "port": 443,
+            "protocol": "tcp",
+            "service": {
+              "method": "probed",
+              "name": "https",
+              "product": "",
+              "version": ""
+            },
+            "state": {
+              "state": "open"
+            }
+          }
+        ],
+        "status": {
+          "state": "up"
+        }
+      }
+    ],
+    "scanner": "nmap",
+    "version": "fixture"
+  },
+  "schema_version": 1,
+  "version": "0.4.0"
+}
+stderr:

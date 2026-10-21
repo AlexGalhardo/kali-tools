@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "command": "capabilities",
+  "paths": {
+    "data": "array",
+    "data[].detail": "string",
+    "data[].id": "string",
+    "data[].provider": "string",
+    "data[].state": "string",
+    "schema_version": "number",
+    "version": "string"
+  }
+}

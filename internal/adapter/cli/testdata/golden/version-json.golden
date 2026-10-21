@@ -1,0 +1,13 @@
+exit=0
+stdout:
+{
+  "data": {
+    "arch": "ARCH",
+    "go": "goX",
+    "os": "OS",
+    "version": "0.4.0"
+  },
+  "schema_version": 1,
+  "version": "0.4.0"
+}
+stderr:

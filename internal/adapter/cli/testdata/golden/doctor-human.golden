@@ -1,0 +1,14 @@
+exit=0
+stdout:
+System: OS/ARCH
+
+CAPABILITY STATE PROVIDER DETAIL
+interfaces available go/net Go interface inventory
+diagnostics available go/net DNS, bounded TCP, HTTP and TLS; redirects are not followed
+discovery available go/net IPv4 TCP connect, /24 or narrower, at most 32 ports
+capture_import available gopacket PCAP and PCAPNG, 64 MiB and 10000 decoded packets
+
+NAME    STATE               VERSION  PATH
+nmap    available           fixture  /fixture/nmap
+tshark  dependency_missing           
+stderr:

@@ -6,6 +6,9 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ### Changed
 
+- Completed the CLI human-output migration, localized result labels, bounded job progress, persistent shared settings/history and explicit JSON contract fixtures. See the [CLI contract](docs/cli.md) and [C01 evidence](docs/verification/specs/C01.md).
+- Migration from 0.1.0-alpha.1-dev: scripts must add `--json`; flags are command-specific; error codes have distinct exits; help exits 0; rejected flags never echo values; diagnostics are jobs with redacted history; doctor documents confirmed CLI key reveal. Deprecated invocations retain one warning. Rejected diagnostic targets no longer reflect credentials into partial results.
+
 - CLI diagnostics now run through the shared job manager and retain redacted history. Interrupts cancel the job, live capture cancellation waits at most three seconds and never exports a cancelled result, and the CLI handles SIGTERM while restoring default handling for a second interrupt. [C01 evidence](docs/verification/specs/C01.md).
 
 ## [0.4.0] - 2026-10-21

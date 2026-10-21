@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "command": "capture live",
+  "paths": {
+    "data.dropped": "null",
+    "data.finished": "string",
+    "data.limited": "boolean",
+    "data.packets": "null",
+    "data.provider": "string",
+    "data.started": "string",
+    "error.code": "string",
+    "error.message": "string",
+    "schema_version": "number",
+    "version": "string"
+  }
+}

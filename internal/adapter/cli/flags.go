@@ -15,9 +15,26 @@ import (
 )
 
 const (
-	minTimeout = 100 * time.Millisecond
-	maxTimeout = 10 * time.Minute
+	minTimeout     = 100 * time.Millisecond
+	maxTimeout     = 10 * time.Minute
+	maxPortsArg    = 191
+	maxPortsCommas = 31
 )
+
+func parsePorts(value string) ([]int, error) {
+	if len(value) > maxPortsArg || strings.Count(value, ",") > maxPortsCommas {
+		return nil, domain.Invalid("1..32 ports required")
+	}
+	ports := []int{}
+	for _, part := range strings.Split(value, ",") {
+		port, err := strconv.Atoi(part)
+		if err != nil {
+			return nil, domain.Invalid("invalid port list")
+		}
+		ports = append(ports, port)
+	}
+	return ports, nil
+}
 
 type globals struct {
 	JSON    bool
@@ -192,6 +209,9 @@ func parseInvocation(args []string) (invocation, error) {
 	for _, name := range call.command.flags {
 		call.values[name] = fs.Lookup(name).Value.String()
 	}
+	if call.command.path == "wifi reveal" && call.values["confirm"] != "true" {
+		return call, domain.Invalid("wifi reveal prints the saved network key; re-run with --confirm")
+	}
 	if strings.HasPrefix(call.command.path, "capture") || call.command.path == "import" {
 		if call.values["output"] != "" && call.values["format"] != "pcap" && call.values["format"] != "pcapng" {
 			return call, domain.Invalid("packet export requires --format pcap or pcapng")
@@ -221,7 +241,7 @@ func parseInvocation(args []string) (invocation, error) {
 		if f.Name == "kind" && positionalKind != "" && value != positionalKind {
 			parseErr = domain.Invalid("kind given twice")
 		}
-		if f.Name == "format" && value == "csv" && call.g.JSON {
+		if f.Name == "format" && value == "csv" && call.g.JSON && call.command.path == "discover" {
 			parseErr = domain.Invalid("CSV cannot be combined with --json")
 		}
 		call.legacy = append(call.legacy, "--"+f.Name, value)

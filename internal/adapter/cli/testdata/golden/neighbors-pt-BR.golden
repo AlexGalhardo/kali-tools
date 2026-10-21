@@ -1,0 +1,4 @@
+exit=3
+stdout:
+stderr:
+erro: não suportado: neighbor inventory is not implemented yet

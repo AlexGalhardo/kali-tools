@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "command": "interfaces",
+  "paths": {
+    "data": "array",
+    "data[].addresses": "array",
+    "data[].addresses[]": "string",
+    "data[].index": "number",
+    "data[].loopback": "boolean",
+    "data[].mac": "string",
+    "data[].mtu": "number",
+    "data[].name": "string",
+    "data[].up": "boolean",
+    "schema_version": "number",
+    "version": "string"
+  }
+}

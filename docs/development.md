@@ -38,17 +38,17 @@ Bun 1.4.3 now has a workspace `frontend/bun.lock`, ready for commit. Run `bun in
 go run ./cmd/kali-tools version
 go run ./cmd/kali-tools doctor
 go run ./cmd/kali-tools interfaces
-go run ./cmd/kali-tools diagnose --kind tcp --target localhost --port 8080
-go run ./cmd/kali-tools diagnose --kind http --target http://localhost:8080/health
+go run ./cmd/kali-tools diagnose tcp --target localhost --port 8080
+go run ./cmd/kali-tools diagnose http --target http://localhost:8080/health
 go run ./cmd/kali-tools discover --target 127.0.0.1/32 --ports 8080,9090 --format csv
-go run ./cmd/kali-tools import --file synthetic.pcap
+go run ./cmd/kali-tools capture import --file synthetic.pcap
 ```
 
-JSON uses `schema_version: 1`. Exit 0 is success, 1 is an operation failure, 2 is invalid input. Diagnostic timeouts are 100–30000 ms. Discovery accepts IPv4 /24 or narrower, at most 32 unique ports and at most 32 workers. HTTP redirects are reported rather than followed. IPv4 ping and traceroute currently require the Windows native provider. Wi-Fi reveal is desktop-only, explicit and never written to normal history.
+Human output is the default; scripts use `--json` with `schema_version: 1`. The [CLI contract](cli.md) defines all stable exit codes. Diagnostic timeouts are 100–30000 ms. Discovery accepts IPv4 /24 or narrower, at most 32 unique ports and at most 32 workers. HTTP redirects are reported rather than followed. IPv4 ping and traceroute currently require the Windows native provider. Wi-Fi reveal requires explicit desktop consent or `wifi reveal --confirm`; keys never enter normal history.
 
 ## Private laboratory
 
-Current C01 checkpoint: JSON remains the default. Canonical forms include `diagnose tcp`, `wifi show`, `wifi reveal --confirm`, `capture live`, `capture import` and `capture export`. `help` lists per-command flags; unrelated flags are rejected. History/settings are currently process-local because CLI composition still uses in-memory SQLite. Human/progress output, persistent composition and SSH acceptance remain pending. See [C01 evidence](verification/specs/C01.md) for exit codes and checkpoint limits.
+The CLI uses canonical command paths, human or explicit JSON output, localized result labels and bounded job progress. Settings/history persist in the shared per-user SQLite database; jobs and capture artifacts remain process-local. The CLI never prompts or reads stdin. `NO_COLOR` disables state colors. Native SSH acceptance remains pending; see [C01 evidence](verification/specs/C01.md).
 
 ```text
 node scripts/task.mjs lab
@@ -81,6 +81,6 @@ The owner authorized workflow activation on 2026-10-19. See [the CI/CD guide](ci
 
 After a native CLI/desktop build, `go mod download all` and `node scripts/package.mjs` assemble that host's release archive with notices and source metadata. Go/production frontend licenses are collected from pinned installed sources; missing notice files fail packaging. Native CI supplies Windows x64, Linux x64 and both Mac architectures.
 
-DNS accepts `--record A|AAAA|CNAME|MX|NS|TXT|PTR`. Discovery launches at most 100 probes/second with 32 workers and a two-minute total deadline. Nmap service inspection has its own fixed two-minute deadline. Packet conversion is explicit: `go run ./cmd/kali-tools import --file input.pcap --output output.pcapng --format pcapng`.
+DNS accepts `--record A|AAAA|CNAME|MX|NS|TXT|PTR`. Discovery launches at most 100 probes/second with 32 workers and a two-minute total deadline. Nmap service inspection has its own fixed two-minute deadline. Packet conversion is explicit: `go run ./cmd/kali-tools capture import --file input.pcap --output output.pcapng --format pcapng`.
 
 The local Windows preview can be copied from build/bin/kali-tools-desktop.exe to the repository root; both locations are ignored. Existing user preferences/history under the previous hacker-tools directory are reused without moving files; new installations use kali-tools. No configuration outside the repository is rewritten during the rename.

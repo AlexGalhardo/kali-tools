@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "command": "history list",
+  "paths": {
+    "data": "array",
+    "data[].created": "string",
+    "data[].finished": "string",
+    "data[].id": "string",
+    "data[].kind": "string",
+    "data[].state": "string",
+    "data[].summary": "string",
+    "schema_version": "number",
+    "version": "string"
+  }
+}

@@ -1,0 +1,77 @@
+exit=0
+stdout:
+{
+  "data": {
+    "arch": "ARCH",
+    "capabilities": [
+      {
+        "detail": "Go interface inventory",
+        "id": "interfaces",
+        "provider": "go/net",
+        "state": "available"
+      },
+      {
+        "detail": "DNS, bounded TCP, HTTP and TLS; redirects are not followed",
+        "id": "diagnostics",
+        "provider": "go/net",
+        "state": "available"
+      },
+      {
+        "detail": "IPv4 TCP connect, /24 or narrower, at most 32 ports",
+        "id": "discovery",
+        "provider": "go/net",
+        "state": "available"
+      },
+      {
+        "detail": "PCAP and PCAPNG, 64 MiB and 10000 decoded packets",
+        "id": "capture_import",
+        "provider": "gopacket",
+        "state": "available"
+      },
+      {
+        "detail": "\u003cnative\u003e",
+        "id": "routes_counters",
+        "provider": "\u003cnative\u003e",
+        "state": "\u003cnative\u003e"
+      },
+      {
+        "detail": "\u003cnative\u003e",
+        "id": "icmp",
+        "provider": "\u003cnative\u003e",
+        "state": "\u003cnative\u003e"
+      },
+      {
+        "detail": "\u003cnative\u003e",
+        "id": "wifi",
+        "provider": "\u003cnative\u003e",
+        "state": "\u003cnative\u003e"
+      },
+      {
+        "detail": "\u003cnative\u003e",
+        "id": "capture_live",
+        "provider": "\u003cnative\u003e",
+        "state": "\u003cnative\u003e"
+      }
+    ],
+    "capture": "Windows raw IPv4 requires administrator authorization; no external driver. Other platforms unavailable.",
+    "os": "OS",
+    "tools": [
+      {
+        "name": "nmap",
+        "path": "/fixture/nmap",
+        "state": "available",
+        "version": "fixture"
+      },
+      {
+        "name": "tshark",
+        "path": "",
+        "state": "dependency_missing",
+        "version": ""
+      }
+    ],
+    "wifi": "Windows WLAN API; key reveal requires wifi reveal --confirm or the desktop reveal action"
+  },
+  "schema_version": 1,
+  "version": "0.4.0"
+}
+stderr:

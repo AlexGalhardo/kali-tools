@@ -1,0 +1,9 @@
+exit=0
+stdout:
+SSID: Fixture Network
+BSSID: 02:00:00:00:00:02
+perfil: Fixture
+sinal: 80%
+autenticação: 7
+estado: conectado
+stderr:

@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "command": "inspect",
+  "paths": {
+    "data.finished.exit": "string",
+    "data.hosts": "array",
+    "data.hosts[].addresses": "array",
+    "data.hosts[].addresses[].address": "string",
+    "data.hosts[].addresses[].type": "string",
+    "data.hosts[].ports": "array",
+    "data.hosts[].ports[].port": "number",
+    "data.hosts[].ports[].protocol": "string",
+    "data.hosts[].ports[].service.method": "string",
+    "data.hosts[].ports[].service.name": "string",
+    "data.hosts[].ports[].service.product": "string",
+    "data.hosts[].ports[].service.version": "string",
+    "data.hosts[].ports[].state.state": "string",
+    "data.hosts[].status.state": "string",
+    "data.scanner": "string",
+    "data.version": "string",
+    "schema_version": "number",
+    "version": "string"
+  }
+}

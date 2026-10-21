@@ -1,0 +1,8 @@
+exit=0
+stdout:
+HOST       PORT   STATE
+127.0.0.1  443  open
+stderr:
+job <id> discovery: queued
+job <id> discovery: running
+job <id> discovery: completed

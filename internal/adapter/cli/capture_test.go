@@ -7,6 +7,8 @@ import (
 	"errors"
 	"net"
 	"net/netip"
+	"os"
+	"path/filepath"
 	"runtime"
 	"sync/atomic"
 	"testing"
@@ -20,7 +22,72 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/job"
+	"github.com/AlexGalhardo/kali-tools/internal/porttest/fake"
 )
+
+func TestInterruptStopsCaptureWithoutExport(t *testing.T) {
+	before := runtime.NumGoroutine()
+	addresses, err := net.InterfaceAddrs()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var address string
+	for _, candidate := range addresses {
+		prefix, err := netip.ParsePrefix(candidate.String())
+		if err == nil && prefix.Addr().Is4() && !prefix.Addr().IsLoopback() {
+			address = prefix.Addr().String()
+			break
+		}
+	}
+	if address == "" {
+		t.Skip("no non-loopback IPv4 for application input validation")
+	}
+	started := make(chan struct{})
+	stopped := make(chan struct{})
+	provider := fake.LiveCapture{CaptureFunc: func(ctx context.Context, request capture.LiveRequest) (capture.LiveResult, *capture.Artifact, error) {
+		close(started)
+		<-ctx.Done()
+		close(stopped)
+		return capture.LiveResult{Provider: "synthetic", Packets: []capture.Packet{{Number: 1, Protocol: "TCP"}}}, nil, nil
+	}}
+	store := fake.NewStore()
+	a := app.New(app.Deps{Jobs: store, Settings: store, Capture: provider})
+	t.Cleanup(func() { _ = a.Close() })
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	destination := filepath.Join(t.TempDir(), "cancelled.pcap")
+	var out, stderr bytes.Buffer
+	done := make(chan int, 1)
+	go func() {
+		done <- runJSON(ctx, a, []string{"capture", "live", "--target", address, "--output", destination, "--format", "pcap"}, &out, &stderr)
+	}()
+	select {
+	case <-started:
+	case <-time.After(3 * time.Second):
+		t.Fatal("capture did not start")
+	}
+	cancel()
+	select {
+	case code := <-done:
+		if code != cli.ExitCancelled || !bytes.Contains(out.Bytes(), []byte(`"number": 1`)) {
+			t.Fatalf("exit=%d out=%s stderr=%s", code, &out, &stderr)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("capture did not stop")
+	}
+	select {
+	case <-stopped:
+	default:
+		t.Fatal("provider did not observe cancellation")
+	}
+	if _, err := os.Stat(destination); !os.IsNotExist(err) {
+		t.Fatal("cancelled capture created an export file")
+	}
+	if err := a.Close(); err != nil {
+		t.Fatal(err)
+	}
+	assertGoroutinesReturn(t, before)
+}
 
 func TestAwaitCapturePreservesTypedError(t *testing.T) {
 	events := make(chan job.Event, 2)
@@ -68,7 +135,7 @@ func TestAwaitCaptureClosedChannel(t *testing.T) {
 
 func TestCLICaptureRejectsLoopback(t *testing.T) {
 	var out, stderr bytes.Buffer
-	if code := cli.Run(t.Context(), newApp(t), []string{"capture", "--target", "127.0.0.1"}, &out, &stderr); code != 2 || !bytes.Contains(out.Bytes(), []byte(`"invalid_input"`)) {
+	if code := runJSON(t.Context(), newApp(t), []string{"capture", "--target", "127.0.0.1"}, &out, &stderr); code != 2 || !bytes.Contains(out.Bytes(), []byte(`"invalid_input"`)) {
 		t.Fatalf("exit=%d, out=%s, stderr=%s", code, out.String(), stderr.String())
 	}
 }
@@ -141,7 +208,7 @@ func TestCLICaptureReportsProviderState(t *testing.T) {
 	defer func() { _ = a.Close() }()
 	var out, stderr bytes.Buffer
 	start := time.Now()
-	exitCode := cli.Run(t.Context(), a, []string{"capture", "--target", address, "--duration", "1", "--limit", "1"}, &out, &stderr)
+	exitCode := runJSON(t.Context(), a, []string{"capture", "--target", address, "--duration", "1", "--limit", "1"}, &out, &stderr)
 	if time.Since(start) >= 11*time.Second {
 		t.Fatal("capture exceeded bound")
 	}

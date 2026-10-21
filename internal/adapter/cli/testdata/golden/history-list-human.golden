@@ -1,0 +1,5 @@
+exit=0
+stdout:
+ID                                CREATED               STATE      KIND  SUMMARY
+0123456789abcdef0123456789abcdef  2026-10-19T12:00:00Z  completed  tcp   Diagnostic completed
+stderr:

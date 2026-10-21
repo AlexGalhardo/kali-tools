@@ -1,0 +1,21 @@
+exit=0
+stdout:
+{
+  "data": [
+    {
+      "name": "nmap",
+      "path": "/fixture/nmap",
+      "state": "available",
+      "version": "fixture"
+    },
+    {
+      "name": "tshark",
+      "path": "",
+      "state": "dependency_missing",
+      "version": ""
+    }
+  ],
+  "schema_version": 1,
+  "version": "0.4.0"
+}
+stderr:

@@ -1,0 +1,7 @@
+exit=2
+stdout:
+0 pacotes, formato live
+Nº  HORA  TAMANHO  ORIGEM  DESTINO  PROTOCOLO  INFO
+stderr:
+warning: "capture" is deprecated; use "capture live"
+erro: entrada inválida: select a local non-loopback IPv4, duration 1..60 and packet limit 1..10000

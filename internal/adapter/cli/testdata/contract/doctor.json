@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "command": "doctor",
+  "paths": {
+    "data.arch": "string",
+    "data.capabilities": "array",
+    "data.capabilities[].detail": "string",
+    "data.capabilities[].id": "string",
+    "data.capabilities[].provider": "string",
+    "data.capabilities[].state": "string",
+    "data.capture": "string",
+    "data.os": "string",
+    "data.tools": "array",
+    "data.tools[].name": "string",
+    "data.tools[].path": "string",
+    "data.tools[].state": "string",
+    "data.tools[].version": "string",
+    "data.wifi": "string",
+    "schema_version": "number",
+    "version": "string"
+  }
+}

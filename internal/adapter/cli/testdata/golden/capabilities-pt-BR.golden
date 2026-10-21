@@ -1,0 +1,8 @@
+exit=0
+stdout:
+CAPACIDADE ESTADO PROVEDOR DETALHE
+interfaces disponível go/net Go interface inventory
+diagnostics disponível go/net DNS, bounded TCP, HTTP and TLS; redirects are not followed
+discovery disponível go/net IPv4 TCP connect, /24 or narrower, at most 32 ports
+capture_import disponível gopacket PCAP and PCAPNG, 64 MiB and 10000 decoded packets
+stderr:

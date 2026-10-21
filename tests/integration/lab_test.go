@@ -63,6 +63,7 @@ func TestPrivateLab(t *testing.T) {
 }
 
 func TestCLIExecutable(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	host := os.Getenv("LAB_FIXTURE")
 	if host == "" {
 		t.Fatal("LAB_FIXTURE is required")
@@ -73,12 +74,13 @@ func TestCLIExecutable(t *testing.T) {
 		expected string
 	}{
 		{[]string{"version"}, 0, "version"},
+		{[]string{"wifi", "reveal"}, 2, "invalid_input"},
 		{[]string{"diagnose", "--kind", "http", "--target", "http://" + net.JoinHostPort(host, "8080") + "/health"}, 0, "204 No Content"},
 		{[]string{"diagnose", "--target", "invalid;host"}, 2, "invalid_input"},
 		{[]string{"discover", "--target", "0.0.0.0/0"}, 2, "invalid_input"},
 	} {
 		ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
-		cmd := exec.CommandContext(ctx, "kali-tools", c.args...)
+		cmd := exec.CommandContext(ctx, "kali-tools", append([]string{"--json"}, c.args...)...)
 		cmd.WaitDelay = time.Second
 		var stdout, stderr bytes.Buffer
 		cmd.Stdout, cmd.Stderr = &stdout, &stderr

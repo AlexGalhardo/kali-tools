@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "command": "version",
+  "paths": {
+    "data.arch": "string",
+    "data.go": "string",
+    "data.os": "string",
+    "data.version": "string",
+    "schema_version": "number",
+    "version": "string"
+  }
+}

@@ -200,16 +200,16 @@ Docker builds Linux CLI images. It does not create native Windows/macOS desktop 
 ```bash
 go run ./cmd/kali-tools version
 go run ./cmd/kali-tools doctor
-go run ./cmd/kali-tools interfaces
-go run ./cmd/kali-tools diagnose --kind dns --target example.com --record MX
-go run ./cmd/kali-tools diagnose --kind tcp --target localhost --port 8080
-go run ./cmd/kali-tools diagnose --kind http --target http://localhost:8080/health
+go run ./cmd/kali-tools --json interfaces
+go run ./cmd/kali-tools diagnose dns --target example.com --record MX
+go run ./cmd/kali-tools diagnose tcp --target localhost --port 8080
+go run ./cmd/kali-tools diagnose http --target http://localhost:8080/health
 go run ./cmd/kali-tools discover --target 127.0.0.1/32 --ports 8080,9090
 go run ./cmd/kali-tools inspect --target 127.0.0.1/32 --ports 8080
-go run ./cmd/kali-tools import --file synthetic.pcap --output converted.pcapng --format pcapng
+go run ./cmd/kali-tools capture import --file synthetic.pcap --output converted.pcapng --format pcapng
 ```
 
-Start a listening local service for the TCP/HTTP examples; otherwise a refused connection is an expected diagnostic failure. JSON includes `schema_version: 1` and remains the default for this partial C01 checkpoint. Prefer `diagnose dns`, `wifi show` and `capture import`; old forms print a deprecation warning. Additional commands include `capabilities`, `tools`, `jobs list|show|cancel`, `history list|clear`, and `settings get|set`. `wifi reveal --confirm` explicitly prints the saved key and a warning. CLI history/settings still last only for the current process. Exit codes are 0 success, 1 generic failure, 2 invalid input, 3 unsupported, 4 permission/consent, 5 dependency missing, 6 not found, 7 timeout, 8 conflict, 9 authentication and 130 cancelled. Discovery accepts IPv4 /24 or narrower and up to 32 unique ports. The web server and the complete human/progress CLI remain pending.
+Start a listening local service for the TCP/HTTP examples; refusal is an expected diagnostic failure. Human output is the default; scripts must add `--json`, whose envelope includes `schema_version: 1`. Diagnostics stream bounded progress on stderr and record redacted job history. Settings and history persist in the shared per-user SQLite database. `wifi reveal --confirm` explicitly prints the saved key and a warning. Jobs remain owned by their starting process. See the [CLI contract](docs/cli.md) for commands, exit codes, SSH behavior and migration. Discovery accepts IPv4 /24 or narrower and up to 32 unique ports. Native SSH acceptance remains pending. The web server remains planned.
 
 ## Troubleshooting
 
