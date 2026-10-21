@@ -281,8 +281,8 @@ These are reusable delivery requirements, not a separate completed milestone. De
   - [ ] W01/W03: add the HTTP driver and run the unchanged shared acceptance specifications.
   - Progress: [H07 evidence](docs/verification/specs/H07.md). The ICMP correction, seven real/fake suites, race checks and direct/CLI/Wails acceptance matrix pass. H07 remains open for native qualification. HTTP remains W01; CLI history remains C01.
   - Assert: each fake passes the same suite as its adapter; at least the diagnostics, discovery and history specifications run through two drivers.
-- [ ] H08 Enforce the dependency rule.
-  - Local implementation verified: eight depguard cases, wrong-version guard, cleanup and actual commit-hook rejection pass; hosted positive/negative proof pending. [Evidence](docs/verification/specs/H08.md).
+- [x] H08 Enforce the dependency rule.
+  - Eight depguard cases, wrong-version guard, cleanup and actual commit-hook rejection pass. Positive hosted run 39669810016 passes; negative PR #1 fails specifically on the application depguard rule, then was closed and deleted without merging. [Evidence](docs/verification/specs/H08.md).
   - Spec: [H08-dependency-rule](docs/specs/H08-dependency-rule.md)
   - [ ] Configure depguard in `.golangci.yml` (or pinned go-arch-lint) with the matrix in architecture §3. Run it in CI and in Lefthook.
   - [ ] Use the spec's pinned depguard configuration, including test-only porttest and composition-root restrictions.
