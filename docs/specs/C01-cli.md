@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | C01, C02, C03, C04 |
-| Status | Steps 1–4 implemented 2026-10-21; remaining CLI migration and acceptance open |
+| Status | Steps 1–4 implemented 2026-10-21; step 5 diagnostic job/cancellation path implemented, progress and remaining acceptance open |
 | Depends on | H01, H02, H03, H04, H05, H06, H07, H08 (H08 includes the H09 parser ADR) |
 | Risk | Medium: the default output format and per-command flag strictness change for existing invocations; a documented migration is part of this spec |
 

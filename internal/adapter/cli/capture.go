@@ -14,7 +14,7 @@ import (
 )
 
 const captureGrace = 10 * time.Second
-const captureCancelGrace = 5 * time.Second
+const captureCancelGrace = cancelGrace
 
 func runCapture(ctx context.Context, application *app.Application, request capture.LiveRequest) (capture.LiveResult, error) {
 	subCtx, cancel := context.WithCancel(context.Background())
@@ -43,6 +43,9 @@ func awaitCapture(ctx context.Context, events <-chan job.Event, stop func(), lim
 			}
 			outcome, ok := event.Data.(app.CaptureEvent)
 			if ok {
+				if wasCancelled || ctx.Err() != nil {
+					return outcome.Result, ctx.Err()
+				}
 				err := outcome.Err
 				if err == nil {
 					err = parseCodedError(outcome.Error)

@@ -24,9 +24,93 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/bootstrap"
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
+	"github.com/AlexGalhardo/kali-tools/internal/job"
 )
 
 var updateGolden = flag.Bool("update", false, "update CLI golden fixtures")
+
+func TestDiagnosticJobResultAndHistory(t *testing.T) {
+	for _, test := range []struct {
+		name   string
+		status int
+	}{
+		{"success", http.StatusOK},
+		{"http-error-status", http.StatusServiceUnavailable},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			a := newTestApp(t)
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(test.status)
+			}))
+			defer server.Close()
+			var out, stderr bytes.Buffer
+			code := cli.Run(t.Context(), a, []string{"--json", "diagnose", "http", "--target", server.URL}, &out, &stderr)
+			if code != 0 || !strings.Contains(out.String(), `"kind": "http"`) || stderr.Len() != 0 {
+				t.Fatalf("exit=%d stdout=%s stderr=%s", code, &out, &stderr)
+			}
+			history, err := a.History(t.Context())
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, status := range history {
+				if status.Kind == "http" && status.State == job.Completed {
+					return
+				}
+			}
+			t.Fatal("completed diagnostic missing from history")
+		})
+	}
+}
+
+func TestInterruptCancelsDiagnostic(t *testing.T) {
+	a := newTestApp(t)
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	started := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		close(started)
+		<-r.Context().Done()
+	}))
+	defer server.Close()
+	done := make(chan struct{})
+	var out, stderr bytes.Buffer
+	var code int
+	go func() {
+		defer close(done)
+		code = cli.Run(ctx, a, []string{"--json", "diagnose", "http", "--target", server.URL, "--timeout", "2s"}, &out, &stderr)
+	}()
+	select {
+	case <-started:
+	case <-time.After(3 * time.Second):
+		t.Fatal("diagnostic did not start")
+	}
+	cancel()
+	select {
+	case <-done:
+	case <-time.After(3 * time.Second):
+		t.Fatal("diagnostic did not cancel")
+	}
+	if code != cli.ExitCancelled || !strings.Contains(out.String(), `"code": "cancelled"`) || stderr.Len() != 0 {
+		t.Fatalf("exit=%d stdout=%s stderr=%s", code, &out, &stderr)
+	}
+	history, err := a.History(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, status := range history {
+		if status.Kind == "http" {
+			if status.State != job.Cancelled {
+				t.Fatalf("history state=%s", status.State)
+			}
+			snapshot, ok := a.JobSnapshot(t.Context(), status.ID)
+			if !ok || snapshot.State != job.Cancelled {
+				t.Fatal("cancelled snapshot missing")
+			}
+			return
+		}
+	}
+	t.Fatal("diagnostic was not recorded as a job")
+}
 
 func TestCLIGolden(t *testing.T) {
 	fixture := filepath.Join(t.TempDir(), "synthetic.pcapng")

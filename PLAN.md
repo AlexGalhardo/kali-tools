@@ -424,6 +424,8 @@ These start after H04 and can run in parallel with late alpha work. Parity is de
   - [ ] Global flags `--json`, `--timeout`, `--no-color` and `--lang`. Stable exit codes documented per error code. Help text for every command.
   - Assert: golden tests for human and JSON output; malformed input returns documented exit codes without echoing secrets.
 - [ ] C02 Long-running jobs in a terminal.
+
+  - Job-backed CLI diagnostics and cancelled snapshot/history regression verified; SIGTERM and three-second capture cancellation implemented. Human progress and full C02 acceptance remain open. [Evidence](docs/verification/specs/C01.md).
   - Spec: [C01-cli](docs/specs/C01-cli.md)
   - [ ] Progress streaming from the job manager; Ctrl-C cancels through `Cancel`; `--detach` is rejected until a daemon mode exists (no hidden background processes).
   - Assert: cancellation leaves no child process or capture handle; output stays bounded.

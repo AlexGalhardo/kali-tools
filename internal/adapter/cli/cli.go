@@ -96,7 +96,7 @@ func runLegacy(ctx context.Context, application *app.Application, args []string,
 			value, e := application.Inventory(ctx)
 			data, err = contract.FromInventory(value), e
 		case "diagnose":
-			value, e := application.Diagnose(ctx, network.Request{Kind: *kind, Target: *target, Port: *port, TimeoutMS: *timeout, RecordType: *recordType})
+			value, e := runDiagnostic(ctx, application, network.Request{Kind: *kind, Target: *target, Port: *port, TimeoutMS: *timeout, RecordType: *recordType})
 			data, err = contract.FromDiagnosticResult(value), e
 		case "discover", "inspect":
 			if *format != "json" && *format != "csv" {

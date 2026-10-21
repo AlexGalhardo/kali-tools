@@ -162,7 +162,7 @@ func TestCaptureCancellationGraceIsBounded(t *testing.T) {
 		calls := 0
 		before := time.Now()
 		_, err := cli.AwaitCaptureForTest(ctx, events, func() { calls++ }, 200*time.Millisecond)
-		if !errors.Is(err, context.Canceled) || calls != 1 || time.Since(before) != 5*time.Second {
+		if !errors.Is(err, context.Canceled) || calls != 1 || time.Since(before) != 3*time.Second {
 			t.Fatalf("elapsed=%s, calls=%d, err=%v", time.Since(before), calls, err)
 		}
 	})

@@ -4,6 +4,10 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+### Changed
+
+- CLI diagnostics now run through the shared job manager and retain redacted history. Interrupts cancel the job, live capture cancellation waits at most three seconds and never exports a cancelled result, and the CLI handles SIGTERM while restoring default handling for a second interrupt. [C01 evidence](docs/verification/specs/C01.md).
+
 ## [0.4.0] - 2026-10-21
 
 Unsigned development checkpoint published at the owner's request. C01 remains partial; JSON is still the default and CLI history/settings are process-local. Full release qualification remains open.

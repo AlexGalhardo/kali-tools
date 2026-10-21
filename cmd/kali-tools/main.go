@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"syscall"
 
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/cli"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
@@ -33,8 +34,10 @@ func runWithBootstrap(ctx context.Context, args []string, stdout, stderr io.Writ
 }
 
 func main() {
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	stopReset := context.AfterFunc(ctx, cancel)
 	code := run(ctx, os.Args[1:], os.Getenv, os.Stdout, os.Stderr)
+	stopReset()
 	cancel()
 	os.Exit(code)
 }
