@@ -10,6 +10,7 @@ import (
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/platform"
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/probe"
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/storage"
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/tools"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
@@ -50,7 +51,7 @@ func (a *App) startup(ctx context.Context) {
 		a.initErr = e
 		return
 	}
-	a.service = app.New(store)
+	a.service = app.New(store, network.Diagnostics{Prober: probe.ICMP{}})
 	settings, e := store.Settings(a.ctx)
 	if e == nil {
 		a.initErr = store.Retain(a.ctx, time.Now().AddDate(0, 0, -settings.RetentionDays))
@@ -132,7 +133,7 @@ func (a *App) Diagnose(r network.Request) (network.Result, error) {
 	if e := a.ready(); e != nil {
 		return network.Result{}, e
 	}
-	return network.Diagnose(a.ctx, r)
+	return a.service.Diagnostics.Diagnose(a.ctx, r)
 }
 func (a *App) StartDiagnostic(r network.Request) (storage.Job, error) {
 	if e := a.ready(); e != nil {

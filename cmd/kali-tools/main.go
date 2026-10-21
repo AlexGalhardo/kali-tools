@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/platform"
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/probe"
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/tools"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
@@ -67,7 +68,7 @@ func run(ctx context.Context, args []string, out, errout io.Writer) int {
 		case "inventory":
 			data, err = platform.Inventory()
 		case "diagnose":
-			data, err = network.Diagnose(ctx, network.Request{Kind: *kind, Target: *target, Port: *port, TimeoutMS: *timeout, RecordType: *recordType})
+			data, err = network.Diagnostics{Prober: probe.ICMP{}}.Diagnose(ctx, network.Request{Kind: *kind, Target: *target, Port: *port, TimeoutMS: *timeout, RecordType: *recordType})
 		case "discover", "inspect":
 			if *format != "json" && *format != "csv" {
 				err = domain.Invalid("format must be json or csv")

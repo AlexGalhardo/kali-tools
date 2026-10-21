@@ -24,12 +24,14 @@ var create = dll.NewProc("IcmpCreateFile")
 var closeICMP = dll.NewProc("IcmpCloseHandle")
 var send = dll.NewProc("IcmpSendEcho")
 
-type options32 struct {
+// ipOptionInformation mirrors IP_OPTION_INFORMATION, whose OptionsData is
+// pointer-sized (16 bytes in 64-bit processes).
+type ipOptionInformation struct {
 	TTL   byte
 	TOS   byte
 	Flags byte
 	Size  byte
-	Data  uint32
+	Data  uintptr
 }
 
 func Run(ctx context.Context, target string, trace bool) ([]string, error) {
@@ -89,7 +91,7 @@ func Run(ctx context.Context, target string, trace bool) ([]string, error) {
 		if trace {
 			ttl = byte(i)
 		}
-		options := options32{TTL: ttl}
+		options := ipOptionInformation{TTL: ttl}
 		reply := make([]byte, 512)
 		n, _, callErr := send.Call(handle, uintptr(binary.LittleEndian.Uint32(ip)), uintptr(unsafe.Pointer(&payload[0])), uintptr(len(payload)), uintptr(unsafe.Pointer(&options)), uintptr(unsafe.Pointer(&reply[0])), uintptr(len(reply)), uintptr(timeout.Milliseconds()))
 		if n == 0 {

@@ -21,7 +21,7 @@ func TestCancellationAndRedaction(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	s := New(store)
+	s := New(store, network.Diagnostics{})
 	defer func() {
 		if e := s.Close(); e != nil {
 			t.Error(e)
@@ -61,7 +61,7 @@ func TestDiscoverySummarySurvivesRestartWithoutTargets(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	service := New(store)
+	service := New(store, network.Diagnostics{})
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
@@ -101,7 +101,7 @@ func TestConcurrentDiagnosticsBoundAndShutdown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	service := New(store)
+	service := New(store, network.Diagnostics{})
 	defer func() {
 		if err := service.Close(); err != nil {
 			t.Error(err)
@@ -134,5 +134,55 @@ func TestConcurrentDiagnosticsBoundAndShutdown(t *testing.T) {
 	}
 	if _, err := service.Start(t.Context(), network.Request{Kind: "tcp", Target: "localhost", Port: 80, TimeoutMS: 100}); err == nil {
 		t.Fatal("closed service accepted a job")
+	}
+}
+
+func TestCloseIsIdempotent(t *testing.T) {
+	store, err := storage.Open(filepath.Join(t.TempDir(), "db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := New(store, network.Diagnostics{})
+	if err = s.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err = s.Close(); err != nil {
+		t.Fatal("second close:", err)
+	}
+}
+
+func TestTerminalEventSurvivesFullEventBuffer(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	port := listener.Addr().(*net.TCPAddr).Port
+	_ = listener.Close()
+	store, err := storage.Open(filepath.Join(t.TempDir(), "db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := New(store, network.Diagnostics{})
+	defer func() { _ = s.Close() }()
+	for len(s.Events) < cap(s.Events) {
+		s.Events <- Event{}
+	}
+	j, err := s.Start(t.Context(), network.Request{Kind: "tcp", Target: "127.0.0.1", Port: port, TimeoutMS: 500})
+	if err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.After(3 * time.Second)
+	for {
+		select {
+		case e := <-s.Events:
+			if e.Job.ID == j.ID && e.Job.Finished != nil {
+				if e.Job.State != "failed" {
+					t.Fatal("unexpected terminal state", e.Job.State)
+				}
+				return
+			}
+		case <-deadline:
+			t.Fatal("terminal event was dropped")
+		}
 	}
 }

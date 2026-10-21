@@ -25,24 +25,40 @@ type SystemClock struct{}
 
 func (SystemClock) Now() time.Time { return time.Now().UTC() }
 
+// terminalEventWait bounds how long a finished job waits for a slow event
+// consumer, so terminal states are not silently lost yet never block forever.
+const terminalEventWait = 2 * time.Second
+
 type Service struct {
-	Store  *storage.Store
-	Clock  Clock
-	Events chan Event
-	mu     sync.Mutex
-	jobs   map[string]context.CancelFunc
-	wg     sync.WaitGroup
-	closed bool
+	Store       *storage.Store
+	Diagnostics network.Diagnostics
+	Clock       Clock
+	Events      chan Event
+	mu          sync.Mutex
+	jobs        map[string]context.CancelFunc
+	wg          sync.WaitGroup
+	closed      bool
+	closeErr    error
 }
 
-func New(s *storage.Store) *Service {
-	return &Service{Store: s, Clock: SystemClock{}, Events: make(chan Event, 128), jobs: map[string]context.CancelFunc{}}
+func New(s *storage.Store, d network.Diagnostics) *Service {
+	return &Service{Store: s, Diagnostics: d, Clock: SystemClock{}, Events: make(chan Event, 128), jobs: map[string]context.CancelFunc{}}
 }
 func (s *Service) Interfaces() ([]network.InterfaceInfo, error) { return network.Interfaces() }
 func (s *Service) emit(j storage.Job) {
 	select {
 	case s.Events <- Event{SchemaVersion: domain.SchemaVersion, Job: j}:
 	default:
+	}
+}
+
+// emitTerminal delivers a final job state, waiting briefly for the consumer.
+func (s *Service) emitTerminal(e Event) {
+	timer := time.NewTimer(terminalEventWait)
+	defer timer.Stop()
+	select {
+	case s.Events <- e:
+	case <-timer.C:
 	}
 }
 func (s *Service) Start(parent context.Context, r network.Request) (storage.Job, error) {
@@ -83,7 +99,7 @@ func (s *Service) Start(parent context.Context, r network.Request) (storage.Job,
 			}
 		} else {
 			s.emit(j)
-			value, diagnosticErr := network.Diagnose(ctx, r)
+			value, diagnosticErr := s.Diagnostics.Diagnose(ctx, r)
 			e = diagnosticErr
 			result = &value
 			j.State = "completed"
@@ -103,10 +119,7 @@ func (s *Service) Start(parent context.Context, r network.Request) (storage.Job,
 			j.State = "failed"
 			j.Summary = "History write failed"
 		}
-		select {
-		case s.Events <- Event{SchemaVersion: domain.SchemaVersion, Job: j, Result: result}:
-		default:
-		}
+		s.emitTerminal(Event{SchemaVersion: domain.SchemaVersion, Job: j, Result: result})
 	}()
 	return initial, nil
 }
@@ -119,15 +132,26 @@ func (s *Service) Cancel(id string) bool {
 	}
 	return ok
 }
+
+// Close cancels running jobs, waits for them and closes the store. It is idempotent.
 func (s *Service) Close() error {
 	s.mu.Lock()
+	if s.closed {
+		err := s.closeErr
+		s.mu.Unlock()
+		return err
+	}
 	s.closed = true
 	for _, cancel := range s.jobs {
 		cancel()
 	}
 	s.mu.Unlock()
 	s.wg.Wait()
-	return s.Store.Close()
+	err := s.Store.Close()
+	s.mu.Lock()
+	s.closeErr = err
+	s.mu.Unlock()
+	return err
 }
 
 // Discover persists counts only; addresses and port results remain in memory.
@@ -211,9 +235,9 @@ func (s *Service) runOperation(parent context.Context, kind string, operation fu
 	if writeErr := s.Store.PutJob(persist, j); writeErr != nil {
 		j.State = "failed"
 		j.Summary = "History write failed"
-		s.emit(j)
+		s.emitTerminal(Event{SchemaVersion: domain.SchemaVersion, Job: j})
 		return errors.Join(err, writeErr)
 	}
-	s.emit(j)
+	s.emitTerminal(Event{SchemaVersion: domain.SchemaVersion, Job: j})
 	return err
 }

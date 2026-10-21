@@ -30,7 +30,7 @@ func TestPrivateLab(t *testing.T) {
 		t.Fatal(ips, e)
 	}
 	address := ips[0].IP.String()
-	httpResult, e := network.Diagnose(ctx, network.Request{Kind: "http", Target: "http://" + net.JoinHostPort(address, "8080") + "/health", TimeoutMS: 1000})
+	httpResult, e := (network.Diagnostics{}).Diagnose(ctx, network.Request{Kind: "http", Target: "http://" + net.JoinHostPort(address, "8080") + "/health", TimeoutMS: 1000})
 	if e != nil || httpResult.Values[0] != "204 No Content" {
 		t.Fatal(httpResult, e)
 	}
@@ -52,11 +52,11 @@ func TestPrivateLab(t *testing.T) {
 		return (&net.Dialer{}).DialContext(ctx, "udp", net.JoinHostPort(address, "5353"))
 	}}
 	defer func() { net.DefaultResolver = original }()
-	result, e := network.Diagnose(ctx, network.Request{Kind: "dns", Target: "fixture.test", TimeoutMS: 1000})
+	result, e := (network.Diagnostics{}).Diagnose(ctx, network.Request{Kind: "dns", Target: "fixture.test", TimeoutMS: 1000})
 	if e != nil || strings.Join(result.Values, ",") != "192.0.2.42" {
 		t.Fatal(result, e)
 	}
-	_, e = network.Diagnose(ctx, network.Request{Kind: "dns", Target: "missing.test", TimeoutMS: 1000})
+	_, e = (network.Diagnostics{}).Diagnose(ctx, network.Request{Kind: "dns", Target: "missing.test", TimeoutMS: 1000})
 	if dns, ok := e.(*net.DNSError); !ok || !dns.IsNotFound {
 		t.Fatal("expected NXDOMAIN", strconv.Quote(result.Target), e)
 	}

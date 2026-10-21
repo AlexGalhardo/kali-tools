@@ -42,7 +42,11 @@ func Inventory() (Snapshot, error) {
 		}
 	}
 	for _, i := range interfaces {
-		out.Adapters = append(out.Adapters, Adapter{uint32(i.Index), i.Name, gateways[i.Name], dns})
+		gw := gateways[i.Name]
+		if gw == nil {
+			gw = []string{}
+		}
+		out.Adapters = append(out.Adapters, Adapter{uint32(i.Index), i.Name, gw, append([]string{}, dns...)})
 	}
 	f, e := os.Open("/proc/net/dev")
 	if e != nil {

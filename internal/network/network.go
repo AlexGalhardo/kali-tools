@@ -15,7 +15,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/AlexGalhardo/kali-tools/internal/adapter/probe"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 )
 
@@ -80,7 +79,7 @@ func ValidateHost(host string) error {
 			return domain.Invalid("invalid host")
 		}
 		for _, r := range label {
-			valid := r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-'
+			valid := r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-' || r == '_'
 			if !valid {
 				return domain.Invalid("invalid host")
 			}
@@ -135,7 +134,20 @@ func Validate(r Request) error {
 	}
 	return nil
 }
-func Diagnose(ctx context.Context, r Request) (Result, error) {
+
+// Prober runs native ICMP echo or traceroute probes. Composition roots inject
+// an OS implementation (internal/adapter/probe); nil means unsupported.
+type Prober interface {
+	Provider() string
+	Run(ctx context.Context, target string, trace bool) ([]string, error)
+}
+
+// Diagnostics runs bounded single-target diagnostics with injected OS providers.
+type Diagnostics struct {
+	Prober Prober
+}
+
+func (d Diagnostics) Diagnose(ctx context.Context, r Request) (Result, error) {
 	result := Result{Kind: r.Kind, Target: r.Target, Status: "completed", Values: []string{}, Provider: "go/net"}
 	if err := Validate(r); err != nil {
 		result.Status = "failed"
@@ -148,8 +160,12 @@ func Diagnose(ctx context.Context, r Request) (Result, error) {
 	var err error
 	switch r.Kind {
 	case "ping", "traceroute":
-		result.Provider = probe.Provider
-		result.Values, err = probe.Run(ctx, r.Target, r.Kind == "traceroute")
+		if d.Prober == nil {
+			err = domain.Unsupported("native ICMP provider is not available")
+			break
+		}
+		result.Provider = d.Prober.Provider()
+		result.Values, err = d.Prober.Run(ctx, r.Target, r.Kind == "traceroute")
 	case "dns":
 		result.Values, err = lookupDNS(ctx, net.DefaultResolver, r.Target, r.RecordType)
 	case "tcp":
