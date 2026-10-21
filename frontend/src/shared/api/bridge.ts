@@ -1,4 +1,4 @@
-import * as generated from "../wailsjs/go/main/App";
+import * as generated from "../../../wailsjs/go/main/App";
 export type Interface = {
   index: number;
   name: string;

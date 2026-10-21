@@ -4,13 +4,13 @@ package main
 
 import (
 	"context"
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/platform"
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/storage"
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/tools"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/network"
-	"github.com/AlexGalhardo/kali-tools/internal/platform"
-	"github.com/AlexGalhardo/kali-tools/internal/storage"
-	"github.com/AlexGalhardo/kali-tools/internal/tools"
 	"github.com/AlexGalhardo/kali-tools/internal/wifi"
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 	"sync"

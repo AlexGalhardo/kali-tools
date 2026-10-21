@@ -15,8 +15,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/probe"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
-	"github.com/AlexGalhardo/kali-tools/internal/probe"
 )
 
 type InterfaceInfo struct {

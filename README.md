@@ -25,9 +25,9 @@ There are exactly six shell scripts:
 
 | System | Without Docker: native desktop + CLI | With Docker: isolated CLI lab |
 | --- | --- | --- |
-| Windows 11 | `setups/setup-windows.sh` | `setups/setup-windows-docker.sh` |
-| Linux | `setups/setup-linux.sh` | `setups/setup-linux-docker.sh` |
-| macOS | `setups/setup-darwin.sh` | `setups/setup-darwin-docker.sh` |
+| Windows 11 | `scripts/setup/setup-windows.sh` | `scripts/setup/setup-windows-docker.sh` |
+| Linux | `scripts/setup/setup-linux.sh` | `scripts/setup/setup-linux-docker.sh` |
+| macOS | `scripts/setup/setup-darwin.sh` | `scripts/setup/setup-darwin-docker.sh` |
 
 Run these in **Git Bash on Windows**, or Terminal on Linux/macOS. Start at the repository root. Using `bash script.sh` does not require changing executable permissions.
 
@@ -60,7 +60,7 @@ go version
 node --version
 npm --version
 gcc --version
-bash setups/setup-windows.sh setup
+bash scripts/setup/setup-windows.sh setup
 ```
 
 ### Linux
@@ -80,7 +80,7 @@ Continue by preparing the project:
 ```bash
 go version
 node --version
-bash setups/setup-linux.sh setup
+bash scripts/setup/setup-linux.sh setup
 ```
 
 The Linux script supplies the `webkit2_41` Wails build tag. If Playwright reports missing browser system packages, follow its diagnostic instructions. Native Linux feature acceptance remains pending.
@@ -93,7 +93,7 @@ Install Go and Node.js for your Mac architecture. Install Xcode Command Line Too
 xcode-select --install
 go version
 node --version
-bash setups/setup-darwin.sh setup
+bash scripts/setup/setup-darwin.sh setup
 ```
 
 Native macOS Wi-Fi/Keychain and capture support remain pending. Successful compilation does not imply feature parity.
@@ -104,13 +104,13 @@ Choose the script for your computer:
 
 ```bash
 # Windows / Git Bash
-bash setups/setup-windows.sh test
+bash scripts/setup/setup-windows.sh test
 
 # Linux
-bash setups/setup-linux.sh test
+bash scripts/setup/setup-linux.sh test
 
 # macOS
-bash setups/setup-darwin.sh test
+bash scripts/setup/setup-darwin.sh test
 ```
 
 The `test` action stops on failure and runs Go formatting/module checks, vet, unit tests with coverage, golangci-lint, govulncheck, race tests, parser fuzz smoke, frontend lint/typecheck/build, Playwright workflows/accessibility, workflow pin/static checks and Markdown lint.
@@ -134,9 +134,9 @@ node scripts/markdown.mjs
 Choose **one** build command:
 
 ```bash
-bash setups/setup-windows.sh build
-bash setups/setup-linux.sh build
-bash setups/setup-darwin.sh build
+bash scripts/setup/setup-windows.sh build
+bash scripts/setup/setup-linux.sh build
+bash scripts/setup/setup-darwin.sh build
 ```
 
 Outputs are in `build/bin/`. The Windows desktop executable is `kali-tools-desktop.exe`; the CLI is `kali-tools.exe`. These are unsigned development artifacts.
@@ -144,9 +144,9 @@ Outputs are in `build/bin/`. The Windows desktop executable is `kali-tools-deskt
 For development with automatic frontend/backend rebuilds, use your script with `dev`:
 
 ```bash
-bash setups/setup-windows.sh dev
-# Linux: bash setups/setup-linux.sh dev
-# macOS: bash setups/setup-darwin.sh dev
+bash scripts/setup/setup-windows.sh dev
+# Linux: bash scripts/setup/setup-linux.sh dev
+# macOS: bash scripts/setup/setup-darwin.sh dev
 ```
 
 Use `doctor` to inspect prerequisites or `help` to see the action list.
@@ -170,13 +170,13 @@ Choose **one** command for your host. No Go or Node.js installation is needed on
 
 ```bash
 # Windows / Git Bash
-bash setups/setup-windows-docker.sh test
+bash scripts/setup/setup-windows-docker.sh test
 
 # Linux
-bash setups/setup-linux-docker.sh test
+bash scripts/setup/setup-linux-docker.sh test
 
 # macOS
-bash setups/setup-darwin-docker.sh test
+bash scripts/setup/setup-darwin-docker.sh test
 ```
 
 The first run downloads base images and builds the CLI, fixture and test images. A private network contains health-checked HTTP/TCP/DNS services. Tests assert HTTP status, TCP inventory, DNS answers and NXDOMAIN, and execute the built CLI to check JSON schemas, successful diagnostics and invalid-input exit codes. Runtime and test services use a non-root account; no host ports are published.
@@ -187,10 +187,10 @@ All three Docker scripts accept the same actions:
 
 ```bash
 # Replace windows with linux or darwin for those hosts.
-bash setups/setup-windows-docker.sh build    # Build images only
-bash setups/setup-windows-docker.sh doctor   # Check daemon/Compose/configuration
-bash setups/setup-windows-docker.sh down     # Manual lab cleanup
-bash setups/setup-windows-docker.sh help
+bash scripts/setup/setup-windows-docker.sh build    # Build images only
+bash scripts/setup/setup-windows-docker.sh doctor   # Check daemon/Compose/configuration
+bash scripts/setup/setup-windows-docker.sh down     # Manual lab cleanup
+bash scripts/setup/setup-windows-docker.sh help
 ```
 
 Docker builds Linux CLI images. It does not create native Windows/macOS desktop installers or replace native acceptance tests.

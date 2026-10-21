@@ -22,9 +22,9 @@ import {
   type Settings,
   type Tool,
   type WiFi,
-} from "./bridge";
-import { NavIcon } from "./Icon";
-import { en, pt } from "./i18n";
+} from "../shared/api/bridge";
+import { en, pt } from "../shared/i18n/i18n";
+import { NavIcon } from "../shared/ui/Icon";
 
 type Page =
   | "dashboard"

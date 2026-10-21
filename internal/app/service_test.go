@@ -2,8 +2,8 @@ package app
 
 import (
 	"context"
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/storage"
 	"github.com/AlexGalhardo/kali-tools/internal/network"
-	"github.com/AlexGalhardo/kali-tools/internal/storage"
 	"net"
 	"net/http"
 	"net/http/httptest"

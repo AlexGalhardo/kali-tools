@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/storage"
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/tools"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/network"
-	"github.com/AlexGalhardo/kali-tools/internal/storage"
-	"github.com/AlexGalhardo/kali-tools/internal/tools"
 )
 
 type Event struct {

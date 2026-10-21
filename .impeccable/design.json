@@ -1,6 +1,6 @@
 {
   "name": "Hacker Tools",
-  "source": "frontend/src/style.css",
+  "source": "frontend/src/styles/style.css",
   "mode": "operate",
   "colors": {"background":"#0c1118","sidebar":"#10161e","surface":"#111923","border":"#24303c","text":"#dbe4ec","muted":"#94a6b8","primary":"#61e6af","primaryInk":"#062a20"},
   "typography": {"body":{"family":"Segoe UI, system-ui, sans-serif","size":"14px","weight":400},"title":{"size":"30px","weight":550},"metadata":{"minimum":"11px"}},
