@@ -169,7 +169,7 @@ H07 suite wiring:
 | `ProberContract` | `probe.ICMP` | `fake.Prober` |
 | `LiveProviderContract` | `capture.Native` | `fake.LiveCapture` |
 
-Only test files outside `internal/porttest` import the suites or fakes. `tests/acceptance` creates a fresh application per scenario; diagnostics and discovery run through direct, CLI and Wails drivers, while history runs through direct and Wails until C01. The HTTP driver remains W01. No Wails runtime or native dialogs are launched by these drivers.
+Only test files outside `internal/porttest` import the suites or fakes. `tests/acceptance` creates a fresh application per scenario; diagnostics, discovery and history run through direct, CLI and Wails drivers after C01 step 4. Bootstrap still wires real SQLite in memory for interface acceptance; persistence remains covered by real-file storage/bootstrap tests. The HTTP driver remains W01. No Wails runtime or native dialogs are launched by these drivers.
 
 H07 native OS-port suites passed on Windows build 26300 with active Wi-Fi and administrator capture on 2026-10-21. The capture suite selects an active non-loopback interface; disconnected interfaces may retain addresses that Windows cannot bind. This qualifies H07 OS-port data branches only, not desktop IPC or other platform acceptance.
 
@@ -245,6 +245,8 @@ H02 moves all three streams through `job.Manager`. `Subscribe(ctx)` uses a defau
 - **Capability honesty:** a server running as another user or as a service may lack Wi-Fi location consent or capture permission. It must report those states, not fail silently.
 
 ### 6.3 CLI
+
+C01 steps 1–4 add per-command flags/help, stable exit codes, capabilities/tools, jobs list/show/cancel, history list/clear, settings get/set, confirmed Wi-Fi reveal and canonical capture paths. Deprecated forms print one warning. JSON remains the default at this checkpoint; the root still uses an in-memory store. Jobs cannot be cancelled across processes, and CLI history/settings do not yet survive process exit. The human/progress/default-persistence migration and contract freeze remain open. `serve` is a reserved error/help stub; no HTTP listener is shipped.
 
 - `cmd/kali-tools/main.go` only composes and cleans up. `internal/adapter/cli.Run(ctx, application, args, stdout, stderr) int` owns stdlib flag parsing and the commands: `version`, `doctor`, `interfaces`, `inventory`, `diagnose`, `discover`/`inspect`, `wifi`, `capture`/`import`.
 - All capability commands route through `app.Application`. CLI capture subscribes before starting and waits at most the requested duration plus 10 s; cancellation stops capture and waits for its typed completion. Import/export use application-managed artifacts and the shared 30 s export bound. Discovery and inspection keep count-only history in the CLI's in-memory store.

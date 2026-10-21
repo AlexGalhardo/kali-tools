@@ -68,5 +68,10 @@ func (d cliDriver) Discover(ctx context.Context, cidr string, ports []int, timeo
 	}
 	return cliResult[[]contract.PortResult](d, ctx, []string{"discover", "--target", cidr, "--ports", strings.Join(numbers, ","), "--timeout", strconv.FormatInt(timeout.Milliseconds(), 10)})
 }
-func (cliDriver) History(context.Context) ([]contract.Job, error) { return nil, errUnsupported }
-func (cliDriver) ClearHistory(context.Context) error              { return errUnsupported }
+func (d cliDriver) History(ctx context.Context) ([]contract.Job, error) {
+	return cliResult[[]contract.Job](d, ctx, []string{"history", "list"})
+}
+func (d cliDriver) ClearHistory(ctx context.Context) error {
+	_, err := cliResult[struct{ Cleared bool }](d, ctx, []string{"history", "clear"})
+	return err
+}

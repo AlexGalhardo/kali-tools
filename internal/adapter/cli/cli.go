@@ -45,12 +45,17 @@ func Run(ctx context.Context, application *app.Application, args []string, out, 
 		}
 		return ExitOK
 	}
+	if old, replacement := deprecation(call); old != "" {
+		if _, err := fmt.Fprintf(errout, "warning: %q is deprecated; use %q\n", old, replacement); err != nil {
+			return writeEnvelope(out, nil, err)
+		}
+	}
 	if call.g.Timeout != 0 && call.command.path != "diagnose" && call.command.path != "discover" && call.command.path != "version" {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, call.g.Timeout)
 		defer cancel()
 	}
-	if data, err, handled := runReadOnly(ctx, application, call); handled {
+	if data, err, handled := runAdditional(ctx, application, call, errout); handled {
 		return writeEnvelope(out, data, err)
 	}
 	return runLegacy(ctx, application, call.legacy, out, errout)

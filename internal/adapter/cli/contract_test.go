@@ -73,7 +73,7 @@ func TestHelpListsEveryCommand(t *testing.T) {
 	if code := cli.Run(t.Context(), nil, []string{"help"}, &list, &stderr); code != 0 {
 		t.Fatal(code, stderr.String())
 	}
-	for _, name := range []string{"version", "doctor", "interfaces", "inventory", "diagnose", "discover", "inspect", "wifi", "capture", "import", "capabilities", "tools", "neighbors", "wifi show", "jobs list", "jobs show", "history list", "settings get"} {
+	for _, name := range []string{"version", "doctor", "interfaces", "inventory", "diagnose", "discover", "inspect", "wifi", "capture", "import", "capabilities", "tools", "neighbors", "wifi show", "jobs list", "jobs show", "history list", "settings get", "jobs cancel", "history clear", "settings set", "wifi reveal", "capture live", "capture import", "capture export", "serve"} {
 		t.Run(name, func(t *testing.T) {
 			if !strings.Contains(list.String(), name) {
 				t.Fatal("missing command", name)
@@ -118,7 +118,7 @@ func TestLegacyInvocationsStillParse(t *testing.T) {
 			t.Fatal(err)
 		}
 		var out, stderr bytes.Buffer
-		if got := cli.Run(t.Context(), newApp(t), fields[2:], &out, &stderr); got != want {
+		if got := cli.Run(t.Context(), newTestApp(t), fields[2:], &out, &stderr); got != want {
 			t.Fatalf("%s: exit=%d, want=%d", line, got, want)
 		}
 		var response envelope
@@ -127,6 +127,14 @@ func TestLegacyInvocationsStillParse(t *testing.T) {
 		}
 		if fields[1] != "-" && (response.Error == nil || response.Error.Code != fields[1]) {
 			t.Fatal("legacy error code changed", line)
+		}
+		warnings := 0
+		if fields[2] == "wifi" || fields[2] == "capture" || fields[2] == "import" ||
+			strings.Contains(line, "--kind") || strings.Contains(line, "--format json") {
+			warnings = 1
+		}
+		if strings.Count(stderr.String(), "is deprecated") != warnings {
+			t.Fatalf("%s: expected %d deprecation warnings; stderr=%s", line, warnings, stderr.String())
 		}
 	}
 }
@@ -191,6 +199,64 @@ func TestJobsListFiltersTerminalHistory(t *testing.T) {
 		if err := json.Unmarshal(out.Bytes(), &response); err != nil || len(response.Data) != test.want {
 			t.Fatalf("result=%s, error=%v", out.String(), err)
 		}
+	}
+}
+
+func TestWiFiRevealRequiresConfirm(t *testing.T) {
+	a, provider := revealApplication(t)
+	var out, stderr bytes.Buffer
+	code := cli.Run(t.Context(), a, []string{"--json", "wifi", "reveal"}, &out, &stderr)
+	if code != 2 || provider.reveals.Load() != 0 || strings.Contains(out.String()+stderr.String(), "synthetic-test-key") {
+		t.Fatalf("exit=%d, reveals=%d", code, provider.reveals.Load())
+	}
+}
+
+func TestWiFiRevealWarnsAndNeverPersists(t *testing.T) {
+	a, provider := revealApplication(t)
+	var out, stderr bytes.Buffer
+	code := cli.Run(t.Context(), a, []string{"--json", "wifi", "reveal", "--confirm"}, &out, &stderr)
+	rows, err := a.History(t.Context())
+	if code != 0 || provider.reveals.Load() != 1 || !strings.Contains(out.String(), "synthetic-test-key") ||
+		!strings.Contains(stderr.String(), "Terminal scrollback") || strings.Contains(stderr.String(), "synthetic-test-key") || err != nil || len(rows) != 0 {
+		t.Fatalf("exit=%d, reveals=%d, history_rows=%d, error=%v", code, provider.reveals.Load(), len(rows), err)
+	}
+}
+
+func TestSettingsAndHistoryMutations(t *testing.T) {
+	a := newTestApp(t)
+	for _, args := range [][]string{
+		{"settings", "set", "--language", "pt-BR", "--retention-days", "365"},
+		{"history", "clear"},
+	} {
+		var out, stderr bytes.Buffer
+		if code := cli.Run(t.Context(), a, append([]string{"--json"}, args...), &out, &stderr); code != 0 {
+			t.Fatalf("%v: exit=%d, out=%s", args, code, out.String())
+		}
+	}
+	settings, err := a.Settings(t.Context())
+	if err != nil || settings.Language != "pt-BR" || settings.RetentionDays != 365 {
+		t.Fatal(settings, err)
+	}
+	rows, err := a.History(t.Context())
+	if err != nil || len(rows) != 0 {
+		t.Fatal(rows, err)
+	}
+}
+
+func TestCaptureOutputRequiresFormatFirst(t *testing.T) {
+	for _, path := range []string{"capture live", "capture import", "capture export"} {
+		t.Run(path, func(t *testing.T) {
+			destination := filepath.Join(t.TempDir(), "must-not-exist.pcap")
+			args := append([]string{"--json"}, strings.Fields(path)...)
+			args = append(args, "--output", destination)
+			var out, stderr bytes.Buffer
+			if code := cli.Run(t.Context(), newTestApp(t), args, &out, &stderr); code != 2 {
+				t.Fatalf("exit=%d, out=%s", code, out.String())
+			}
+			if _, err := os.Stat(destination); !os.IsNotExist(err) {
+				t.Fatal("destination created", err)
+			}
+		})
 	}
 }
 

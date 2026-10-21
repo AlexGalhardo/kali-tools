@@ -2,7 +2,6 @@ package acceptance
 
 import (
 	"encoding/json"
-	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -10,10 +9,6 @@ import (
 
 func HistorySpec(t *testing.T, newDriver scenarioDriver) {
 	t.Helper()
-	probe := newDriver(t)
-	if _, err := probe.History(testContext(t)); errors.Is(err, errUnsupported) {
-		t.Skip("history: CLI command arrives in C01")
-	}
 	t.Run("discovery_summary_without_target", func(t *testing.T) {
 		d := newDriver(t)
 		if _, err := d.Discover(testContext(t), "127.0.0.1/32", []int{openPort(t)}, 500*time.Millisecond); err != nil {

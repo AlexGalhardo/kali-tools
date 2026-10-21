@@ -24,6 +24,8 @@ Continuation scope (2026-10-21): the owner requested resuming from the latest co
 
 Native continuation authorized 2026-10-21: the first elevated capture contract chose a disconnected interface. Select the first non-loopback IPv4 on an **active** interface in `internal/porttest/capture.go`. Keep the provider and contract assertions unchanged. The owner requested continued implementation after the failure report; the corrected native run must pass before AC-10/DA-7 closes.
 
+C01 continuation correction (2026-10-21): the acceptance driver graph now uses bootstrap's real in-memory SQLite mode rather than a temporary file. Interface/history assertions need an isolated store, not filesystem persistence; repeated Windows directory cleanup failures occurred after successful Close. Real-file persistence and storage contracts remain in storage/bootstrap tests. C01 removes the CLI-history skip after implementing both history commands.
+
 ## 3. Current state
 
 Facts at commit `8cbf25e` (re-verify):

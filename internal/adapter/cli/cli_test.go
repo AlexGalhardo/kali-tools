@@ -284,17 +284,20 @@ func TestCLICaptureConversion(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, format := range []string{"pcap", "pcapng"} {
-		destination := filepath.Join(dir, "output."+format)
-		var out, stderr bytes.Buffer
-		if code := cli.Run(t.Context(), newApp(t), []string{"import", "--file", source, "--output", destination, "--format", format}, &out, &stderr); code != 0 {
-			t.Fatalf("%d %s", code, out.String())
-		}
-		if bytes.Contains(out.Bytes(), []byte("synthetic-private")) {
-			t.Fatal("payload leaked in JSON")
-		}
-		result, err := capture.ReadFile(destination)
-		if err != nil || result.Format != format || len(result.Packets) != 1 || result.Packets[0].Protocol != "HTTP" {
-			t.Fatalf("%+v %v", result, err)
+		for _, command := range [][]string{{"import"}, {"capture", "import"}, {"capture", "export"}} {
+			destination := filepath.Join(dir, "output."+format)
+			var out, stderr bytes.Buffer
+			args := append(command, "--file", source, "--output", destination, "--format", format)
+			if code := cli.Run(t.Context(), newApp(t), args, &out, &stderr); code != 0 {
+				t.Fatalf("%d %s", code, out.String())
+			}
+			if bytes.Contains(out.Bytes(), []byte("synthetic-private")) {
+				t.Fatal("payload leaked in JSON")
+			}
+			result, err := capture.ReadFile(destination)
+			if err != nil || result.Format != format || len(result.Packets) != 1 || result.Packets[0].Protocol != "HTTP" {
+				t.Fatalf("%+v %v", result, err)
+			}
 		}
 	}
 	destination := filepath.Join(dir, "invalid.pcap")
@@ -316,7 +319,7 @@ type envelope struct {
 
 func newApp(t *testing.T) *app.Application {
 	t.Helper()
-	a, cleanup, err := bootstrap.New(t.Context(), bootstrap.Config{DataPath: filepath.Join(t.TempDir(), "history.db")})
+	a, cleanup, err := bootstrap.New(t.Context(), bootstrap.Config{DataPath: ":memory:"})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | C01, C02, C03, C04 |
-| Status | In progress 2026-10-21; step 1 exit mapping |
+| Status | Steps 1–4 implemented 2026-10-21; remaining CLI migration and acceptance open |
 | Depends on | H01, H02, H03, H04, H05, H06, H07, H08 (H08 includes the H09 parser ADR) |
 | Risk | Medium: the default output format and per-command flag strictness change for existing invocations; a documented migration is part of this spec |
 
@@ -89,6 +89,8 @@ func (a *Application) Close() error
 ## 4. Design
 
 Checkout corrections (2026-10-21): the H07 CLI acceptance driver must prepend `--json` and use `cli.ExitCode` as soon as stricter parsing arrives, rather than waiting for the human-default step. Update `tests/acceptance/cli_driver_test.go` in this spec and retain its history skip until history commands are implemented. Application signatures use domain values and `job.ID`/boolean status (as delivered by H04); map through the existing H06 functions, without adding application methods or DTO dependencies. Interface inventory and generated job IDs remain native/random; normalize those fields in golden fixtures rather than adding production test seams.
+
+Step 4 also updates `tests/acceptance/history_test.go`, `diagnostics_test.go` and `driver_test.go` to remove the obsolete CLI-history skip/sentinel and require redacted empty history after invalid input through every driver. CLI adapter tests and `tests/acceptance/app_test.go` use bootstrap's real in-memory SQLite mode: repeated Windows cleanup failures were isolated to temporary SQLite directories after Close, while these tests assert command/interface behavior rather than file persistence. Storage/bootstrap tests retain their real temporary databases and persistence assertions. This is a test-fixture scope correction, not a production storage change or a diagnosis of the OS/driver cleanup race.
 
 ### 4.1 Package layout
 

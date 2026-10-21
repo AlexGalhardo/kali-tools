@@ -48,6 +48,8 @@ JSON uses `schema_version: 1`. Exit 0 is success, 1 is an operation failure, 2 i
 
 ## Private laboratory
 
+Current C01 checkpoint: JSON remains the default. Canonical forms include `diagnose tcp`, `wifi show`, `wifi reveal --confirm`, `capture live`, `capture import` and `capture export`. `help` lists per-command flags; unrelated flags are rejected. History/settings are currently process-local because CLI composition still uses in-memory SQLite. Human/progress output, persistent composition and SSH acceptance remain pending. See [C01 evidence](verification/specs/C01.md) for exit codes and checkpoint limits.
+
 ```text
 node scripts/task.mjs lab
 ```

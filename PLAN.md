@@ -4,6 +4,8 @@ Planning baseline: 2026-10-19. Architecture revision: 2026-10-21.
 
 Owner release instruction (2026-10-21): publish v0.3.0 and rename the earlier release records to v0.1.0/v0.2.0. This explicitly authorizes publication with disclosed unsigned development status; it does not complete any native or release-qualification checkbox below.
 
+Owner checkpoint instruction (2026-10-21): expedite the current work with limited credits, synchronize PLAN/docs/changelog, commit, push and publish the next development release (0.4.0). Earlier 0.1.0/0.2.0 drafts were published without replacing their contents. This publication remains unsigned and does not mark the full PLAN or partial C01 complete.
+
 Related documents:
 
 - Product owner decisions: [brainstorming](docs/brainstorming.md).
@@ -279,7 +281,7 @@ These are reusable delivery requirements, not a separate completed milestone. De
   - [x] H07 native OS-port data branches AC-10/DA-7: Wi-Fi, ICMP, host inventory and elevated capture pass on Windows build 26300 after the suite selects an active interface. [Native evidence](docs/verification/specs/H07.md#native-capture-correction-2026-10-21).
   - [ ] C01: implement CLI history and remove the single explicit acceptance skip.
   - [ ] W01/W03: add the HTTP driver and run the unchanged shared acceptance specifications.
-  - Progress: [H07 evidence](docs/verification/specs/H07.md). The ICMP correction, seven real/fake suites, race checks and direct/CLI/Wails acceptance matrix pass. H07 remains open for native qualification. HTTP remains W01; CLI history remains C01.
+  - Progress: [H07 evidence](docs/verification/specs/H07.md). Native OS-port data branches now pass; C01 step 4 removes the CLI-history skip. HTTP remains W01. Other specs' native gates are independent.
   - Assert: each fake passes the same suite as its adapter; at least the diagnostics, discovery and history specifications run through two drivers.
 - [x] H08 Enforce the dependency rule.
   - Eight depguard cases, wrong-version guard, cleanup and actual commit-hook rejection pass. Positive hosted run 39669810016 passes; negative PR #1 fails specifically on the application depguard rule, then was closed and deleted without merging. [Evidence](docs/verification/specs/H08.md).
@@ -400,6 +402,7 @@ These start after H04 and can run in parallel with late alpha work. Parity is de
 ### 7.1 Complete CLI
 
 - [ ] C01 Command tree and conventions.
+  - Steps 1–4 checkpoint: strict root/per-command flags, help, stable exits, capabilities/tools, jobs/history/settings, confirmed reveal and capture paths implemented; direct/CLI/Wails history acceptance passes. JSON default, in-memory CLI lifetime and incomplete human/progress/SSH/schema work remain explicit. [Evidence](docs/verification/specs/C01.md).
   - Spec: [C01-cli](docs/specs/C01-cli.md)
   - [ ] Commands:
     - `version`
@@ -675,12 +678,12 @@ The plan does not claim feature parity with every Kali package.
 
 **Next tasks, in order** (each is a spec in [docs/specs](docs/specs/README.md)):
 
-1. H08/H09: dependency enforcement and CLI parser ADR; H07's ICMP correction and non-native verification now pass.
-2. C01–C04: complete the CLI, including history acceptance and SSH ergonomics.
+1. C01 steps 5–10: finish job-backed diagnosis/cancellation, human/progress output, persistent root composition, golden/schema freeze, docs and SSH acceptance. Steps 1–4 and CLI history acceptance are implemented.
+2. H09 owner approval: ADR 004 is proposed; H08 mechanical enforcement and hosted positive/negative proofs pass.
 3. W01–W06: shared UI and HTTP/SSE; implement W04 security with W01 before committing `serve` to main.
 4. A05, A06, A01, B08–B11: follow the remaining SDD execution order. Keep H01–H07 native checks and the A07 NPSL owner decision visible; do not treat them as headless passes.
 
 **Constraints.**
 
 - Hardware acceptance, privilege architecture, license/signing decisions and Linux/macOS parity are not inferred from compilation.
-- Do not mark the plan complete or tag a release.
+- Do not mark the plan complete. The owner's current explicit 0.4.0 checkpoint-publication request supersedes the earlier no-tag instruction only for that disclosed development release after its checks pass.

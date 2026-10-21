@@ -24,6 +24,7 @@ type globals struct {
 	Timeout time.Duration
 	NoColor bool
 	Lang    string
+	Detach  bool
 }
 
 type invocation struct {
@@ -34,6 +35,7 @@ type invocation struct {
 	flagFailure bool
 	arg         string
 	values      map[string]string
+	set         map[string]bool
 }
 
 func parseTimeout(value string) (time.Duration, error) {
@@ -53,6 +55,7 @@ func parseTimeout(value string) (time.Duration, error) {
 func registerGlobals(fs *flag.FlagSet, g *globals) {
 	fs.BoolVar(&g.JSON, "json", g.JSON, "versioned JSON output")
 	fs.BoolVar(&g.NoColor, "no-color", g.NoColor, "disable ANSI colors")
+	fs.BoolVar(&g.Detach, "detach", g.Detach, "unsupported: no daemon mode")
 	fs.StringVar(&g.Lang, "lang", g.Lang, "result language: en or pt-BR")
 	fs.Func("timeout", "operation timeout: milliseconds or Go duration", func(value string) error {
 		var err error
@@ -124,7 +127,7 @@ func parseInvocation(args []string) (invocation, error) {
 	}
 	call.command = commands[index]
 	args = args[consumed:]
-	if call.command.path == "jobs show" && len(args) > 0 && !strings.HasPrefix(args[0], "-") {
+	if (call.command.path == "jobs show" || call.command.path == "jobs cancel") && len(args) > 0 && !strings.HasPrefix(args[0], "-") {
 		call.arg, args = args[0], args[1:]
 	}
 	positionalKind := ""
@@ -139,7 +142,7 @@ func parseInvocation(args []string) (invocation, error) {
 	registerGlobals(fs, &call.g)
 	for _, name := range call.command.flags {
 		switch name {
-		case "all":
+		case "all", "confirm":
 			fs.Bool(name, false, "include completed jobs")
 		case "port":
 			fs.Int(name, 443, "TCP port")
@@ -147,6 +150,8 @@ func parseInvocation(args []string) (invocation, error) {
 			fs.Int(name, 5, "capture seconds")
 		case "limit":
 			fs.Int(name, 1000, "packet limit")
+		case "retention-days":
+			fs.Int(name, 0, "history retention days")
 		default:
 			value := ""
 			switch name {
@@ -171,19 +176,41 @@ func parseInvocation(args []string) (invocation, error) {
 	if fs.NArg() != 0 {
 		return call, domain.Invalid("unexpected positional arguments")
 	}
+	if call.help {
+		return call, nil
+	}
+	if call.g.Detach {
+		return call, domain.Invalid("--detach is not supported: kali-tools has no daemon mode")
+	}
 	if call.g.Lang != "en" && call.g.Lang != "pt-BR" {
 		return call, domain.Invalid("language must be en or pt-BR")
 	}
-	if call.command.path == "jobs show" && !call.help && !validJobID.MatchString(call.arg) {
+	if (call.command.path == "jobs show" || call.command.path == "jobs cancel") && !call.help && !validJobID.MatchString(call.arg) {
 		return call, domain.Invalid("job ID must be 32 lowercase hexadecimal characters")
 	}
 	call.values = make(map[string]string, len(call.command.flags))
 	for _, name := range call.command.flags {
 		call.values[name] = fs.Lookup(name).Value.String()
 	}
+	if strings.HasPrefix(call.command.path, "capture") || call.command.path == "import" {
+		if call.values["output"] != "" && call.values["format"] != "pcap" && call.values["format"] != "pcapng" {
+			return call, domain.Invalid("packet export requires --format pcap or pcapng")
+		}
+		if (call.command.path == "capture import" || call.command.path == "import") && call.values["file"] == "" {
+			return call, domain.Invalid("capture import requires --file")
+		}
+	}
 	call.legacy = []string{call.command.path}
+	switch call.command.path {
+	case "capture live":
+		call.legacy[0] = "capture"
+	case "capture import":
+		call.legacy[0] = "import"
+	}
+	call.set = make(map[string]bool)
 	var parseErr error
 	fs.Visit(func(f *flag.Flag) {
+		call.set[f.Name] = true
 		if !slices.Contains(call.command.flags, f.Name) {
 			return
 		}
@@ -203,7 +230,7 @@ func parseInvocation(args []string) (invocation, error) {
 		call.legacy = append(call.legacy, "--kind", positionalKind)
 	}
 	if call.g.Timeout != 0 && call.command.path != "version" {
-		if call.command.path == "capture" {
+		if call.command.path == "capture" || call.command.path == "capture live" {
 			return call, domain.Invalid("capture live uses --duration")
 		}
 		call.legacy = append(call.legacy, "--timeout", strconv.FormatInt(call.g.Timeout.Milliseconds(), 10))

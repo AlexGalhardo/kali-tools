@@ -1,7 +1,6 @@
 package acceptance
 
 import (
-	"path/filepath"
 	"testing"
 
 	"github.com/AlexGalhardo/kali-tools/internal/app"
@@ -10,7 +9,7 @@ import (
 
 func newApplication(t *testing.T) *app.Application {
 	t.Helper()
-	a, cleanup, err := bootstrap.New(t.Context(), bootstrap.Config{DataPath: filepath.Join(t.TempDir(), "acceptance.db")})
+	a, cleanup, err := bootstrap.New(t.Context(), bootstrap.Config{DataPath: ":memory:"})
 	if err != nil {
 		t.Fatal(err)
 	}

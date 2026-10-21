@@ -209,7 +209,7 @@ go run ./cmd/kali-tools inspect --target 127.0.0.1/32 --ports 8080
 go run ./cmd/kali-tools import --file synthetic.pcap --output converted.pcapng --format pcapng
 ```
 
-Start a listening local service for the TCP/HTTP examples; otherwise a refused connection is an expected diagnostic failure. JSON includes `schema_version: 1`. Exit codes: 0 success, 1 operation failure, 2 invalid input. Discovery accepts IPv4 /24 or narrower and up to 32 unique ports.
+Start a listening local service for the TCP/HTTP examples; otherwise a refused connection is an expected diagnostic failure. JSON includes `schema_version: 1` and remains the default for this partial C01 checkpoint. Prefer `diagnose dns`, `wifi show` and `capture import`; old forms print a deprecation warning. Additional commands include `capabilities`, `tools`, `jobs list|show|cancel`, `history list|clear`, and `settings get|set`. `wifi reveal --confirm` explicitly prints the saved key and a warning. CLI history/settings still last only for the current process. Exit codes are 0 success, 1 generic failure, 2 invalid input, 3 unsupported, 4 permission/consent, 5 dependency missing, 6 not found, 7 timeout, 8 conflict, 9 authentication and 130 cancelled. Discovery accepts IPv4 /24 or narrower and up to 32 unique ports. The web server and the complete human/progress CLI remain pending.
 
 ## Troubleshooting
 

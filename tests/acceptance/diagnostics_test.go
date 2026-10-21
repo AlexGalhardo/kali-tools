@@ -29,9 +29,6 @@ func DiagnosticsSpec(t *testing.T, newDriver scenarioDriver) {
 		_, err := d.Diagnose(testContext(t), contract.DiagnosticRequest{Kind: "tcp", Target: "a;whoami", Port: 443, TimeoutMS: 3000})
 		assertCode(t, err, "invalid_input")
 		rows, err := d.History(testContext(t))
-		if errors.Is(err, errUnsupported) {
-			return
-		}
 		if err != nil || len(rows) != 0 {
 			t.Fatalf("rows=%v err=%v", rows, err)
 		}

@@ -10,8 +10,6 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/app"
 )
 
-var errUnsupported = errors.New("driver does not support this operation yet")
-
 type Driver interface {
 	Name() string
 	Diagnose(context.Context, contract.DiagnosticRequest) (contract.DiagnosticResult, error)
