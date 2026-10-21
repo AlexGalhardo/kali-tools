@@ -7,10 +7,11 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/layers"
 	"github.com/gopacket/gopacket/pcapgo"
+
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
 )
 
 type record struct {

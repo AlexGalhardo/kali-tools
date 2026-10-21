@@ -3,10 +3,11 @@ package tools
 import (
 	"context"
 	"encoding/xml"
-	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
 )
 
 type Tool struct {

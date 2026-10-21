@@ -2,6 +2,7 @@ package wifi
 
 import (
 	"encoding/xml"
+
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 )
 

@@ -7,12 +7,14 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/AlexGalhardo/kali-tools/internal/domain"
-	"golang.org/x/sys/windows"
 	"net"
 	"net/netip"
 	"time"
 	"unsafe"
+
+	"golang.org/x/sys/windows"
+
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
 )
 
 const Provider = "Windows ICMP API (IPv4)"

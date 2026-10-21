@@ -3,12 +3,13 @@ package main
 
 import (
 	"context"
-	"golang.org/x/net/dns/dnsmessage"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"time"
+
+	"golang.org/x/net/dns/dnsmessage"
 )
 
 func main() {

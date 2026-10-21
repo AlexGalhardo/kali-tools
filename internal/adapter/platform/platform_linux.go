@@ -6,11 +6,12 @@ import (
 	"bufio"
 	"encoding/hex"
 	"fmt"
-	"github.com/AlexGalhardo/kali-tools/internal/network"
 	"net"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/AlexGalhardo/kali-tools/internal/network"
 )
 
 func Inventory() (Snapshot, error) {

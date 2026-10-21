@@ -2,11 +2,13 @@ package capture
 
 import (
 	"context"
-	"github.com/AlexGalhardo/kali-tools/internal/domain"
-	"github.com/gopacket/gopacket/layers"
 	"net"
 	"net/netip"
 	"time"
+
+	"github.com/gopacket/gopacket/layers"
+
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
 )
 
 type LiveRequest struct {

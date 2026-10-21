@@ -5,10 +5,12 @@ package platform
 import (
 	"errors"
 	"fmt"
-	"github.com/AlexGalhardo/kali-tools/internal/network"
-	"golang.org/x/sys/windows"
 	"sort"
 	"unsafe"
+
+	"golang.org/x/sys/windows"
+
+	"github.com/AlexGalhardo/kali-tools/internal/network"
 )
 
 func Inventory() (Snapshot, error) {

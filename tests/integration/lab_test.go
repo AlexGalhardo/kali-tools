@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/AlexGalhardo/kali-tools/internal/network"
 	"net"
 	"os"
 	"os/exec"
@@ -15,6 +14,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/AlexGalhardo/kali-tools/internal/network"
 )
 
 func TestPrivateLab(t *testing.T) {

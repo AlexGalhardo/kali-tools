@@ -4,6 +4,7 @@ package probe
 
 import (
 	"context"
+
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 )
 

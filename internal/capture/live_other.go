@@ -4,6 +4,7 @@ package capture
 
 import (
 	"context"
+
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 )
 

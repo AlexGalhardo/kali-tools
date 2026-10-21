@@ -4,9 +4,6 @@ import (
 	"bytes"
 	"encoding/csv"
 	"encoding/json"
-	"github.com/AlexGalhardo/kali-tools/internal/capture"
-	"github.com/gopacket/gopacket"
-	"github.com/gopacket/gopacket/layers"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -16,6 +13,11 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/gopacket/gopacket"
+	"github.com/gopacket/gopacket/layers"
+
+	"github.com/AlexGalhardo/kali-tools/internal/capture"
 )
 
 func TestCLIContract(t *testing.T) {

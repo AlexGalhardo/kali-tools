@@ -2,8 +2,6 @@ package app
 
 import (
 	"context"
-	"github.com/AlexGalhardo/kali-tools/internal/adapter/storage"
-	"github.com/AlexGalhardo/kali-tools/internal/network"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +9,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/storage"
+	"github.com/AlexGalhardo/kali-tools/internal/network"
 )
 
 func TestCancellationAndRedaction(t *testing.T) {

@@ -5,9 +5,10 @@ package probe
 import (
 	"context"
 	"errors"
-	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"testing"
 	"time"
+
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
 )
 
 func TestNativeLoopbackPingAndCancellation(t *testing.T) {

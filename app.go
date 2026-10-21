@@ -4,6 +4,11 @@ package main
 
 import (
 	"context"
+	"sync"
+	"time"
+
+	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
+
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/platform"
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/storage"
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/tools"
@@ -12,9 +17,6 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/network"
 	"github.com/AlexGalhardo/kali-tools/internal/wifi"
-	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
-	"sync"
-	"time"
 )
 
 type App struct {

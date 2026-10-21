@@ -5,14 +5,16 @@ package capture
 import (
 	"context"
 	"errors"
-	"github.com/AlexGalhardo/kali-tools/internal/domain"
-	"github.com/gopacket/gopacket"
-	"github.com/gopacket/gopacket/layers"
-	"golang.org/x/sys/windows"
 	"net/netip"
 	"sync"
 	"time"
 	"unsafe"
+
+	"github.com/gopacket/gopacket"
+	"github.com/gopacket/gopacket/layers"
+	"golang.org/x/sys/windows"
+
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
 )
 
 func live(ctx context.Context, r LiveRequest, artifact *Artifact) (LiveResult, error) {

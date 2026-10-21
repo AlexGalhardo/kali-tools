@@ -11,10 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/layers"
 	"github.com/gopacket/gopacket/pcapgo"
+
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
 )
 
 const MaxFileSize = 64 << 20

@@ -2,6 +2,7 @@ package capture
 
 import (
 	"encoding/binary"
+
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 )
 

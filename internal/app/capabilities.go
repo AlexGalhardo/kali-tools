@@ -1,8 +1,9 @@
 package app
 
 import (
-	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"runtime"
+
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
 )
 
 func Capabilities() []domain.Capability {

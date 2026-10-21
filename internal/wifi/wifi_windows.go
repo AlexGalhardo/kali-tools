@@ -4,10 +4,12 @@ package wifi
 
 import (
 	"fmt"
-	"github.com/AlexGalhardo/kali-tools/internal/domain"
-	"golang.org/x/sys/windows"
 	"net"
 	"unsafe"
+
+	"golang.org/x/sys/windows"
+
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
 )
 
 var wlan = windows.NewLazySystemDLL("wlanapi.dll")
