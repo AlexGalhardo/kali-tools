@@ -6,6 +6,8 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ### Changed
 
+- Resumed H07 with real ICMP contract coverage and host validation before DNS/native delegation. Reconciled PLAN implementation, native acceptance and next-spec checklists; corrected the H06/H07 spec statuses. ([H07 continuation evidence](docs/verification/specs/H07.md#continuation-2026-10-21))
+
 - Added shared port suites, contract-tested in-memory fakes and direct/CLI/headless Wails acceptance drivers. The H07 checkpoint keeps the discovered ICMP validation gap and native data-branch qualification open. ([5b15aac](https://github.com/AlexGalhardo/kali-tools/commit/5b15aac), [H07 evidence](docs/verification/specs/H07.md))
 
 - Separated shared transport DTOs from application models, centralized bounded safe error mapping and added bilingual location-consent labels; CLI golden output remains unchanged. Native IPC acceptance remains open. ([cf5f4dc](https://github.com/AlexGalhardo/kali-tools/commit/cf5f4dc), [H06 evidence](docs/verification/specs/H06.md))

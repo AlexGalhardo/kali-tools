@@ -511,7 +511,7 @@ H07 implements the shared suites in `internal/porttest`, with fakes in `internal
 func JobStoreContract(t *testing.T, newStore func(t *testing.T) app.JobStore)
 ```
 
-`storage` and `fake` both run this suite and `SettingsStoreContract`. The store round-trip contract is verbatim: redaction is an upstream application responsibility. Five additional suites cover host inventory, tools, Wi-Fi, ICMP and capture. Direct, CLI and headless Wails acceptance drivers run identical diagnostic and discovery scenarios; CLI history remains explicitly unsupported until C01, and HTTP is W01. See [H07 evidence](verification/specs/H07.md) for verified branches and the pending ICMP validation issue.
+`storage` and `fake` both run this suite and `SettingsStoreContract`. The store round-trip contract is verbatim: redaction is an upstream application responsibility. Five additional suites cover host inventory, tools, Wi-Fi, ICMP and capture. The real ICMP adapter now rejects invalid targets with the existing network validator before native delegation and runs `ProberContract`. Direct, CLI and headless Wails acceptance drivers run identical diagnostic and discovery scenarios; CLI history remains explicitly unsupported until C01, and HTTP is W01. See [H07 evidence](verification/specs/H07.md) for verified branches and pending native qualification.
 
 ## 11. Enforcing the dependency rule
 

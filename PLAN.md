@@ -208,17 +208,34 @@ These tasks remove the deviations listed in [architecture §8](docs/architecture
 - Each task updates `docs/architecture.md` in the same change.
 - Work in small vertical steps. Do not rewrite packages wholesale.
 
+Checkpoint reconciliation (2026-10-21, history through `c630f7d`): H01–H06 have verified implementation records; their parent boxes remain open because native acceptance is pending. H07 is the active spec. H08/H09 follow only after H07's non-native verification passes, under the authorized headless continuation. No release qualification is implied.
+
+SDD delivery checklist, applied to each spec before its parent checkbox can close:
+
+- [ ] Confirm the spec's current-state claims against the checkout and record deviations.
+- [ ] Run the specified regression tests before implementation (or preserve existing refactor tests).
+- [ ] Implement only the active spec and its recorded scope corrections.
+- [ ] Record every applicable QG-1–QG-15 result, including coverage before/after, in `docs/verification/specs/<ID>.md`; explain every not-applicable or not-run result.
+- [ ] Record every AC and DA with its test, command or artifact; retain each pending native check explicitly.
+- [ ] Synchronize the spec status, architecture, PLAN and Unreleased changelog with the evidence.
+- [ ] Pass Conventional Commit and Lefthook checks; never bypass hooks.
+- [ ] Close the parent checkbox only when all applicable gates and native acceptance have evidence.
+
+These are reusable delivery requirements, not a separate completed milestone. Detailed command thresholds and the ordered list of all 18 specs remain in [SDD](docs/specs/README.md).
+
 - [ ] H01 Shared composition: `internal/bootstrap`.
   - Spec: [H01-bootstrap](docs/specs/H01-bootstrap.md)
   - [x] `bootstrap.New(ctx, Config) (*app.Application, cleanup, error)` opens storage, applies retention and injects the existing ICMP adapter, as scoped by H01. Tool discovery and remaining platform wiring stay with H03/H04. [Evidence](docs/verification/specs/H01.md).
   - [x] Wails `main.go`/`app.go` and `cmd/kali-tools` both use it; composition roots expose `run(ctx, args, getenv, stdout, stderr)`. [Evidence](docs/verification/specs/H01.md).
   - Acceptance pending: native Wails bridge (AC-10); non-root Docker lab (AC-11) passed. H01 remains open for native acceptance; owner authorized sequential headless implementation with native gates pending.
+  - [ ] H01 native bridge AC-10, with OS/hardware/date evidence.
   - Assert: the desktop and the CLI build the same application graph; no package below `cmd`/root reads flags or environment variables.
 - [ ] H02 Job manager and event fan-out: `internal/job`.
   - Spec: [H02-job-manager](docs/specs/H02-job-manager.md)
   - [x] Extract the job lifecycle from `app.Service`. Jobs run under a manager context. Events carry a monotonic `seq`. Provide `Subscribe(ctx)` with `Limits.SubscriberBuffer` and drop counting, plus `Cancel`, `Snapshot` and `Wait`. [Evidence](docs/verification/specs/H02.md).
   - [x] Move the metrics ticker and the capture session state from `app.go` into application use cases that publish through the manager (D3). [Evidence](docs/verification/specs/H02.md).
   - Acceptance pending: native desktop rates, job states and capture (AC-16); sequential headless implementation is owner-authorized.
+  - [ ] H02 native desktop AC-16/DA-8.
   - Assert: tests cover state transitions, cancellation, a slow subscriber that drops without blocking, shutdown without goroutine leaks (race detector), and stable job IDs.
 - [ ] H03 Consumer-side driven ports.
   - Spec: [H03-driven-ports](docs/specs/H03-driven-ports.md)
@@ -227,17 +244,20 @@ These tasks remove the deviations listed in [architecture §8](docs/architecture
   - [x] Declare `HostNetwork`, `ToolRunner` (including service inspection), `WiFiProvider` and `CaptureProvider` in their consumers. [Evidence](docs/verification/specs/H03.md).
   - [x] Add compile-time assertions in bootstrap or tests only. [Evidence](docs/verification/specs/H03.md).
   - Acceptance pending: native desktop on moved types (AC-11); sequential headless implementation is owner-authorized.
+  - [ ] H03 native desktop AC-11.
   - Assert: `internal/network`, `internal/capture`, `internal/wifi` and `internal/app` import no `internal/adapter/*` package.
 - [ ] H04 Single application facade.
   - Spec: [H04-application-facade](docs/specs/H04-application-facade.md)
   - [x] `app.Application` exposes every operation currently called directly by `app.go` or the CLI: interfaces, inventory, tools, diagnostics, discovery, inspection, Wi-Fi, capture, import/export, history and settings (D2). [Evidence](docs/verification/specs/H04.md).
   - Acceptance pending: complete native desktop workflow (AC-12); sequential headless implementation is owner-authorized.
+  - [ ] H04 native desktop AC-12.
   - Assert: `app.go` and the CLI import only `app`, `domain` and DTO packages.
 - [ ] H05 Driving adapters extracted.
   - Spec: [H05-driving-adapters](docs/specs/H05-driving-adapters.md)
   - [x] Move the CLI command tree to `internal/adapter/cli` (`Run(ctx, app, args, stdout, stderr) int`); `cmd/kali-tools/main.go` only wires. [Evidence](docs/verification/specs/H05.md).
   - [x] Move the Wails bindings and event forwarder to `internal/adapter/wailsui`. Regenerate `frontend/wailsjs`, update `shared/api/bridge.ts` and verify there is no binding drift. Keep `main.go` at the root. [Evidence](docs/verification/specs/H05.md).
   - Acceptance pending: native bridge and desktop workflows (AC-17/18); sequential headless implementation is owner-authorized.
+  - [ ] H05 native AC-17/18 and bridge DA-8.
   - Assert: the native bridge smoke test and all Playwright workflows pass; the CLI JSON output is byte-compatible except for documented changes.
 - [ ] H06 Transport DTOs and error mapping.
   - Spec: [H06-dtos-and-errors](docs/specs/H06-dtos-and-errors.md)
@@ -245,20 +265,30 @@ These tasks remove the deviations listed in [architecture §8](docs/architecture
   - [x] Map errors once per adapter.
   - [x] Add the `location_consent_required` capability state.
   - Implementation evidence: [H06](docs/verification/specs/H06.md). Native bridge AC-17/DA-8 remains pending under the authorized headless workflow.
+  - [ ] H06 native bridge AC-17/DA-8.
   - Assert: no `storage.*` type appears in a binding, HTTP or CLI signature; secret-redaction tests cover every DTO.
 - [ ] H07 Contract and acceptance test harness.
   - Spec: [H07-test-harness](docs/specs/H07-test-harness.md)
-  - [ ] `internal/porttest` suites for each driven port, run against the real adapter and an in-memory fake.
-  - [x] `tests/acceptance` specifications, with drivers for the direct application, the CLI and (after W03) HTTP.
-  - Progress: [H07 evidence](docs/verification/specs/H07.md). Independent storage/fake suites and the direct/CLI/Wails acceptance matrix pass; real ICMP target validation requires the reported scope decision. HTTP remains W01; CLI history remains C01.
+  - [x] `internal/porttest` suites for each driven port, run against the real adapter and an in-memory fake. [Continuation evidence](docs/verification/specs/H07.md#continuation-2026-10-21).
+  - [x] `tests/acceptance` diagnostics/discovery for direct application, CLI and headless Wails; history for direct/Wails. [Evidence](docs/verification/specs/H07.md).
+  - [x] Verify the real ICMP regression after rejecting invalid targets before DNS/native delegation. `TestProberContract` passes; probe coverage 75.8% → 78.1%. [Evidence](docs/verification/specs/H07.md#continuation-2026-10-21).
+  - [x] Rerun H07 race checks after installing GCC 16.2.0: `go test -race -timeout 120s ./internal/porttest/... ./internal/adapter/... ./tests/acceptance/...` passes. [Evidence](docs/verification/specs/H07.md#continuation-2026-10-21).
+  - [ ] H07 native OS-port data branches AC-10/DA-7, with Wi-Fi, capture privileges and documented hardware.
+  - [ ] C01: implement CLI history and remove the single explicit acceptance skip.
+  - [ ] W01/W03: add the HTTP driver and run the unchanged shared acceptance specifications.
+  - Progress: [H07 evidence](docs/verification/specs/H07.md). The ICMP correction, seven real/fake suites, race checks and direct/CLI/Wails acceptance matrix pass. H07 remains open for native qualification. HTTP remains W01; CLI history remains C01.
   - Assert: each fake passes the same suite as its adapter; at least the diagnostics, discovery and history specifications run through two drivers.
 - [ ] H08 Enforce the dependency rule.
   - Spec: [H08-dependency-rule](docs/specs/H08-dependency-rule.md)
   - [ ] Configure depguard in `.golangci.yml` (or pinned go-arch-lint) with the matrix in architecture §3. Run it in CI and in Lefthook.
+  - [ ] Use the spec's pinned depguard configuration, including test-only porttest and composition-root restrictions.
+  - [ ] Add `scripts/depguard-check.mjs` and `node scripts/task.mjs arch`; prove each of the eight rules rejects a deliberate violation and cleans up.
+  - [ ] Wire the architecture check into the existing pinned CI job; record QG/AC/DA evidence in `docs/verification/specs/H08.md`.
   - Assert: a deliberately forbidden import fails the check locally and in CI.
 - [ ] H09 Decide the CLI parser.
   - Spec: [H08-dependency-rule](docs/specs/H08-dependency-rule.md)
   - [ ] Record an ADR: stdlib `flag` versus Cobra, based on the C-phase command tree, completion needs and license review.
+  - [ ] Write ADR 004 using H08 §4.5's decision rule and revisit triggers; keep its status `proposed` until owner approval.
   - Assert: the ADR names the trigger for revisiting the decision.
 
 ## 6. Alpha — Windows-first integrated toolkit
@@ -355,7 +385,7 @@ Alpha exit: on a supported Windows setup, the desktop GUI provides:
 - Wi-Fi key display;
 - live capture.
 
-H01–H06 are complete, so that web and CLI parity do not require a second implementation. Missing Linux/macOS implementations are explicit. Unrelated future capabilities do not block alpha.
+H01–H06 have verified implementations; native acceptance remains open in their evidence records and checklists above. Web and CLI parity reuse the same core. Missing Linux/macOS implementations are explicit. Unrelated future capabilities do not block alpha.
 
 ## 7. Interfaces — complete CLI (C) and web server (W)
 
@@ -639,11 +669,10 @@ The plan does not claim feature parity with every Kali package.
 
 **Next tasks, in order** (each is a spec in [docs/specs](docs/specs/README.md)):
 
-1. H01–H04: bootstrap, job manager, consumer-side ports, single application facade.
-2. A07 owner decision on NPSL.
-3. A05/A06 native Windows acceptance: Wi-Fi with location consent; capture backend spike with Npcap/Pktmon.
-4. H05–H08: extract driving adapters, DTOs, contract harness, dependency enforcement.
-5. C01 and W01–W04: CLI command tree and secure web server.
+1. H08/H09: dependency enforcement and CLI parser ADR; H07's ICMP correction and non-native verification now pass.
+2. C01–C04: complete the CLI, including history acceptance and SSH ergonomics.
+3. W01–W06: shared UI and HTTP/SSE; implement W04 security with W01 before committing `serve` to main.
+4. A05, A06, A01, B08–B11: follow the remaining SDD execution order. Keep H01–H07 native checks and the A07 NPSL owner decision visible; do not treat them as headless passes.
 
 **Constraints.**
 

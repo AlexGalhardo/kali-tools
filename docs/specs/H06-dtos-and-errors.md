@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | H06 |
-| Status | Ready |
+| Status | Implementation complete 2026-10-21; native AC-17/DA-8 pending ([evidence](../verification/specs/H06.md)) |
 | Depends on | H05 |
 | Risk | Medium: the frontend contract and the generated models change namespace; a wrong JSON tag or field order breaks the UI or CLI bytes silently |
 

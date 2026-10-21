@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | H07 |
-| Status | Ready |
+| Status | Implementation and non-native acceptance complete 2026-10-21; native AC-10/DA-7 pending ([evidence](../verification/specs/H07.md#continuation-2026-10-21)) |
 | Depends on | H03, H04, H05, H06 |
 | Risk | Low: tests and test-only packages; production code changes only where a fake reveals a real contract gap, and then STOP and report |
 
@@ -19,6 +19,8 @@ Fakes cannot drift from real adapters, and behavior is proven once for every int
 - Do not claim native acceptance: suites against OS adapters (`HostNetwork`, `WiFiProvider`, `Prober`, `LiveProvider`) assert only honest-state properties on hosts without the capability.
 - Do not use `time.Sleep` for synchronization; no unit-test deadline above 3 s.
 - Do not add third-party test libraries.
+
+Continuation scope (2026-10-21): the owner requested resuming from the latest commits and reconciling PLAN with SDD. The previously reported ICMP gap is the resumption point: permit `internal/adapter/probe/probe.go` to call the existing `network.ValidateHost` before native delegation, and wire the specified real `TestProberContract`. No port or native implementation changes are needed. The original stop-and-report requirement was fulfilled by the H07 checkpoint; this correction is recorded explicitly rather than extending other adapter behavior.
 
 ## 3. Current state
 
@@ -275,6 +277,7 @@ Modify:
 
 - `internal/adapter/storage/storage.go`: only to export `HistoryLimit`, `MinRetentionDays`, `MaxRetentionDays` if they are still literals (§4.2).
 - `internal/app/*_test.go`: only if H03/H04 fakes move into `fake` (§4.3).
+- `internal/adapter/probe/probe.go`: only the continuation correction described in §2.
 - `docs/architecture.md`, `docs/architecture-research.md`, `PLAN.md`: §10.
 
 Delete: `internal/porttest/.gitkeep`, `tests/acceptance/.gitkeep`.
