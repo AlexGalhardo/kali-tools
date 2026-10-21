@@ -6,6 +6,7 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ### Changed
 
+- Declared consumer-side storage, host, tool, Wi-Fi and capture ports; bootstrap owns adapter cleanup and the core no longer imports driven adapters. Generated model namespaces now follow application-owned types with unchanged JSON. ([18c178f](https://github.com/AlexGalhardo/kali-tools/commit/18c178f), [H03 evidence](docs/verification/specs/H03.md))
 - Extracted bounded job lifecycles and ordered subscriptions into `internal/job`; application services now own metrics and capture streams, with unchanged Wails payloads plus job sequence numbers. Native desktop acceptance remains open. ([772e3d1](https://github.com/AlexGalhardo/kali-tools/commit/772e3d1), [H02 evidence](docs/verification/specs/H02.md))
 - Shared desktop and CLI composition through `internal/bootstrap`, preserving CLI in-memory storage and existing bindings; added retention, cleanup and root-boundary tests. Native bridge and Docker lab acceptance remain open. ([13c0a01](https://github.com/AlexGalhardo/kali-tools/commit/13c0a0130e76585f866bf900c503a029601190ba), [H01 evidence](docs/verification/specs/H01.md))
 
