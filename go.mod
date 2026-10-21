@@ -1,6 +1,6 @@
 module github.com/AlexGalhardo/kali-tools
 
-go 1.27.2
+go 1.27.3
 
 require (
 	github.com/gopacket/gopacket v1.7.4

@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Go 1.27.2 on PATH.
+- Go 1.27.3 on PATH.
 - Node 24.20.0 and Bun 1.4.3.
 - Wails v2.17.0: `go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.0`.
 - golangci-lint v2.15.0: `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0`.
