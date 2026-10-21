@@ -1,13 +1,5 @@
 import { Button } from "@base-ui/react/button";
-import {
-  cloneElement,
-  type ReactElement,
-  useCallback,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   backend,
   type Capability,
@@ -24,7 +16,11 @@ import {
   type WiFi,
 } from "../shared/api/bridge";
 import { en, pt } from "../shared/i18n/i18n";
+import { download } from "../shared/lib/download";
+import { Empty } from "../shared/ui/Empty";
+import { Field } from "../shared/ui/Field";
 import { NavIcon } from "../shared/ui/Icon";
+import { Stat } from "../shared/ui/Stat";
 
 type Page =
   | "dashboard"
@@ -45,18 +41,6 @@ const pages: Page[] = [
   "history",
   "settings",
 ];
-function download(value: unknown) {
-  const blob = new Blob(
-    [JSON.stringify({ schema_version: 1, data: value }, null, 2)],
-    { type: "application/json" },
-  );
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "hacker-tools-export.json";
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
 export function App() {
   const [page, setPage] = useState<Page>("dashboard"),
     [settings, setSettings] = useState<Settings>({
@@ -1227,41 +1211,6 @@ export function App() {
           <span>GO + WAILS</span>
         </footer>
       </div>
-    </div>
-  );
-}
-function Stat({
-  label,
-  value,
-  detail,
-}: {
-  label: string;
-  value: string;
-  detail?: string;
-}) {
-  return (
-    <div className="stat">
-      <p>{label}</p>
-      <strong>{value}</strong>
-      {detail && <small>{detail}</small>}
-    </div>
-  );
-}
-function Empty({ text }: { text: string }) {
-  return <div className="empty">{text}</div>;
-}
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactElement<{ id?: string }>;
-}) {
-  const id = useId();
-  return (
-    <div className="field">
-      <label htmlFor={id}>{label}</label>
-      {cloneElement(children, { id })}
     </div>
   );
 }
