@@ -18,6 +18,12 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/job"
 )
 
+const (
+	HistoryLimit     = 200
+	MinRetentionDays = 1
+	MaxRetentionDays = 365
+)
+
 type Store struct {
 	db    *sql.DB
 	write sync.Mutex
@@ -113,7 +119,7 @@ func (s *Store) PutJob(ctx context.Context, j Job) error {
 	return e
 }
 func (s *Store) History(ctx context.Context) ([]Job, error) {
-	rows, e := s.db.QueryContext(ctx, "SELECT id,kind,state,created,finished,summary FROM jobs ORDER BY created DESC LIMIT 200")
+	rows, e := s.db.QueryContext(ctx, "SELECT id,kind,state,created,finished,summary FROM jobs ORDER BY created DESC LIMIT ?", HistoryLimit)
 	if e != nil {
 		return nil, e
 	}
@@ -177,7 +183,7 @@ func (s *Store) Settings(ctx context.Context) (Settings, error) {
 	return v, validateSettings(v)
 }
 func validateSettings(v Settings) error {
-	if (v.Language != "en" && v.Language != "pt-BR") || v.RetentionDays < 1 || v.RetentionDays > 365 {
+	if (v.Language != "en" && v.Language != "pt-BR") || v.RetentionDays < MinRetentionDays || v.RetentionDays > MaxRetentionDays {
 		return domain.Invalid("invalid settings")
 	}
 	return nil

@@ -61,7 +61,7 @@ kali-tools/
 │   │   ├── httpapi/                (empty) target home of the web server: REST, SSE, security middleware
 │   │   └── cli/                    CLI parsing, commands, output and bounded capture wait
 │   ├── bootstrap/                  shared wiring used by every composition root
-│   └── porttest/                   (empty) target home of the contract test suites for driven ports
+│   └── porttest/                   shared driven-port suites; fake/ contains contract-tested in-memory adapters
 │
 ├── frontend/                       React + TypeScript + Base UI + Tailwind v4 (Vite, Bun)
 │   ├── index.html                  entry HTML (loads src/main.tsx)
@@ -79,7 +79,7 @@ kali-tools/
 │
 ├── tests/
 │   ├── integration/                Docker lab tests (`integration` build tag)
-│   ├── acceptance/                 (empty) target home of interface-agnostic acceptance specifications
+│   ├── acceptance/                 direct, CLI and headless Wails acceptance drivers and shared specifications
 │   └── fixtures/                   (empty) synthetic PCAP and tool-output fixtures
 │
 ├── scripts/                        Node task runners (task, lab, package, release, notices, markdown, setup)
@@ -154,7 +154,20 @@ A port is a small Go interface declared **in the package that consumes it**. Ada
 | `WiFiProvider` — done 2026-10-21 | `app` | `wifi.Native` |
 | `CaptureProvider` — done 2026-10-21 | `capture.LiveProvider`, alias in `app` | `capture.Native` returns a live result and retained artifact |
 
-H03 compile-time assertions live only in `internal/bootstrap/assert.go`. No inner package imports an adapter, checked across all GOOS source files by `TestCoreDoesNotImportAdapters`. `app.New(Deps)` requires job and settings stores; bootstrap owns SQLite and returns a `sync.Once` cleanup that closes the service before the store. Application-owned settings, host and tool types retain their existing JSON tags; tool XML tags remain in the application model; contract inspection DTOs carry JSON fields only. Every port gets a real/fake contract suite in H07.
+H03 compile-time assertions live only in `internal/bootstrap/assert.go`. No inner package imports an adapter, checked across all GOOS source files by `TestCoreDoesNotImportAdapters`. `app.New(Deps)` requires job and settings stores; bootstrap owns SQLite and returns a `sync.Once` cleanup that closes the service before the store. Application-owned settings, host and tool types retain their existing JSON tags; tool XML tags remain in the application model; contract inspection DTOs carry JSON fields only. H07 adds seven reusable suites in `internal/porttest` and in-memory implementations in `internal/porttest/fake`. Suite status and the discovered ICMP validation gap are recorded in [H07 evidence](verification/specs/H07.md).
+
+H07 suite wiring:
+
+| Suite | Real implementation | Shared fake |
+| --- | --- | --- |
+| `JobStoreContract`, `SettingsStoreContract` | `storage.Store` | `fake.Store` |
+| `HostNetworkContract` | `platform.Host` | `fake.Host` |
+| `ToolRunnerContract` | `tools.Runner` | `fake.Tools` |
+| `WiFiProviderContract` | `wifi.Native` | `fake.WiFi` |
+| `ProberContract` | `probe.ICMP` | `fake.Prober` |
+| `LiveProviderContract` | `capture.Native` | `fake.LiveCapture` |
+
+Only test files outside `internal/porttest` import the suites or fakes. `tests/acceptance` creates a fresh application per scenario; diagnostics and discovery run through direct, CLI and Wails drivers, while history runs through direct and Wails until C01. The HTTP driver remains W01. No Wails runtime or native dialogs are launched by these drivers.
 
 ## 5. Runtime flows
 
@@ -269,7 +282,7 @@ Use `git mv`, then rewrite import paths and run `gofmt`. Run `go vet ./...` for 
 | D2 | Resolved 2026-10-21: all desktop and CLI operations route through `app.Application`; driving adapters are extracted into `adapter/cli` and `adapter/wailsui` | Native acceptance remains pending | H04, H05 |
 | D3 | Resolved 2026-10-21: `app.Application` owns metrics and capture; all producers publish through `job.Manager` | Native desktop acceptance remains pending under the owner's headless workflow | H02 |
 | D4 | Resolved 2026-10-21: CLI and Wails map application values to separate `adapter/contract` DTOs; one safe `FromError` preserves stable codes | JSON, redaction, signature and headless workflow tests pass; native IPC acceptance pending | H06 |
-| D5 | Resolved for dependency inversion 2026-10-21: `app.Application` consumes `JobStore` and `SettingsStore`; real/fake contract suites remain H07 | Diagnostic, inspection, settings and history tests run with fakes | H03, H07 |
+| D5 | Resolved: storage ports have shared suites run against SQLite and in-memory fakes; H07 overall completion still awaits the unrelated reported ICMP gap | Real/fake storage contracts and interface acceptance pass headlessly | H03, H07 |
 | D6 | `capture`, `network`, `wifi` mix domain rules with OS or network I/O in one package | Harder to test without hardware | H03 (split only where a port is needed) |
 | D7 | `frontend/src/app/App.tsx` (about 1,250 lines) holds every page | Hard to evolve per feature | W02 |
 | D8 | No mechanical check of the dependency rule | Rules decay silently | H08 |

@@ -249,7 +249,8 @@ These tasks remove the deviations listed in [architecture §8](docs/architecture
 - [ ] H07 Contract and acceptance test harness.
   - Spec: [H07-test-harness](docs/specs/H07-test-harness.md)
   - [ ] `internal/porttest` suites for each driven port, run against the real adapter and an in-memory fake.
-  - [ ] `tests/acceptance` specifications, with drivers for the direct application, the CLI and (after W03) HTTP.
+  - [x] `tests/acceptance` specifications, with drivers for the direct application, the CLI and (after W03) HTTP.
+  - Progress: [H07 evidence](docs/verification/specs/H07.md). Independent storage/fake suites and the direct/CLI/Wails acceptance matrix pass; real ICMP target validation requires the reported scope decision. HTTP remains W01; CLI history remains C01.
   - Assert: each fake passes the same suite as its adapter; at least the diagnostics, discovery and history specifications run through two drivers.
 - [ ] H08 Enforce the dependency rule.
   - Spec: [H08-dependency-rule](docs/specs/H08-dependency-rule.md)

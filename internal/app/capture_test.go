@@ -117,7 +117,7 @@ func TestCaptureSessionStates(t *testing.T) {
 	address := captureAddress(t)
 	deps := fakeDeps()
 	started := make(chan struct{})
-	deps.Capture = fakeCapture{run: func(ctx context.Context, r capture.LiveRequest) (capture.LiveResult, *capture.Artifact, error) {
+	deps.Capture = fakeCapture{CaptureFunc: func(ctx context.Context, r capture.LiveRequest) (capture.LiveResult, *capture.Artifact, error) {
 		close(started)
 		<-ctx.Done()
 		return capture.LiveResult{Packets: []capture.Packet{}}, nil, ctx.Err()

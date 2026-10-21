@@ -14,7 +14,7 @@ import (
 func TestMetricsPublishesOnTick(t *testing.T) {
 	deps := fakeDeps()
 	calls := 0
-	deps.Host = fakeHost{inventory: func(context.Context) (app.HostSnapshot, error) {
+	deps.Host = fakeHost{InventoryFunc: func(context.Context) (app.HostSnapshot, error) {
 		calls++
 		if calls == 2 {
 			return app.HostSnapshot{}, errors.New("synthetic sample failure")
@@ -62,7 +62,7 @@ func TestStartMetricsIsIdempotent(t *testing.T) {
 	s := newService(t)
 	s.StartMetrics(t.Context()) // A nil sampler must leave StartMetrics available for wiring.
 	deps := fakeDeps()
-	deps.Host = fakeHost{inventory: func(context.Context) (app.HostSnapshot, error) { return app.HostSnapshot{}, nil }}
+	deps.Host = fakeHost{InventoryFunc: func(context.Context) (app.HostSnapshot, error) { return app.HostSnapshot{}, nil }}
 	s = serviceWithDeps(t, deps)
 	s.StartMetrics(t.Context())
 	s.StartMetrics(t.Context())

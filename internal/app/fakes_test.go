@@ -4,9 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"slices"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -15,148 +13,35 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/job"
 	"github.com/AlexGalhardo/kali-tools/internal/network"
+	"github.com/AlexGalhardo/kali-tools/internal/porttest/fake"
 	"github.com/AlexGalhardo/kali-tools/internal/wifi"
 )
 
-type fakeJobStore struct {
-	mu       sync.Mutex
-	statuses map[job.ID]job.Status
-}
+type fakeJobStore = fake.Store
+type fakeSettings = fake.Store
 
-func (s *fakeJobStore) PutJob(ctx context.Context, st job.Status) error {
-	if err := ctx.Err(); err != nil {
-		return err
+func newFakeSettings(t *testing.T, value app.Settings) *fake.Store {
+	t.Helper()
+	s := fake.NewStore()
+	if err := s.SaveSettings(t.Context(), value); err != nil {
+		t.Fatal(err)
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.statuses == nil {
-		s.statuses = make(map[job.ID]job.Status)
-	}
-	s.statuses[st.ID] = cloneStatus(st)
-	return nil
+	return s
 }
 
-func (s *fakeJobStore) History(ctx context.Context) ([]job.Status, error) {
-	if err := ctx.Err(); err != nil {
-		return nil, err
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	rows := make([]job.Status, 0, len(s.statuses))
-	for _, st := range s.statuses {
-		rows = append(rows, cloneStatus(st))
-	}
-	slices.SortFunc(rows, func(a, b job.Status) int { return b.Created.Compare(a.Created) })
-	return rows[:min(len(rows), 200)], nil
-}
-
-func (s *fakeJobStore) Clear(ctx context.Context) error {
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	for id, st := range s.statuses {
-		if st.State.Terminal() {
-			delete(s.statuses, id)
-		}
-	}
-	return nil
-}
-
-func (s *fakeJobStore) Retain(ctx context.Context, before time.Time) error {
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	for id, st := range s.statuses {
-		if st.State.Terminal() && st.Created.Before(before) {
-			delete(s.statuses, id)
-		}
-	}
-	return nil
-}
-
-func cloneStatus(st job.Status) job.Status {
-	if st.Finished != nil {
-		finished := *st.Finished
-		st.Finished = &finished
-	}
-	return st
-}
-
-type fakeSettings struct {
-	mu    sync.Mutex
-	value app.Settings
-}
-
-func (s *fakeSettings) Settings(ctx context.Context) (app.Settings, error) {
-	if err := ctx.Err(); err != nil {
-		return app.Settings{}, err
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.value.Language == "" {
-		return app.Settings{Language: "en", RetentionDays: 30}, nil
-	}
-	return s.value, nil
-}
-func (s *fakeSettings) SaveSettings(ctx context.Context, value app.Settings) error {
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.value = value
-	return nil
-}
-
-type fakeHost struct {
-	inventory func(context.Context) (app.HostSnapshot, error)
-}
-
-func (h fakeHost) Inventory(ctx context.Context) (app.HostSnapshot, error) { return h.inventory(ctx) }
-
-type fakeTools struct {
-	result app.Nmap
-	err    error
-}
-
-func (f fakeTools) Inventory(context.Context) []app.Tool                     { return []app.Tool{} }
-func (f fakeTools) RunNmap(context.Context, string, []int) (app.Nmap, error) { return f.result, f.err }
-
-type fakeWiFi struct{}
-
-func (fakeWiFi) Current(context.Context) (wifi.Network, error) {
-	return wifi.Network{State: "disconnected"}, nil
-}
-func (fakeWiFi) Reveal(context.Context) (wifi.Secret, error) {
-	return wifi.Secret{State: "no_saved_key"}, nil
-}
-
-type fakeCapture struct {
-	run func(context.Context, capture.LiveRequest) (capture.LiveResult, *capture.Artifact, error)
-}
-
-func (f fakeCapture) Capture(ctx context.Context, request capture.LiveRequest) (capture.LiveResult, *capture.Artifact, error) {
-	return f.run(ctx, request)
-}
-
-type fakeProber struct{}
-
-func (fakeProber) Provider() string { return "fake" }
-func (fakeProber) Run(context.Context, string, bool) ([]string, error) {
-	return []string{"synthetic response"}, nil
-}
+type fakeHost = fake.Host
+type fakeTools = fake.Tools
+type fakeWiFi = fake.WiFi
+type fakeCapture = fake.LiveCapture
+type fakeProber = fake.Prober
 
 func fakeDeps() app.Deps {
-	return app.Deps{Jobs: &fakeJobStore{}, Settings: &fakeSettings{}, WiFi: fakeWiFi{}}
+	return app.Deps{Jobs: &fakeJobStore{}, Settings: &fakeSettings{}, WiFi: fakeWiFi{Network: wifi.Network{State: "disconnected"}, Secret: wifi.Secret{State: "no_saved_key"}}}
 }
 
 func TestDiagnosticJobWithFakes(t *testing.T) {
 	deps := fakeDeps()
-	deps.Diagnostics = network.Diagnostics{Prober: fakeProber{}}
+	deps.Diagnostics = network.Diagnostics{Prober: fakeProber{Values: []string{"synthetic response"}}}
 	s := app.New(deps)
 	defer func() { _ = s.Close() }()
 	st, err := s.StartDiagnostic(t.Context(), network.Request{Kind: "ping", Target: "synthetic-target.invalid", TimeoutMS: 100})
@@ -196,7 +81,7 @@ func TestDiagnosticJobWithFakes(t *testing.T) {
 
 func TestInspectServicesUsesToolRunner(t *testing.T) {
 	deps := fakeDeps()
-	deps.Tools = fakeTools{result: app.Nmap{Version: "7.95", Hosts: []app.NmapHost{{}, {}}}}
+	deps.Tools = fakeTools{Result: app.Nmap{Version: "7.95", Hosts: []app.NmapHost{{}, {}}}}
 	s := app.New(deps)
 	defer func() { _ = s.Close() }()
 	result, err := s.InspectServices(t.Context(), "127.0.0.1/32", []int{80})

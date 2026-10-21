@@ -94,8 +94,8 @@ func TestApplicationDelegatesToPorts(t *testing.T) {
 			}
 			deps := app.Deps{
 				Jobs:     recordingJobs{fakeJobStore: &fakeJobStore{}, see: see},
-				Settings: recordingSettings{fakeSettings: &fakeSettings{value: preferences}, see: see},
-				Host:     fakeHost{inventory: func(ctx context.Context) (app.HostSnapshot, error) { see(ctx); return host, nil }},
+				Settings: recordingSettings{fakeSettings: newFakeSettings(t, preferences), see: see},
+				Host:     fakeHost{InventoryFunc: func(ctx context.Context) (app.HostSnapshot, error) { see(ctx); return host, nil }},
 				Tools:    recordingTools{see: see}, WiFi: recordingWiFi{see: see},
 			}
 			a := app.New(deps)
@@ -247,7 +247,7 @@ func TestApplicationAfterClose(t *testing.T) {
 
 func TestSynchronousDiagnoseDoesNotPersist(t *testing.T) {
 	deps := fakeDeps()
-	deps.Diagnostics = network.Diagnostics{Prober: fakeProber{}}
+	deps.Diagnostics = network.Diagnostics{Prober: fakeProber{Values: []string{"synthetic response"}}}
 	a := app.New(deps)
 	defer func() { _ = a.Close() }()
 	result, err := a.Diagnose(t.Context(), network.Request{Kind: "ping", Target: "synthetic.invalid", TimeoutMS: 100})

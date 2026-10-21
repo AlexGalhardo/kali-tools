@@ -505,18 +505,13 @@ Two kali-tools-specific consequences:
 | Native | Real hardware | Manual or hosted evidence recorded in `docs/verification/`; never inferred |
 | Browser | React | Playwright with contract-faithful fakes; does not prove Wails IPC |
 
-Contract suite shape:
+H07 implements the shared suites in `internal/porttest`, with fakes in `internal/porttest/fake`. The real exported signature is:
 
 ```go
-// internal/porttest/jobstore.go
-func JobStoreContract(t *testing.T, newStore func(t *testing.T) app.JobStore) {
-    t.Run("put then list", func(t *testing.T) { /* ... */ })
-    t.Run("never stores secrets or payloads", func(t *testing.T) { /* ... */ })
-}
-
-// internal/adapter/storage/store_test.go
-func TestStoreContract(t *testing.T) { porttest.JobStoreContract(t, newTempStore) }
+func JobStoreContract(t *testing.T, newStore func(t *testing.T) app.JobStore)
 ```
+
+`storage` and `fake` both run this suite and `SettingsStoreContract`. The store round-trip contract is verbatim: redaction is an upstream application responsibility. Five additional suites cover host inventory, tools, Wi-Fi, ICMP and capture. Direct, CLI and headless Wails acceptance drivers run identical diagnostic and discovery scenarios; CLI history remains explicitly unsupported until C01, and HTTP is W01. See [H07 evidence](verification/specs/H07.md) for verified branches and the pending ICMP validation issue.
 
 ## 11. Enforcing the dependency rule
 
