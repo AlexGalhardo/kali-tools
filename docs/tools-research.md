@@ -1,76 +1,451 @@
 # Tools research
 
-Research date: 2026-10-19. Status: initial research complete; product decisions pending brainstorming.
+Research dates: 2026-10-19 (baseline), 2026-10-21 (technical deepening). Scope: defensive, diagnostic and authorized-testing capabilities. Credential attacks, exploitation frameworks, Wi-Fi injection/monitor-mode attacks and evasion remain out of scope (see PLAN.md §9).
 
-## Context recovered
+Items marked **(verify)** come from secondary sources or conflicting reports. Confirm them against the upstream LICENSE or a native test before relying on them in a decision, release note or license inventory.
 
-The shared conversation was read in the browser. The requested product combines network monitoring, packet inspection, LAN discovery, Wi-Fi information and an extensible security toolkit on Windows 11, Linux and macOS. The chosen stack is Go + Wails + React + TypeScript + Base UI + Tailwind CSS v4. Go supersedes the earlier Rust recommendation.
+## 1. Context recovered
+
+The shared conversation was read in the browser. The requested product combines network monitoring, packet inspection, LAN discovery, Wi-Fi information and an extensible security toolkit on Windows 11, Linux and macOS. The chosen stack is Go + Wails + React + TypeScript + Base UI + Tailwind CSS v4. Go supersedes the earlier Rust recommendation. On 2026-10-21 the owner confirmed three interfaces sharing one Go core: native Wails GUI (primary), a web server serving the same UI, and a complete CLI for headless/SSH use. See [architecture](architecture.md).
 
 Source: https://chatgpt.com/share/6ad626c6-5a54-83e9-837b-064b7a148a55?ogimg=plain
 
-## What Kali tools have underneath
+## 2. What Kali tools have underneath
 
-Kali is an integration and distribution ecosystem, not a common application engine. Its catalog points to independently developed tools and packages. Their internals range from OS networking APIs and packet libraries to protocol implementations and subprocess orchestration. A unified desktop must normalize capabilities, dependencies and results instead of assuming a universal Kali API.
+Kali is an integration and distribution ecosystem, not a common application engine. Its catalog points to independently developed tools and packages. Their internals range from OS networking APIs and packet libraries to protocol implementations and subprocess orchestration. A unified desktop must therefore normalize three things instead of assuming a universal Kali API:
+
+- capabilities;
+- dependencies;
+- results.
 
 Source: https://www.kali.org/tools/
 
-### Nmap: scheduling and inference, beyond socket connections
+### 2.1 Nmap: scheduling and inference, beyond socket connections
 
-Nmap's scanning engine handles multiple probe types, host/port parallelism, adaptive round-trip estimates, retries and congestion control. A timeout alone does not establish that a port is closed. A small Go TCP-connect scanner is feasible, but is not feature-equivalent to Nmap's service detection or OS fingerprinting. Recommendation: native Go for a constrained connect diagnostic; an optional Nmap adapter for advanced scans. Parse structured output and preserve tool version and scan settings with each result.
+Nmap's scanning engine handles:
+
+- multiple probe types;
+- host and port parallelism;
+- adaptive round-trip estimates;
+- retries;
+- congestion control.
+
+A timeout alone does not establish that a port is closed. A small Go TCP-connect scanner is feasible, but it is not feature-equivalent to Nmap's service detection or OS fingerprinting.
+
+Recommendation:
+
+- Use native Go for a constrained connect diagnostic.
+- Use an optional Nmap adapter for advanced scans.
+- Parse structured output.
+- Preserve the tool version and scan settings with each result.
 
 Source: https://nmap.org/book/port-scanning-algorithms.html
 
-### Wireshark/TShark: capture and decoding are separate layers
+### 2.2 Wireshark/TShark: capture and decoding are separate layers
 
-Capture uses platform facilities through pcap; dissectors interpret captured bytes. TShark supports live capture and saved files, protocol fields and structured output. Capture filters and display filters have different syntax and execution costs. Ring files and stop conditions bound disk use. Recommendation: begin with offline PCAP/PCAPNG import and optional TShark decoding; add live capture with explicit capability checks. Avoid implementing hundreds of protocol decoders for 1.0.
+Capture uses platform facilities through pcap; dissectors interpret the captured bytes. TShark supports live capture and saved files, protocol fields and structured output. Capture filters and display filters differ in syntax and execution cost. Ring files and stop conditions bound disk use.
+
+Recommendation:
+
+- Keep offline PCAP/PCAPNG import and Go decoding as the base.
+- Use TShark only for justified decoding depth.
+- Avoid implementing hundreds of protocol decoders for 1.0.
 
 Sources:
 
 - https://www.wireshark.org/docs/man-pages/tshark.html
 - https://www.wireshark.org/docs/wsdg_html_chunked/ChapterCapture.html
-- https://github.com/wireshark/wireshark
 
-HTTPS payloads remain encrypted without separately supplied session secrets. Observing TLS metadata is not equivalent to reading application content. Packet capture, process attribution and per-process bandwidth accounting also require different mechanisms.
+HTTPS payloads remain encrypted unless session secrets are supplied separately. Observing TLS metadata is not the same as reading application content. Packet capture, process attribution and per-process bandwidth accounting each need a different mechanism.
 
-### Gobuster: a useful Go architecture reference
+### 2.3 Gobuster: a Go architecture reference
 
-Gobuster is implemented in Go and separates command modes and reusable execution logic. It illustrates how a specialized CLI can expose different discovery operations while reusing concurrency and configuration infrastructure. For this product, bounded workers, request deadlines, cancellation and explicit result models should live in the Go core, shared by CLI and desktop.
+Gobuster is implemented in Go. It separates command modes from reusable execution logic, which shows how a specialized CLI can expose several discovery operations while sharing concurrency and configuration infrastructure. For kali-tools, the following belong in the Go core, shared by every interface:
+
+- bounded workers;
+- request deadlines;
+- cancellation;
+- explicit result models.
 
 Source: https://github.com/OJ/gobuster
 
-### iperf3: active throughput measurement
+### 2.4 iperf3: active throughput measurement
 
-iperf3 uses a client/server model, with control and traffic flows and JSON output for integration. It measures throughput to a selected endpoint, not an inherent universal internet speed. Recommendation: an optional adapter with duration and bandwidth limits and a local test server. Interface counters provide passive usage, not connection capacity.
+iperf3 uses a client/server model with control and traffic flows, and JSON output for integration. It measures throughput to a selected endpoint, not a universal "internet speed". Interface counters give passive usage, not connection capacity.
+
+Recommendation: an optional adapter with duration and bandwidth limits.
 
 Source: https://software.es.net/iperf/invoking.html
 
-## Native Go versus external adapters
+## 3. Findings that change earlier assumptions (2026-10-21)
 
-| Capability | Proposed approach | Important boundary |
-| --- | --- | --- |
-| Interfaces, IPv4/IPv6, MAC | Go `net` | Routes, DNS configuration and counters need additional platform APIs |
-| TCP connect, DNS, HTTP, certificates | Go core | A TLS certificate check is not a complete vulnerability audit |
-| Ping and traceroute | Platform adapters | Privileges and ICMP behavior differ by OS |
-| Passive traffic rate | Counter deltas per interface | Handle resets, interface replacement and monotonic elapsed time |
-| Advanced port/service discovery | Optional Nmap process | Versioned parser and availability checks |
-| Protocol inspection | Optional TShark process | Bounded output, file size, capture and display filters |
-| Wi-Fi metadata and saved key | Native platform adapter | User/session permissions and network type determine availability |
-| Throughput test | Optional iperf3 process | Requires a suitable endpoint |
+1. **Nmap license (NPSL 0.95) and the dedicated adapter.**
+   - NPSL lists software "designed specifically to execute Covered Software and parse the results" as a derivative-work trigger. It also lists reading `nmap-service-probes`/`nmap-os-db`. The licensor reads "derivative work" broadly, though the annotation says the definition only binds parties that accept the license.
+   - The existing `InspectServices` Nmap adapter falls into that wording.
+   - Owner decision required, choosing one of:
+     - (a) accept and document the risk;
+     - (b) request a waiver, which NPSL offers to open-source projects;
+     - (c) narrow the adapter to importing XML that the user produced with their own Nmap.
+   - Whatever the decision: never bundle Nmap and never read its data files. `Ullaakut/nmap` (MIT) wraps the same executable and does not change the analysis.
+   - Sources: https://nmap.org/npsl/npsl-annotated.html, https://github.com/Ullaakut/nmap
+2. **Npcap free edition is not redistributable.**
+   - The free license allows up to 5 systems, no external redistribution and no silent installer. The OEM edition is paid.
+   - The maintainers advise free projects to ask users to install Npcap themselves.
+   - Npcap supports loopback capture (`NPF_Loopback`) and an "Administrators only" install mode.
+   - kali-tools must detect Npcap and link to it, never install it. Sources: https://npcap.com/, https://npcap.com/oem/
+3. **Windows 11 24H2 location consent gates Wi-Fi metadata.**
+   - Without precise-location consent, the following return `ERROR_ACCESS_DENIED`, even when the process is elevated:
+     - `WlanGetAvailableNetworkList`;
+     - `WlanGetNetworkBssList`;
+     - `WlanQueryInterface(wlan_intf_opcode_current_connection)`;
+     - `WlanScan`;
+     - `netsh wlan show network mode=bssid`.
+   - Windows prompts once per app, and only for user-context processes outside `System32`.
+   - Microsoft's guidance:
+     - check consent with `AppCapability.CheckAccess("wiFiControl")`;
+     - deep-link to `ms-settings:privacy-location`;
+     - use `WlanConnectionProfileDetails.GetConnectedSsid` when only the SSID is needed;
+     - throttle scans.
+   - Model a `location_consent_required` capability state in every interface. A web server running under another account may never receive the prompt.
+   - Source: https://learn.microsoft.com/en-us/windows/win32/nativewifi/wi-fi-access-location-changes
+4. **Pktmon is a built-in Windows capture path that needs no Npcap.**
+   - `pktmon.exe` has shipped since build 19041. It supports packet capture, counters and drop reasons, Ethernet/Wi-Fi/MBB, and real-time and circular logging.
+   - `pktmon etl2pcap` converts ETL to pcapng, but drops component identity and omits dropped packets unless `--drop-only` is passed. Microsoft's `etl2pcapng` keeps components as pcapng interfaces.
+   - Candidate optional adapter: an elevated pktmon session → pcapng → existing `pcapgo.NgReader` import. Elevation required **(verify)**. Use argv arrays only.
+   - Sources: https://learn.microsoft.com/en-us/windows-server/networking/technologies/pktmon/pktmon, https://github.com/microsoft/etl2pcapng
 
-Go networking reference: https://pkg.go.dev/net
+## 4. Capability catalog by category
 
-External execution must use an executable plus an argument array, without a shell. Validate operations and targets in Go. Bound runtime, output and concurrency; cancel descendant processes on each OS. Record missing, unsupported and permission-denied capabilities distinctly. Never expose an arbitrary command executor through Wails bindings.
+Each category records:
 
-## Platform feasibility and spikes
+- (a) representative tools;
+- (b) Go building blocks;
+- (c) native/adapter/out-of-scope recommendation;
+- (d) platform and permission boundaries;
+- (e) structured formats useful to adapters.
+
+In the architecture, each category maps to one module under `internal/modules/` (see [architecture](architecture.md)).
+
+### 4.1 Discovery and port/service inventory
+
+**(a) Representative tools.**
+
+| Tool | License | Language | Notes |
+| --- | --- | --- | --- |
+| Nmap | NPSL 0.95 | C/C++/Lua | See §3.1 |
+| masscan | AGPL-3.0 | C | `-oX`, `-oJ`, `-oL` output |
+| naabu | MIT | Go | SYN mode needs libpcap/Npcap; CONNECT fallback without root; library runner; JSONL |
+| arp-scan | GPL **(verify)** | C | |
+| netdiscover | GPL **(verify)** | C | Depends on libpcap and libnet |
+| fping, hping3 | BSD-style / GPL-2 **(verify)** | C | |
+
+**(b) Go building blocks.**
+
+- `net.Dialer` with context deadlines: implemented, unprivileged and portable.
+- `mdlayher/arp` (MIT): ARP on the local L2 segment. Linux `AF_PACKET`, needs `CAP_NET_RAW`.
+- `mdlayher/ndp` (MIT): IPv6 neighbor discovery. Upstream is less active; consider the `antrea.io/ndp` fork.
+- `mdlayher/netlink` (MIT): Linux neighbor and route tables.
+- Windows `GetIpNetTable2` (iphlpapi): lists the OS ARP/ND cache without raw packets. This is the least-privilege answer to "what is on my LAN". Check whether the `x/sys/windows` binding exists, or add a tiny syscall shim **(verify)**.
+- `hashicorp/mdns` (MIT): mDNS/DNS-SD. `grandcat/zeroconf` is stale (last release about 6 years ago).
+- `gosnmp` (BSD-2 **(verify)**): read-only system and interface MIB queries against owned devices.
+- SSDP/UPnP: an M-SEARCH listener on `net.ListenMulticastUDP`, with no dependency.
+
+**(c) Recommendation.**
+
+- **Native Go:**
+  - TCP connect (done);
+  - OS neighbor cache per OS;
+  - read-only mDNS/SSDP/SNMP inventory;
+  - port-number service hints, labelled as inference.
+- **Optional adapter:** Nmap, under the NPSL decision in §3.1. masscan is not recommended (AGPL, scan-rate focus).
+- **Out of scope:**
+  - half-open SYN scanning;
+  - OS fingerprinting;
+  - service-probe databases.
+
+**(d) Platform and permission boundaries.**
+
+- **Windows:**
+  - `SOCK_RAW` requires Administrators.
+  - Client SKUs block TCP data over raw sockets and drop spoofed-source UDP.
+  - Anything beyond connect probing therefore needs Npcap at Ethernet level.
+  - Source: https://learn.microsoft.com/en-us/windows/win32/winsock/tcp-ip-raw-sockets-2
+- **Linux:** raw/ARP needs `CAP_NET_RAW`.
+- **macOS:** raw sockets need root.
+
+**(e) Structured output.**
+
+- Nmap `-oX`, following the `nmap.dtd` structure: `nmaprun` → `host` → `ports` → `runstats`. Source: https://nmap.org/book/app-nmap-dtd.html
+- naabu `-json` writes JSON lines.
+- Parse every format with `io.LimitReader` plus streaming decoders.
+
+### 4.2 Packet capture and analysis (read-only)
+
+**(a) Representative tools.**
+
+- Wireshark/TShark (GPLv2+): runs as a separate process only, which keeps the MIT core clean.
+- tcpdump/libpcap: BSD **(verify)**.
+- Zeek (BSD-3): TSV/JSON logs.
+- Suricata: GPLv2, EVE JSON **(verify)**.
+
+**(b) Go building blocks.**
+
+- `github.com/gopacket/gopacket` (BSD-3, already pinned at v1.7.4):
+  - the actively maintained community fork of Google's gopacket;
+  - `pcap` works with Npcap/libpcap and supports BPF;
+  - `pcapgo` provides pure-Go PCAP/PCAPNG `Reader`/`Writer`/`NgReader`/`NgWriter`; its `EthernetHandle` live capture is Linux-only.
+  - Sources: https://github.com/gopacket/gopacket, https://pkg.go.dev/github.com/gopacket/gopacket/pcapgo
+- `malivvan/gopacket`: purego (cgo-free) libpcap loading. Watch it; do not adopt yet.
+- Windows Pktmon → pcapng (§3.4).
+
+**(c) Recommendation.**
+
+- **Native Go:**
+  - decoding;
+  - PCAP/PCAPNG I/O;
+  - flow/conversation summaries;
+  - protocol counters;
+  - BPF-filtered live capture when Npcap/libpcap exists.
+- **Optional adapters:**
+  - TShark for dissector depth;
+  - Pktmon on Windows;
+  - Zeek/Suricata as offline JSON log importers only.
+- **Out of scope:** spoofing, ARP poisoning, MITM and anything else that writes to the wire.
+
+**(d) Platform and permission boundaries.**
+
+- **Windows:** Npcap is user-installed and possibly admin-only.
+- **Linux:** `CAP_NET_RAW`, plus `CAP_NET_ADMIN` for promiscuous mode.
+- **macOS:** `/dev/bpf*` access through Wireshark's ChmodBPF group (`access_bpf`). kali-tools reports BPF access and never changes device permissions.
+- **All platforms:**
+  - never store payloads in history;
+  - bound snaplen, packet count and duration.
+
+**(e) Structured output (TShark).**
+
+| Option | Format |
+| --- | --- |
+| `-T ek` | Newline-delimited, all values are strings, so map types explicitly |
+| `-T fields -e …` | Explicit field list |
+| `-T json` | One large array; harder to stream |
+| `-T pdml` / `-T psml` | XML detail / XML summary |
+| `-G fields` | Field glossary for validating `-e` names at adapter start-up |
+| `-G elastic-mapping` | Typed mappings |
+
+Prefer `ek` or `fields` for bounded streaming. Source: https://www.wireshark.org/docs/man-pages/tshark.html
+
+### 4.3 Name resolution and DNS inspection
+
+**(a) Representative tools.**
+
+- dnsrecon, dnsenum and fierce (GPL family **(verify)**).
+- `dig`/`host`.
+- ProjectDiscovery `dnsx` (MIT, Go):
+  - record types A, AAAA, CNAME, PTR, NS, MX, TXT, SRV and SOA;
+  - DoH/DoT;
+  - JSONL;
+  - a library API.
+
+**(b) Go building blocks.**
+
+- Stdlib `net.Resolver`, already used, gives the OS-resolver view.
+- `miekg/dns` (BSD-3) has moved to `codeberg.org/miekg/dns` (new API, pre-1.0). Pending decision: pin GitHub v1.1.x short-term or adopt Codeberg. Record the choice in `docs/dependencies.md`.
+- DoH: `net/http` plus the wire format. DoT: `crypto/tls` plus `miekg/dns`.
+
+**(c) Recommendation.**
+
+- **Native Go:**
+  - system vs explicit resolver comparison;
+  - TTL/authority checks;
+  - SOA/NS consistency across authoritative servers;
+  - read-only DNSSEC chain display;
+  - DoH/DoT reachability.
+- **Out of scope:** subdomain brute force and third-party zone-transfer attempts. AXFR is only possible later, against a user-declared owned zone.
+
+**(d) Platform and permission boundaries.** No privileges are needed. Report blocked port-53 egress as its own failure class.
+
+**(e) Structured output.**
+
+- dnsx JSONL.
+- Align exported field names with RFC 8427 (DNS in JSON) where practical **(verify fit)**.
+
+### 4.4 TLS and certificate auditing
+
+**(a) Representative tools.**
+
+| Tool | License | Language | Notes |
+| --- | --- | --- | --- |
+| testssl.sh | GPL-2.0 | Bash | Windows only via MSYS2/Cygwin/WSL; JSON/CSV/HTML output |
+| SSLyze | AGPL | Python | |
+| sslscan | GPL-3 **(verify)** | C | |
+| tlsx | MIT | Go | SAN/CN/fingerprints; expired/self-signed/mismatch/revoked detection; version/cipher enumeration; JARM/JA3; JSONL |
+
+**(b) Go building blocks.**
+
+- Stdlib `crypto/tls` + `crypto/x509` cover:
+  - handshake, negotiated version and cipher;
+  - chain building against the system roots (on Windows, `SystemCertPool` delegates to the platform verifier, so record which verifier produced each verdict);
+  - stapled OCSP and SCT presence.
+- `zmap/zlint` (Apache-2.0, active): lints certificates and CRLs against:
+  - RFC 5280;
+  - CA/B Forum BR/EV;
+  - ETSI;
+  - Mozilla/Apple CT policy.
+  It is high-value, low-risk audit content.
+- `zmap/zcrypto` (Apache-2.0): a research fork that speaks legacy TLS/export suites. It has no releases and is explicitly not for production security. Isolate it in an adapter used only for observing legacy servers, never for kali-tools' own connections.
+- `google/certificate-transparency-go` (Apache-2.0): verifies embedded SCTs. CT-log querying for third-party domains is OSINT and stays optional.
+- TLS fingerprints:
+  - JA3 (BSD-3) and JA4 client (BSD-3) may be implemented.
+  - JA4S/JA4X/JA4H/JA4L/JA4SSH use the FoxIO License 1.1, are patent pending and restrict monetization. They need an owner decision before implementation.
+
+**(c) Recommendation.**
+
+- **Native Go:**
+  - chain report: validity, SAN coverage, key and signature algorithms, AIA/OCSP/CRL URLs, stapling, SCT count;
+  - protocol support matrix via `MinVersion`/`MaxVersion` per attempt;
+  - zlint findings;
+  - JA3/JA4 for ClientHellos in imported PCAPs.
+- **Optional:**
+  - zcrypto legacy probes behind a labelled switch;
+  - testssl.sh adapter on Linux/macOS.
+- **Out of scope:** exploit checks such as Heartbleed-style memory reads.
+
+**(d) Platform and permission boundaries.** No privileges are needed.
+
+**(e) Structured output.**
+
+- tlsx JSONL.
+- testssl.sh JSON/CSV **(verify flag names)**.
+- zlint result maps keyed by lint name.
+
+### 4.5 Path, latency and throughput
+
+**(a) Representative tools.**
+
+- mtr (GPL-2 **(verify)**), traceroute, fping.
+- iperf3 (BSD-3, ESnet):
+  - `-J` JSON output;
+  - official builds only for Linux/FreeBSD/macOS; the last official Windows binary is 3.1.3 (2016);
+  - current release 3.20 (2025-11).
+  - Source: https://software.es.net/iperf/news.html
+
+**(b) Go building blocks.**
+
+- `golang.org/x/net/icmp`: unprivileged `udp4`/`udp6` endpoints on Linux (needs `ping_group_range`) and Darwin only; raw endpoints are privileged.
+- `prometheus-community/pro-bing` (MIT **(verify)**): sources conflict on whether Windows needs elevation.
+- Windows `IcmpSendEcho2Ex`, already used by the native probe adapter: TTL is set through `IP_OPTION_INFORMATION`. Some Windows 10 setups block ICMP Time Exceeded, so report "no reply", not "host down".
+- No maintained Go iperf3-protocol library exists. A native kali-tools-to-kali-tools throughput test is simple but is **not** iperf3-wire-compatible.
+
+**(c) Recommendation.**
+
+- **Native Go:** ping/traceroute/TCP RTT (done).
+- **Optional adapter:** iperf3.
+- **Out of scope:** flood/stress modes.
+
+**(d) Platform and permission boundaries.** Covered in (b). Unelevated `IcmpSendEcho2` on Windows 10/11 needs a native acceptance test.
+
+**(e) Structured output.**
+
+- iperf3 `-J`: `start`, `intervals[]`, `end`, and `error` on failure **(verify per version)**.
+- mtr `--json` **(verify)**.
+
+### 4.6 Wi-Fi metadata (managed mode only)
+
+**(a) Representative tools.**
+
+- Kismet (GPL-2 **(verify)**).
+- `iw`, `nmcli`, wavemon on Linux.
+- `netsh wlan` on Windows.
+- The aircrack-ng suite and monitor-mode injection are excluded.
+
+**(b) Go building blocks.**
+
+- **Windows:** wlanapi, subject to the 24H2 location gate (§3.3).
+- **Linux:** `mdlayher/wifi` (MIT, nl80211). Triggering a scan likely needs `CAP_NET_ADMIN`; cached BSS reads likely do not **(verify)**.
+- **macOS:** CoreWLAN through cgo.
+  - Since Sonoma, SSID/BSSID are nil without Location Services authorization.
+  - CLI binaries and LaunchAgents struggle to get that authorization.
+  - Some 15.1 reports show empty values even when authorized.
+  - Only a signed `.app` with a usage string is realistic.
+  - Source: https://developer.apple.com/forums/thread/732431
+
+**(c) Recommendation.**
+
+- **Native:**
+  - current connection: SSID, BSSID, band, channel, RSSI, PHY, auth/cipher;
+  - visible BSS list;
+  - channel overlap view.
+- **Consent-state model:** `granted`, `prompt_required`, `denied`, `unsupported`.
+- **Key reveal:** stays explicit, current-network-only and never persisted.
+- **Out of scope:** monitor mode, deauthentication, handshake capture, cracking.
+
+**(d) Platform and permission boundaries.** As above. Web-server mode under another account may not get consent prompts.
+
+**(e) Structured output.** No standard exists. Define the JSON schema in-repo. Text parsing of `netsh`/`iw` is a last-resort adapter.
+
+### 4.7 HTTP and web metadata (read-only)
+
+**(a) Representative tools.**
+
+- httpx (MIT, Go): status, title, TLS, tech detection, favicon hash; JSONL.
+- WhatWeb (GPL-2 **(verify)**).
+- Nuclei (MIT): an SDK exists, but its templates are vulnerability-oriented.
+
+**(b) Go building blocks.** `net/http` with a custom `Transport`:
+
+- timeouts;
+- `httptrace` for DNS/connect/TLS/TTFB phases;
+- a redirect cap;
+- `io.LimitReader` bodies.
+
+**(c) Recommendation.**
+
+- **Native Go:**
+  - the existing HTTP diagnostic, extended with `httptrace` timings;
+  - a security-header presence report (HSTS, CSP, and others);
+  - the redirect chain, reported without following it;
+  - hand-off to the TLS module.
+- **Out of scope:** Nuclei templates, fuzzing and directory brute force.
+
+## 5. Native Go versus external adapters (summary)
+
+| Capability | Approach | Module | Boundary |
+| --- | --- | --- | --- |
+| Interfaces, IPv4/IPv6, MAC | Go `net` | network | Routes, DNS configuration and counters need platform adapters |
+| Routes, counters, neighbors | Platform adapters | platform | `GetIpNetTable2`, netlink, sysctl |
+| TCP connect, DNS, HTTP, certificates | Go core | network / future tls | A TLS summary is not a vulnerability audit |
+| Ping and traceroute | Platform adapters | probe | Privileges and ICMP behavior differ by OS |
+| Passive traffic rate | Counter deltas | network | Resets, interface replacement, monotonic time |
+| Advanced port/service discovery | Optional Nmap | tools | NPSL decision (§3.1); versioned parser |
+| Protocol inspection | Go decoding + optional TShark | capture / tools | Bounded output, file size, filters |
+| Built-in Windows capture | Optional Pktmon | capture | Elevation; ETL→pcapng conversion limits |
+| Wi-Fi metadata and saved key | Native adapter | wifi | Location consent, network type, OS authorization |
+| Throughput | Optional iperf3 | tools | Requires a suitable endpoint |
+| Certificate linting | zlint | future tls | Apache-2.0; uses the zcrypto parser |
+
+External execution rules:
+
+- Use an executable plus an argument array, never a shell.
+- Validate operations and targets in Go.
+- Bound runtime, output and concurrency.
+- Cancel descendant processes on every OS.
+- Record missing, unsupported, permission-denied and consent-required capabilities distinctly.
+- Never expose an arbitrary command executor through Wails bindings, HTTP routes or CLI flags.
+
+## 6. Platform feasibility
 
 | Area | Windows 11 | Linux | macOS |
 | --- | --- | --- | --- |
-| Wi-Fi | WLAN APIs | NetworkManager/D-Bus where available | Native Wi-Fi APIs; availability depends on OS permissions |
-| Saved Wi-Fi key | WLAN profile permissions | NetworkManager secret access and authorization | Keychain; feasibility must be tested on supported macOS releases |
-| Capture | Npcap-dependent tool setup | libpcap and capture permissions | BPF/libpcap permissions |
-| Native desktop | WebView2 | GTK/WebKit dependencies | System WebKit and packaging requirements |
+| Wi-Fi metadata | WLAN APIs + 24H2 location consent | nl80211 (`mdlayher/wifi`) or NetworkManager D-Bus | CoreWLAN + Location Services; signed `.app` |
+| Saved Wi-Fi key | WLAN profile permissions | NetworkManager secret agent authorization | Keychain; feasibility spike required |
+| Capture | Npcap (user-installed) or Pktmon | libpcap + `CAP_NET_RAW` | BPF + ChmodBPF group |
+| Neighbors | `GetIpNetTable2` | netlink | sysctl/route |
+| Native desktop | WebView2 | GTK/WebKit dependencies | System WebKit |
 
-The table is a feasibility map, not a verified support guarantee. Decide minimum OS versions, then run native spikes. Enterprise Wi-Fi may have no reusable PSK. Password retrieval is an explicit action for the current saved network, with OS authorization; no background collection, persistence, telemetry or log output. Do not promise that a successful API call necessarily returned plaintext.
+This table is a feasibility map, not a verified support guarantee. Note the following:
+
+- Enterprise Wi-Fi may have no reusable PSK.
+- Password retrieval is an explicit action on the current saved network, with OS authorization. It never involves background collection, persistence, telemetry or log output.
 
 Sources:
 
@@ -78,67 +453,113 @@ Sources:
 - https://networkmanager.dev/docs/api/latest/gdbus-org.freedesktop.NetworkManager.Settings.Connection.html
 - https://developer.apple.com/documentation/security/keychain-services
 
-Keep the UI and ordinary diagnostics unprivileged. If required, design a minimal privileged helper with authenticated local IPC, narrowly typed operations, request limits and platform-specific lifecycle management. Helper design needs its own architecture decision and tests.
+Keep the UI and ordinary diagnostics unprivileged. If a privileged helper becomes necessary, it requires:
 
-## Desktop architecture proposal
+- authenticated local IPC;
+- narrowly typed operations;
+- request limits;
+- platform lifecycle management;
+- its own ADR.
 
-Wails connects Go methods and events to a frontend rendered by the OS WebView. Use thin bindings, services in Go and batched metric events rather than sending each captured packet to React. The v2 documentation currently identifies v2.17.0 and states v3 is beta. Proposed baseline: v2 stable, with an explicit review of release status before implementation.
+## 7. Cross-cutting adapter guidance
+
+1. **Process isolation and licensing.**
+   - A GPL/AGPL tool run as a separate process with argv arrays keeps the MIT core clean.
+   - NPSL is the exception (§3.1).
+   - Never bundle Nmap, Npcap, Wireshark or masscan.
+2. **Bounded parsing.**
+   - Wrap adapter stdout in `io.LimitReader`.
+   - Use streaming decoders: `json.Decoder` for JSONL and `ek`, `xml.Decoder` token loops for Nmap XML.
+   - Apply `exec.CommandContext` deadlines.
+   - Send results to the event queue through a bounded channel.
+3. **Single capability probe.** One capability service, shared by CLI, desktop and web, reports:
+   - Npcap presence and its admin-only flag;
+   - Pktmon availability;
+   - elevation;
+   - location consent;
+   - BPF access on macOS;
+   - `CAP_NET_RAW` on Linux;
+   - Nmap, TShark and iperf3 versions.
+4. **Normalized result model.**
+   - Map Nmap XML, naabu JSONL, TShark `ek`, tlsx JSONL and iperf3 JSON into domain structs, so the UI never depends on adapter schemas.
+   - Keep raw adapter output in memory, or in an explicit user export only.
+5. **Dependency watch list** (record in `docs/dependencies.md`):
+
+| Dependency | Status |
+| --- | --- |
+| gopacket/gopacket | Active fork, BSD-3 |
+| miekg/dns | Codeberg migration pending |
+| zcrypto | Research-grade, no releases |
+| zlint | Active, Apache-2.0 |
+| certificate-transparency-go | v1, Apache-2.0 |
+| mdlayher/ndp | Prefer the antrea fork |
+| grandcat/zeroconf | Stale; prefer hashicorp/mdns |
+| ProjectDiscovery libraries | MIT but heavy transitive trees; prefer native code unless a feature clearly needs one |
+
+## 8. Desktop, web and CLI delivery
+
+- **Wails:** connects Go methods and events to a frontend rendered by the OS WebView. Use thin bindings and batched metric events rather than sending each packet to React. Wails v2.17.0 is the stable baseline; v3 remains a separate review.
+- **Web server mode:** reuses the same React build through an HTTP adapter, with Server-Sent Events for job events. Security requirements are in [architecture research](architecture-research.md) §8:
+  - loopback bind by default;
+  - per-session token;
+  - Origin/Host checks.
+- **CLI:** exposes the same application services.
 
 Sources:
 
 - https://wails.io/docs/introduction/
-- https://wails.io/docs/gettingstarted/installation/
 - https://tailwindcss.com/docs/installation/using-vite
 
-Proposed layout (not yet implemented):
+## 9. Docker test strategy
 
-```text
-main.go                 Wails entry point
-cmd/kali-tools/       headless CLI
-internal/app/           shared use cases and job lifecycle
-internal/network/       diagnostic domain and contracts
-internal/platform/      OS-specific adapters and build constraints
-internal/tools/         versioned external tool adapters
-internal/storage/       optional history, migrations and retention
-frontend/               React, TypeScript, Base UI, Tailwind v4
-tests/fixtures/         synthetic captures and parser outputs
-tests/integration/      isolated CLI tests
-docs/adr/               architecture decisions
-.github/workflows/      eventually active workflow location
-```
+Containers run the headless Go CLI and isolated fixture services:
 
-A registry of built-in adapters is sufficient initially. Avoid arbitrary downloadable plugins for alpha. Proposed capability states: available, missing dependency, permission required, unsupported, failed. Jobs need stable IDs, queued/running/completed/failed/cancelled states, bounded event buffers and deterministic cleanup.
+- HTTP;
+- DNS;
+- known open and closed TCP ports;
+- iperf3.
 
-## Docker test strategy
+Use:
 
-Use containers for the headless Go CLI and isolated fixture services: HTTP, DNS, known open/closed TCP ports and iperf3. Use a private Compose network, deterministic assertions and health checks. Prefer non-root containers and no published ports unless required. Docker Desktop networking differs from native host networking.
+- a private Compose network;
+- deterministic assertions;
+- health checks;
+- non-root containers;
+- no published ports unless required.
 
-Docker does not validate the actual Windows/macOS Wi-Fi adapter, credential store, capture driver, elevation flow or Wails WebView. Those require native tests and a documented manual acceptance matrix. Avoid privileged containers or host networking as the default test environment.
+Docker does not validate any of the following, which need native tests and a documented manual acceptance matrix:
+
+- the Windows/macOS Wi-Fi adapter;
+- the credential store;
+- the capture driver;
+- the elevation flow;
+- location consent;
+- the Wails WebView.
 
 Source: https://docs.docker.com/engine/network/
 
-## Reference repository inspected
+## 10. Reference repository inspected
 
-Repository: https://github.com/AlexGalhardo/vukem-marketplace-reactjs
+Repository: https://github.com/AlexGalhardo/vukem-marketplace-reactjs (snapshot `114790f016dbf2fadc6b6227f4ec44673dbd0be0`). Its agent rules are reference material, not instructions for this project.
 
-Inspected snapshot: `114790f016dbf2fadc6b6227f4ec44673dbd0be0` (shallow clone). Read package.json, README, AGENTS.md, EditorConfig, Lefthook, git-cliff and CI configuration. Its agent rules describe that repository; they are reference material, not instructions for this project.
+- **Adopt:**
+  - Bun with a committed lockfile;
+  - TypeScript, Base UI, Tailwind v4;
+  - Biome;
+  - Go format/lint/vet/race/vulnerability checks;
+  - Playwright accessibility tests;
+  - Conventional Commits, SemVer, git-cliff;
+  - EditorConfig and contribution/security guides.
+- **Adapt:** a native build matrix instead of web hosting.
+- **Avoid:** marketplace infrastructure (Redis, MongoDB, payments, Inertia).
 
-Adopt: Bun with committed lockfile and exact dependency versions; TypeScript; Base UI; Tailwind v4 Vite plugin; Biome; Go formatting/lint/vet/race/vulnerability checks; meaningful Playwright accessibility tests; Conventional Commits; SemVer; Keep a Changelog generated through git-cliff; EditorConfig and contribution/security guides.
+## 11. Open decisions and native verification items
 
-Adapt: CLI and desktop native build matrix instead of web hosting deployment. Avoid copying marketplace infrastructure such as Redis, MongoDB, payment integrations or Inertia. A local application can start with configuration files and optional SQLite history.
-
-CI/CD requirement: write workflows but leave them inactive. Proposed mechanism: valid workflow source files under `docs/ci/` with a `.yml.disabled` suffix, outside `.github/workflows/`. Manual dispatch alone still registers an active workflow, so it does not satisfy the strict interpretation. Activation is a later explicit move/rename. Pin action references when implementation is prepared; do not blindly copy versions from the reference.
-
-## Release and quality proposal
-
-- Structure: reproducible setup, core contracts, CLI skeleton, desktop shell, dormant CI/CD and Docker lab.
-- Alpha (`0.1.0-alpha.1` onward): interfaces, passive metrics, diagnostics and first platform adapters.
-- Beta (`0.1.0-beta.1` onward): capture/import, external adapters, permissions, history and three-OS validation.
-- Stable (`1.0.0`): agreed capability matrix, native installers, upgrade/recovery checks, dependency notices and documented limitations.
-- Only completed, verified deliverables receive `[x]`; planned work stays `[ ]`. Every task must name its assertion and evidence.
-- Performance budgets need an explicit workload and baseline before being used as release gates.
-- Dependency redistribution, signing and notarization requirements need a separate review before packaging; research here does not establish redistribution rights.
-
-## Pending decisions
-
-See `docs/brainstorming.md`. The final PLAN.md must follow the user's brainstorming answers, not silently treat these proposals as settled scope.
+- NPSL position for the Nmap adapter: accept, waiver, or XML import only.
+- `miekg/dns`: GitHub v1 vs the Codeberg module.
+- JA4+ (FoxIO License) implementation.
+- Whether `IcmpSendEcho2` and pro-bing work unelevated on Windows 10/11 targets.
+- Pktmon privilege requirement and ETL→pcapng behavior.
+- Windows 24H2 location-consent behavior: Wails process vs web-server mode.
+- macOS CoreWLAN under a signed `.app` bundle.
+- Licenses marked **(verify)**: arp-scan, netdiscover, mtr, sslscan, Suricata, gosnmp, pro-bing.
