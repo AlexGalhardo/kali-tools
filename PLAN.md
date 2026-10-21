@@ -223,9 +223,10 @@ These tasks remove the deviations listed in [architecture §8](docs/architecture
 - [ ] H03 Consumer-side driven ports.
   - Spec: [H03-driven-ports](docs/specs/H03-driven-ports.md)
   - [x] Declare a `Prober` port in `network` and inject `probe.ICMP` from the composition roots (D1). Evidence: commit 4dd28a3; `go list -deps ./internal/network` lists only `internal/domain`; tests `TestICMPWithoutProberIsUnsupported` and `TestICMPUsesInjectedProber`.
-  - [ ] Declare `JobStore`/`SettingsStore` in `app` (D5).
-  - [ ] Declare `HostNetwork`, `ToolRunner`/`ServiceInspector`, `WiFiProvider` and `CaptureProvider` in their consumers.
-  - [ ] Add compile-time assertions in bootstrap or tests only.
+  - [x] Declare `JobStore`/`SettingsStore` in `app` (D5). [Evidence](docs/verification/specs/H03.md).
+  - [x] Declare `HostNetwork`, `ToolRunner` (including service inspection), `WiFiProvider` and `CaptureProvider` in their consumers. [Evidence](docs/verification/specs/H03.md).
+  - [x] Add compile-time assertions in bootstrap or tests only. [Evidence](docs/verification/specs/H03.md).
+  - Acceptance pending: native desktop on moved types (AC-11); sequential headless implementation is owner-authorized.
   - Assert: `internal/network`, `internal/capture`, `internal/wifi` and `internal/app` import no `internal/adapter/*` package.
 - [ ] H04 Single application facade.
   - Spec: [H04-application-facade](docs/specs/H04-application-facade.md)

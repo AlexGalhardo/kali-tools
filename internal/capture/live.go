@@ -25,7 +25,13 @@ type LiveResult struct {
 	Finished time.Time `json:"finished"`
 }
 type LiveProvider interface {
-	Capture(context.Context, LiveRequest) (LiveResult, error)
+	Capture(context.Context, LiveRequest) (LiveResult, *Artifact, error)
+}
+
+type Native struct{}
+
+func (Native) Capture(ctx context.Context, request LiveRequest) (LiveResult, *Artifact, error) {
+	return LiveSession(ctx, request)
 }
 
 func Live(ctx context.Context, r LiveRequest) (LiveResult, error) { return live(ctx, r, nil) }

@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | H03 |
-| Status | In progress: the `network.Prober` part is Done (2026-10-21, working tree); everything else is Ready |
+| Status | Implementation complete 2026-10-21; native AC-11 pending ([evidence](../verification/specs/H03.md)) |
 | Depends on | H01, H02 |
 | Risk | Medium: type moves change the generated Wails models (namespaces only), and storage gains an import of `internal/app` types |
 

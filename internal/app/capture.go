@@ -21,6 +21,9 @@ func (s *Service) StartCapture(request capture.LiveRequest) error {
 	if err := capture.ValidateLiveRequest(request); err != nil {
 		return err
 	}
+	if s.deps.Capture == nil {
+		return domain.Unsupported("live capture provider is not configured")
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.closed {
@@ -38,7 +41,7 @@ func (s *Service) StartCapture(request capture.LiveRequest) error {
 	go func() {
 		defer s.bg.Done()
 		defer cancel()
-		result, artifact, err := s.Live(ctx, request)
+		result, artifact, err := s.deps.Capture.Capture(ctx, request)
 		s.capMu.Lock()
 		s.capArtifact = artifact
 		s.capCancel = nil

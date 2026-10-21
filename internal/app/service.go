@@ -6,9 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/AlexGalhardo/kali-tools/internal/adapter/storage"
-	"github.com/AlexGalhardo/kali-tools/internal/adapter/tools"
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/job"
 	"github.com/AlexGalhardo/kali-tools/internal/network"
 )
@@ -16,14 +15,11 @@ import (
 const persistTimeout = 5 * time.Second
 
 type Service struct {
-	Store          *storage.Store
 	Diagnostics    network.Diagnostics
 	Jobs           *job.Manager
-	Counters       func(context.Context) ([]network.Counter, error)
-	Live           func(context.Context, capture.LiveRequest) (capture.LiveResult, *capture.Artifact, error)
+	deps           Deps
 	mu             sync.Mutex
 	closed         bool
-	closeErr       error
 	done           chan struct{}
 	closeDone      chan struct{}
 	bg             sync.WaitGroup
@@ -33,22 +29,24 @@ type Service struct {
 	capArtifact    *capture.Artifact
 }
 
-func New(store *storage.Store, diagnostics network.Diagnostics, clock func() time.Time) *Service {
+func New(deps Deps) *Service {
+	if deps.Jobs == nil {
+		panic("app: job store is required")
+	}
+	if deps.Settings == nil {
+		panic("app: settings store is required")
+	}
 	s := &Service{
-		Store: store, Diagnostics: diagnostics, Jobs: job.NewManager(clock, job.Limits{}),
-		Live: capture.LiveSession, done: make(chan struct{}), closeDone: make(chan struct{}),
+		deps: deps, Diagnostics: deps.Diagnostics, Jobs: job.NewManager(deps.Clock, job.Limits{}),
+		done: make(chan struct{}), closeDone: make(chan struct{}),
 	}
 	s.Jobs.Summarize = jobSummary
 	s.Jobs.OnChange = func(st job.Status) error {
 		ctx, cancel := context.WithTimeout(context.Background(), persistTimeout)
 		defer cancel()
-		return s.Store.PutJob(ctx, storedJob(st))
+		return deps.Jobs.PutJob(ctx, st)
 	}
 	return s
-}
-
-func storedJob(st job.Status) storage.Job {
-	return storage.Job{ID: string(st.ID), Kind: st.Kind, State: string(st.State), Created: st.Created, Finished: st.Finished, Summary: st.Summary}
 }
 
 func jobSummary(kind string, state job.State, detail string) string {
@@ -68,28 +66,27 @@ func jobSummary(kind string, state job.State, detail string) string {
 
 func (s *Service) Interfaces() ([]network.InterfaceInfo, error) { return network.Interfaces() }
 
-func (s *Service) Start(parent context.Context, request network.Request) (storage.Job, error) {
+func (s *Service) Start(parent context.Context, request network.Request) (job.Status, error) {
 	if err := network.Validate(request); err != nil {
-		return storage.Job{}, err
+		return job.Status{}, err
 	}
 	st, err := s.Jobs.Start(request.Kind, func(ctx context.Context) (string, any, error) {
 		result, err := s.Diagnostics.Diagnose(ctx, request)
 		return "", &result, err
 	})
-	return storedJob(st), err
+	return st, err
 }
 
 func (s *Service) Cancel(id string) bool { return s.Jobs.Cancel(job.ID(id)) }
 
-// Close cancels producers and jobs before closing storage. Concurrent callers
-// wait for the first close so they receive the same result.
+// Close stops producers and jobs. The composition root owns adapter cleanup.
 func (s *Service) Close() error {
 	s.mu.Lock()
 	if s.closed {
 		done := s.closeDone
 		s.mu.Unlock()
 		<-done
-		return s.closeErr
+		return nil
 	}
 	s.closed = true
 	s.mu.Unlock()
@@ -100,9 +97,8 @@ func (s *Service) Close() error {
 	s.capArtifact = nil
 	s.capMu.Unlock()
 	s.Jobs.Close()
-	s.closeErr = s.Store.Close()
 	close(s.closeDone)
-	return s.closeErr
+	return nil
 }
 
 // Discover persists counts only; addresses and port results remain in memory.
@@ -124,19 +120,31 @@ func (s *Service) Discover(parent context.Context, cidr string, ports []int, tim
 	return results, err
 }
 
-func (s *Service) InspectServices(parent context.Context, cidr string, ports []int) (result tools.Nmap, err error) {
+func (s *Service) InspectServices(parent context.Context, cidr string, ports []int) (result Nmap, err error) {
 	if err = network.ValidateDiscovery(cidr, ports, time.Second); err != nil {
 		return result, err
 	}
+	if s.deps.Tools == nil {
+		return result, domain.Unsupported("tool runner is not configured")
+	}
 	err = s.runOperation(parent, "nmap", func(ctx context.Context) (string, error) {
 		var err error
-		result, err = tools.RunNmap(ctx, cidr, ports)
+		result, err = s.deps.Tools.RunNmap(ctx, cidr, ports)
 		if err != nil {
 			return "", err
 		}
 		return fmt.Sprintf("Nmap %s: %d hosts", result.Version, len(result.Hosts)), nil
 	})
 	return result, err
+}
+
+func (s *Service) History(ctx context.Context) ([]job.Status, error) { return s.deps.Jobs.History(ctx) }
+func (s *Service) ClearHistory(ctx context.Context) error            { return s.deps.Jobs.Clear(ctx) }
+func (s *Service) Settings(ctx context.Context) (Settings, error) {
+	return s.deps.Settings.Settings(ctx)
+}
+func (s *Service) SaveSettings(ctx context.Context, value Settings) error {
+	return s.deps.Settings.SaveSettings(ctx, value)
 }
 
 func (s *Service) runOperation(parent context.Context, kind string, operation func(context.Context) (string, error)) error {

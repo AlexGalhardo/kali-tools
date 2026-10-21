@@ -3,10 +3,9 @@
 import {domain} from '../models';
 import {wifi} from '../models';
 import {network} from '../models';
-import {storage} from '../models';
+import {job} from '../models';
 import {capture} from '../models';
-import {tools} from '../models';
-import {platform} from '../models';
+import {app} from '../models';
 
 export function CancelJob(arg1:string):Promise<boolean>;
 
@@ -20,30 +19,30 @@ export function Diagnose(arg1:network.Request):Promise<network.Result>;
 
 export function Discover(arg1:string,arg2:Array<number>):Promise<Array<network.PortResult>>;
 
-export function History():Promise<Array<storage.Job>>;
+export function History():Promise<Array<job.Status>>;
 
 export function ImportCapture():Promise<capture.ImportResult>;
 
-export function InspectServices(arg1:string,arg2:Array<number>):Promise<tools.Nmap>;
+export function InspectServices(arg1:string,arg2:Array<number>):Promise<app.Nmap>;
 
 export function Interfaces():Promise<Array<network.InterfaceInfo>>;
 
-export function Inventory():Promise<platform.Snapshot>;
+export function Inventory():Promise<app.HostSnapshot>;
 
 export function RevealWiFi():Promise<wifi.Secret>;
 
 export function SaveCapture(arg1:string):Promise<boolean>;
 
-export function SaveSettings(arg1:storage.Settings):Promise<void>;
+export function SaveSettings(arg1:app.Settings):Promise<void>;
 
-export function Settings():Promise<storage.Settings>;
+export function Settings():Promise<app.Settings>;
 
 export function StartCapture(arg1:capture.LiveRequest):Promise<void>;
 
-export function StartDiagnostic(arg1:network.Request):Promise<storage.Job>;
+export function StartDiagnostic(arg1:network.Request):Promise<job.Status>;
 
 export function StopCapture():Promise<void>;
 
-export function Tools():Promise<Array<tools.Tool>>;
+export function Tools():Promise<Array<app.Tool>>;
 
 export function Version():Promise<string>;

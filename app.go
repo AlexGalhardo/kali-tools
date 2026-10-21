@@ -10,7 +10,6 @@ import (
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/platform"
-	"github.com/AlexGalhardo/kali-tools/internal/adapter/storage"
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/tools"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
 	"github.com/AlexGalhardo/kali-tools/internal/bootstrap"
@@ -117,9 +116,9 @@ func (a *App) Diagnose(r network.Request) (network.Result, error) {
 	}
 	return a.service.Diagnostics.Diagnose(a.ctx, r)
 }
-func (a *App) StartDiagnostic(r network.Request) (storage.Job, error) {
+func (a *App) StartDiagnostic(r network.Request) (job.Status, error) {
 	if e := a.ready(); e != nil {
-		return storage.Job{}, e
+		return job.Status{}, e
 	}
 	return a.service.Start(a.ctx, r)
 }
@@ -129,29 +128,29 @@ func (a *App) CancelJob(id string) bool {
 	}
 	return a.service.Cancel(id)
 }
-func (a *App) History() ([]storage.Job, error) {
+func (a *App) History() ([]job.Status, error) {
 	if e := a.ready(); e != nil {
 		return nil, e
 	}
-	return a.service.Store.History(a.ctx)
+	return a.service.History(a.ctx)
 }
 func (a *App) ClearHistory() error {
 	if e := a.ready(); e != nil {
 		return e
 	}
-	return a.service.Store.Clear(a.ctx)
+	return a.service.ClearHistory(a.ctx)
 }
-func (a *App) Settings() (storage.Settings, error) {
+func (a *App) Settings() (app.Settings, error) {
 	if e := a.ready(); e != nil {
-		return storage.Settings{}, e
+		return app.Settings{}, e
 	}
-	return a.service.Store.Settings(a.ctx)
+	return a.service.Settings(a.ctx)
 }
-func (a *App) SaveSettings(v storage.Settings) error {
+func (a *App) SaveSettings(v app.Settings) error {
 	if e := a.ready(); e != nil {
 		return e
 	}
-	return a.service.Store.SaveSettings(a.ctx, v)
+	return a.service.SaveSettings(a.ctx, v)
 }
 func (a *App) CurrentWiFi() (wifi.Network, error) { return wifi.Current() }
 func (a *App) RevealWiFi() (wifi.Secret, error)   { return wifi.Reveal() }

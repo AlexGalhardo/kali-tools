@@ -46,7 +46,7 @@ func Inventory() (Snapshot, error) {
 		if gw == nil {
 			gw = []string{}
 		}
-		out.Adapters = append(out.Adapters, Adapter{uint32(i.Index), i.Name, gw, append([]string{}, dns...)})
+		out.Adapters = append(out.Adapters, Adapter{Index: uint32(i.Index), Name: i.Name, Gateways: gw, DNS: append([]string{}, dns...)})
 	}
 	f, e := os.Open("/proc/net/dev")
 	if e != nil {

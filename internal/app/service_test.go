@@ -23,7 +23,8 @@ func TestCancellationAndRedaction(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	s := app.New(store, network.Diagnostics{}, nil)
+	t.Cleanup(func() { _ = store.Close() })
+	s := app.New(app.Deps{Jobs: store, Settings: store, Diagnostics: network.Diagnostics{}})
 	events, _ := s.Jobs.Subscribe(t.Context())
 	defer func() {
 		if e := s.Close(); e != nil {
@@ -34,7 +35,7 @@ func TestCancellationAndRedaction(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	if !s.Cancel(j.ID) {
+	if !s.Cancel(string(j.ID)) {
 		t.Fatal("missing active job")
 	}
 	deadline := time.NewTimer(2 * time.Second)
@@ -64,7 +65,8 @@ func TestDiscoverySummarySurvivesRestartWithoutTargets(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	service := app.New(store, network.Diagnostics{}, nil)
+	t.Cleanup(func() { _ = store.Close() })
+	service := app.New(app.Deps{Jobs: store, Settings: store, Diagnostics: network.Diagnostics{}})
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
@@ -75,6 +77,9 @@ func TestDiscoverySummarySurvivesRestartWithoutTargets(t *testing.T) {
 		t.Fatal(results, err)
 	}
 	if err := service.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Close(); err != nil {
 		t.Fatal(err)
 	}
 	store, err = storage.Open(path)
@@ -104,7 +109,8 @@ func TestConcurrentDiagnosticsBoundAndShutdown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	service := app.New(store, network.Diagnostics{}, nil)
+	t.Cleanup(func() { _ = store.Close() })
+	service := app.New(app.Deps{Jobs: store, Settings: store, Diagnostics: network.Diagnostics{}})
 	defer func() {
 		if err := service.Close(); err != nil {
 			t.Error(err)
@@ -145,7 +151,8 @@ func TestCloseIsIdempotent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := app.New(store, network.Diagnostics{}, nil)
+	t.Cleanup(func() { _ = store.Close() })
+	s := app.New(app.Deps{Jobs: store, Settings: store, Diagnostics: network.Diagnostics{}})
 	if err = s.Close(); err != nil {
 		t.Fatal(err)
 	}
@@ -165,7 +172,8 @@ func TestTerminalEventSurvivesFullEventBuffer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := app.New(store, network.Diagnostics{}, nil)
+	t.Cleanup(func() { _ = store.Close() })
+	s := app.New(app.Deps{Jobs: store, Settings: store, Diagnostics: network.Diagnostics{}})
 	defer func() { _ = s.Close() }()
 	events, _ := s.Jobs.Subscribe(t.Context())
 	for range job.DefaultSubscriberBuffer {
@@ -179,7 +187,7 @@ func TestTerminalEventSurvivesFullEventBuffer(t *testing.T) {
 	for {
 		select {
 		case e := <-events:
-			if e.Job != nil && string(e.Job.ID) == j.ID && e.Job.Finished != nil {
+			if e.Job != nil && e.Job.ID == j.ID && e.Job.Finished != nil {
 				if e.Job.State != "failed" {
 					t.Fatal("unexpected terminal state", e.Job.State)
 				}
@@ -211,7 +219,7 @@ func TestDiagnosticOutlivesStartingRequest(t *testing.T) {
 	case <-time.After(3 * time.Second):
 		t.Fatal("request cancellation leaked into job context")
 	}
-	if !service.Cancel(st.ID) {
+	if !service.Cancel(string(st.ID)) {
 		t.Fatal("job ended with its starting request")
 	}
 }

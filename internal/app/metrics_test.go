@@ -12,15 +12,16 @@ import (
 )
 
 func TestMetricsPublishesOnTick(t *testing.T) {
-	s := newService(t)
+	deps := fakeDeps()
 	calls := 0
-	s.Counters = func(context.Context) ([]network.Counter, error) {
+	deps.Host = fakeHost{inventory: func(context.Context) (app.HostSnapshot, error) {
 		calls++
 		if calls == 2 {
-			return nil, errors.New("synthetic sample failure")
+			return app.HostSnapshot{}, errors.New("synthetic sample failure")
 		}
-		return []network.Counter{}, nil
-	}
+		return app.HostSnapshot{Counters: []network.Counter{{ID: "synthetic", Received: uint64(calls) * 100, Sent: uint64(calls) * 20}}}, nil
+	}}
+	s := serviceWithDeps(t, deps)
 	events, _ := s.Jobs.Subscribe(t.Context())
 	ticks := make(chan time.Time)
 	stopped := make(chan struct{})
@@ -41,7 +42,7 @@ func TestMetricsPublishesOnTick(t *testing.T) {
 	select {
 	case event := <-events:
 		metrics, ok := event.Data.(network.Metrics)
-		if !ok || !metrics.Timestamp.Equal(first.Add(2*app.MetricsInterval)) {
+		if !ok || !metrics.Timestamp.Equal(first.Add(2*app.MetricsInterval)) || metrics.ReceiveBPS != 50 || metrics.SendBPS != 10 {
 			t.Fatalf("failed tick published: %+v", event)
 		}
 	case <-time.After(3 * time.Second):
@@ -60,7 +61,9 @@ func TestMetricsPublishesOnTick(t *testing.T) {
 func TestStartMetricsIsIdempotent(t *testing.T) {
 	s := newService(t)
 	s.StartMetrics() // A nil sampler must leave StartMetrics available for wiring.
-	s.Counters = func(context.Context) ([]network.Counter, error) { return []network.Counter{}, nil }
+	deps := fakeDeps()
+	deps.Host = fakeHost{inventory: func(context.Context) (app.HostSnapshot, error) { return app.HostSnapshot{}, nil }}
+	s = serviceWithDeps(t, deps)
 	s.StartMetrics()
 	s.StartMetrics()
 	if err := s.Close(); err != nil {

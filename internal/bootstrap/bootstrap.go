@@ -3,14 +3,19 @@ package bootstrap
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/platform"
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/probe"
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/storage"
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/tools"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
+	"github.com/AlexGalhardo/kali-tools/internal/capture"
 	"github.com/AlexGalhardo/kali-tools/internal/network"
+	"github.com/AlexGalhardo/kali-tools/internal/wifi"
 )
 
 // Config holds inputs supplied by a composition root.
@@ -38,18 +43,23 @@ func New(ctx context.Context, cfg Config) (*app.Application, func() error, error
 	if err != nil {
 		return nil, nil, fmt.Errorf("bootstrap: open storage: %w", err)
 	}
-	service := app.New(store, network.Diagnostics{Prober: probe.ICMP{}}, now)
-	service.Counters = func(context.Context) ([]network.Counter, error) {
-		snapshot, err := platform.Inventory()
-		return snapshot.Counters, err
-	}
+	service := app.New(app.Deps{
+		Jobs: store, Settings: store, Diagnostics: network.Diagnostics{Prober: probe.ICMP{}},
+		Host: platform.Host{}, Tools: tools.Runner{}, WiFi: wifi.Native{}, Capture: capture.Native{}, Clock: now,
+	})
 	application := &app.Application{Service: service}
+	var once sync.Once
+	var closeErr error
+	cleanup := func() error {
+		once.Do(func() { closeErr = errors.Join(application.Close(), store.Close()) })
+		return closeErr
+	}
 	settings, err := store.Settings(ctx)
 	if err == nil {
 		if err := store.Retain(ctx, now().AddDate(0, 0, -settings.RetentionDays)); err != nil {
-			_ = application.Close()
+			_ = cleanup()
 			return nil, nil, fmt.Errorf("bootstrap: retention: %w", err)
 		}
 	}
-	return application, application.Close, nil
+	return application, cleanup, nil
 }

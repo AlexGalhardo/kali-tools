@@ -13,21 +13,19 @@ import (
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/layers"
 
-	"github.com/AlexGalhardo/kali-tools/internal/adapter/storage"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/job"
-	"github.com/AlexGalhardo/kali-tools/internal/network"
 )
 
 func newService(t *testing.T) *app.Service {
+	return serviceWithDeps(t, fakeDeps())
+}
+
+func serviceWithDeps(t *testing.T, deps app.Deps) *app.Service {
 	t.Helper()
-	store, err := storage.Open(":memory:")
-	if err != nil {
-		t.Fatal(err)
-	}
-	s := app.New(store, network.Diagnostics{}, nil)
+	s := app.New(deps)
 	t.Cleanup(func() {
 		if err := s.Close(); err != nil {
 			t.Error(err)
@@ -95,8 +93,8 @@ func TestCaptureImportExportRoundTrip(t *testing.T) {
 	expectMessage(t, s.CanImportCapture(), "application is shutting down")
 }
 
-func TestCaptureSessionStates(t *testing.T) {
-	s := newService(t)
+func captureAddress(t *testing.T) string {
+	t.Helper()
 	addresses, err := net.InterfaceAddrs()
 	if err != nil {
 		t.Fatal(err)
@@ -112,12 +110,19 @@ func TestCaptureSessionStates(t *testing.T) {
 	if address == "" {
 		t.Skip("no local non-loopback IPv4 for capture validation")
 	}
+	return address
+}
+
+func TestCaptureSessionStates(t *testing.T) {
+	address := captureAddress(t)
+	deps := fakeDeps()
 	started := make(chan struct{})
-	s.Live = func(ctx context.Context, r capture.LiveRequest) (capture.LiveResult, *capture.Artifact, error) {
+	deps.Capture = fakeCapture{run: func(ctx context.Context, r capture.LiveRequest) (capture.LiveResult, *capture.Artifact, error) {
 		close(started)
 		<-ctx.Done()
 		return capture.LiveResult{Packets: []capture.Packet{}}, nil, ctx.Err()
-	}
+	}}
+	s := serviceWithDeps(t, deps)
 	events, _ := s.Jobs.Subscribe(t.Context())
 	request := capture.LiveRequest{Address: address, DurationSeconds: 1, PacketLimit: 1}
 	if err := s.StartCapture(capture.LiveRequest{}); err == nil {

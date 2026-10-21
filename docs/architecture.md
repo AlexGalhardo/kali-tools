@@ -131,27 +131,27 @@ A port is a small Go interface declared **in the package that consumes it**. Ada
 
 | Consumer | Port (current form) | Implementation |
 | --- | --- | --- |
-| `app.Service` | `*storage.Store` concrete (no interface yet) | `adapter/storage` |
+| `app.Service` | `JobStore`, `SettingsStore` | `*storage.Store`, hand-written in-memory test fakes |
 | `app.Service` | `job.Manager` with injected clock function | `internal/job`; `bootstrap.Config.Now` or UTC system clock |
-| `app.Service` | `Counters` function (until H03) | `platform.Inventory` injected by bootstrap |
-| `app.Service` | `Live` function (until H03) | `capture.LiveSession`, replaced in tests |
-| `app.Service` | Nmap inspection via `tools` functions | `adapter/tools` |
-| `capture` | `LiveProvider` interface | `live_windows.go` / `live_other.go` |
+| `app.Service` | `HostNetwork` | `platform.Host` |
+| `app.Service` | `ToolRunner` (including service inspection) | `tools.Runner` |
+| `app.Service` | `WiFiProvider` | `wifi.Native` (used by the facade in H04) |
+| `app.Service` | `CaptureProvider` alias of `capture.LiveProvider` | `capture.Native` selected by build constraints |
 | `network.Diagnostics` | `network.Prober` interface (injected by `bootstrap.New` for both roots) | `probe.ICMP` in `adapter/probe` |
 | `app.go` / CLI | direct calls to `platform.Snapshot`, `wifi`, `capture`, `tools.Inventory` | respective packages |
 
-### 4.3 Target driven ports (PLAN phase H)
+### 4.3 Implemented driven ports (H03)
 
 | Port | Declared in | Implementations |
 | --- | --- | --- |
-| `JobStore`, `SettingsStore` | `app` | `adapter/storage`, in-memory fake |
+| `JobStore`, `SettingsStore` — done 2026-10-21 | `app` | `adapter/storage`, in-memory fake |
 | `Prober` (ICMP echo/trace) — **done 2026-10-21** | `network` | `probe.ICMP` (windows), unsupported fallback |
-| `HostNetwork` (routes, DNS servers, counters) | `app` | `adapter/platform` |
-| `ToolRunner` / `ServiceInspector` | `app` | `adapter/tools` |
-| `WiFiProvider` | `app` | `internal/wifi` native providers |
-| `CaptureProvider` | `capture` (exists as `LiveProvider`) | Windows raw socket; future Npcap/libpcap/Pktmon |
+| `HostNetwork` (routes, DNS servers, counters) — done 2026-10-21 | `app` | `platform.Host` |
+| `ToolRunner` (includes `ServiceInspector`) — done 2026-10-21 | `app` | `tools.Runner` |
+| `WiFiProvider` — done 2026-10-21 | `app` | `wifi.Native` |
+| `CaptureProvider` — done 2026-10-21 | `capture.LiveProvider`, alias in `app` | `capture.Native` returns a live result and retained artifact |
 
-Every port gets a contract suite in `internal/porttest`, run against both the real adapter and its fake.
+H03 compile-time assertions live only in `internal/bootstrap/assert.go`. No inner package imports an adapter, checked across all GOOS source files by `TestCoreDoesNotImportAdapters`. `app.New(Deps)` requires job and settings stores; bootstrap owns SQLite and returns a `sync.Once` cleanup that closes the service before the store. Application-owned settings, host and tool types retain their existing JSON tags; tool XML tags remain until H06. Every port gets a real/fake contract suite in H07.
 
 ## 5. Runtime flows
 
@@ -263,8 +263,8 @@ Use `git mv`, then rewrite import paths and run `gofmt`. Run `go vet ./...` for 
 | D1 | ~~`internal/network` imports `internal/adapter/probe`~~ — resolved 2026-10-21 by the `network.Prober` port | — | H03 (done) |
 | D2 | `app.go` and the CLI call `platform`, `wifi`, `capture` and `tools` directly instead of going through `app` | Logic and wiring are duplicated per interface; the web server would duplicate them again | H04, H05 |
 | D3 | Resolved 2026-10-21: `app.Service` owns metrics and capture; all producers publish through `job.Manager` | Native desktop acceptance remains pending under the owner's headless workflow | H02 |
-| D4 | Binding and CLI results expose `storage.Job` and `storage.Settings` | Adapter types used as DTOs; storage changes leak to the UI contract | H06 |
-| D5 | `app.Service` depends on `*storage.Store` concretely | Use cases cannot run with a fake store; there is no contract test | H03, H07 |
+| D4 | Bindings now expose `job.Status` and `app.Settings`, but transport DTO separation and error mapping remain pending | H03 removes storage namespaces; H06 defines transport contracts | H06 |
+| D5 | Resolved for dependency inversion 2026-10-21: `app.Service` consumes `JobStore` and `SettingsStore`; real/fake contract suites remain H07 | Diagnostic, inspection, settings and history tests run with fakes | H03, H07 |
 | D6 | `capture`, `network`, `wifi` mix domain rules with OS or network I/O in one package | Harder to test without hardware | H03 (split only where a port is needed) |
 | D7 | `frontend/src/app/App.tsx` (about 1,250 lines) holds every page | Hard to evolve per feature | W02 |
 | D8 | No mechanical check of the dependency rule | Rules decay silently | H08 |

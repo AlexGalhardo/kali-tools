@@ -13,7 +13,7 @@ const MetricsInterval = 2 * time.Second
 func (s *Service) StartMetrics() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.Counters == nil || s.closed || s.metricsStarted {
+	if s.deps.Host == nil || s.closed || s.metricsStarted {
 		return
 	}
 	s.metricsStarted = true
@@ -37,10 +37,10 @@ func (s *Service) runMetrics(tick <-chan time.Time) {
 				return
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), MetricsInterval)
-			counters, err := s.Counters(ctx)
+			snapshot, err := s.deps.Host.Inventory(ctx)
 			cancel()
 			if err == nil {
-				s.Jobs.Publish(job.TopicMetrics, tracker.Update(counters, now))
+				s.Jobs.Publish(job.TopicMetrics, tracker.Update(snapshot.Counters, now))
 			}
 		}
 	}

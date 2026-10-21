@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,6 +11,31 @@ import (
 	"time"
 )
 
+func TestJobStatusJSONMatchesLegacyRow(t *testing.T) {
+	store, err := Open(":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = store.Close() }()
+	created := time.Date(2026, 10, 21, 12, 0, 0, 0, time.UTC)
+	finished := created.Add(time.Second)
+	if err := store.PutJob(t.Context(), Job{ID: "1", Kind: "tcp", State: "completed", Created: created, Finished: &finished, Summary: "x"}); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := store.History(t.Context())
+	if err != nil || len(rows) != 1 {
+		t.Fatalf("history = %+v, err = %v", rows, err)
+	}
+	raw, err := json.Marshal(rows[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	const want = `{"id":"1","kind":"tcp","state":"completed","created":"2026-10-21T12:00:00Z","finished":"2026-10-21T12:00:01Z","summary":"x"}`
+	if string(raw) != want {
+		t.Fatalf("JSON = %s, want %s", raw, want)
+	}
+}
+
 func TestPersistenceRecoveryAndRetention(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "history.db")
 	s, e := Open(path)
@@ -17,7 +43,7 @@ func TestPersistenceRecoveryAndRetention(t *testing.T) {
 		t.Fatal(e)
 	}
 	now := time.Now().UTC()
-	if e = s.SaveSettings(t.Context(), Settings{"pt-BR", 7}); e != nil {
+	if e = s.SaveSettings(t.Context(), Settings{Language: "pt-BR", RetentionDays: 7}); e != nil {
 		t.Fatal(e)
 	}
 	if e = s.PutJob(t.Context(), Job{ID: "1", Kind: "tcp", State: "running", Created: now.AddDate(0, 0, -60), Summary: "Running"}); e != nil {
@@ -71,7 +97,7 @@ func TestConcurrentReadsAndCancelledWrite(t *testing.T) {
 	if e != nil || len(rows) != 0 {
 		t.Fatal(rows, e)
 	}
-	if e = s.SaveSettings(t.Context(), Settings{"unknown", 0}); e == nil {
+	if e = s.SaveSettings(t.Context(), Settings{Language: "unknown", RetentionDays: 0}); e == nil {
 		t.Fatal("invalid settings accepted")
 	}
 }

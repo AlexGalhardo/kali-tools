@@ -12,20 +12,16 @@ import (
 	"time"
 
 	_ "modernc.org/sqlite"
+
+	"github.com/AlexGalhardo/kali-tools/internal/app"
+	"github.com/AlexGalhardo/kali-tools/internal/job"
 )
 
 type Store struct {
 	db    *sql.DB
 	write sync.Mutex
 }
-type Job struct {
-	ID       string     `json:"id"`
-	Kind     string     `json:"kind"`
-	State    string     `json:"state"`
-	Created  time.Time  `json:"created"`
-	Finished *time.Time `json:"finished,omitempty"`
-	Summary  string     `json:"summary"`
-}
+type Job = job.Status
 
 func DefaultPath() (string, error) {
 	base, e := os.UserConfigDir()
@@ -112,7 +108,7 @@ func (s *Store) PutJob(ctx context.Context, j Job) error {
 	if j.Finished != nil {
 		finished = j.Finished.UTC().Format(time.RFC3339Nano)
 	}
-	_, e := s.db.ExecContext(ctx, `INSERT INTO jobs VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET state=excluded.state,finished=excluded.finished,summary=excluded.summary`, j.ID, j.Kind, j.State, j.Created.UTC().Format(time.RFC3339Nano), finished, j.Summary)
+	_, e := s.db.ExecContext(ctx, `INSERT INTO jobs VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET state=excluded.state,finished=excluded.finished,summary=excluded.summary`, string(j.ID), j.Kind, string(j.State), j.Created.UTC().Format(time.RFC3339Nano), finished, j.Summary)
 	return e
 }
 func (s *Store) History(ctx context.Context) ([]Job, error) {
@@ -125,10 +121,12 @@ func (s *Store) History(ctx context.Context) ([]Job, error) {
 	for rows.Next() {
 		var j Job
 		var created string
+		var id, state string
 		var finished sql.NullString
-		if e = rows.Scan(&j.ID, &j.Kind, &j.State, &created, &finished, &j.Summary); e != nil {
+		if e = rows.Scan(&id, &j.Kind, &state, &created, &finished, &j.Summary); e != nil {
 			return nil, e
 		}
+		j.ID, j.State = job.ID(id), job.State(state)
 		j.Created, e = time.Parse(time.RFC3339Nano, created)
 		if e != nil {
 			return nil, e
@@ -157,13 +155,10 @@ func (s *Store) Retain(ctx context.Context, before time.Time) error {
 	return e
 }
 
-type Settings struct {
-	Language      string `json:"language"`
-	RetentionDays int    `json:"retention_days"`
-}
+type Settings = app.Settings
 
 func (s *Store) Settings(ctx context.Context) (Settings, error) {
-	v := Settings{"en", 30}
+	v := Settings{Language: "en", RetentionDays: 30}
 	var raw string
 	e := s.db.QueryRowContext(ctx, "SELECT substr(value,1,1025) FROM settings WHERE key='preferences'").Scan(&raw)
 	if errors.Is(e, sql.ErrNoRows) {

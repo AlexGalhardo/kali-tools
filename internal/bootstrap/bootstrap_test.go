@@ -8,9 +8,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/platform"
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/probe"
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/storage"
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/tools"
 	"github.com/AlexGalhardo/kali-tools/internal/bootstrap"
+	"github.com/AlexGalhardo/kali-tools/internal/capture"
+	"github.com/AlexGalhardo/kali-tools/internal/wifi"
 )
 
 func TestNewWiresStoreAndProber(t *testing.T) {
@@ -25,13 +29,13 @@ func TestNewWiresStoreAndProber(t *testing.T) {
 	if _, ok := application.Service.Diagnostics.Prober.(probe.ICMP); !ok {
 		t.Fatalf("prober = %T, want probe.ICMP", application.Service.Diagnostics.Prober)
 	}
-	if _, err := application.Service.Store.History(t.Context()); err != nil {
+	if _, err := application.Service.History(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestCleanupIsIdempotent(t *testing.T) {
-	_, cleanup, err := bootstrap.New(t.Context(), bootstrap.Config{DataPath: ":memory:"})
+	application, cleanup, err := bootstrap.New(t.Context(), bootstrap.Config{DataPath: ":memory:"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,6 +44,35 @@ func TestCleanupIsIdempotent(t *testing.T) {
 		if err := cleanup(); err != nil {
 			t.Fatal(err)
 		}
+	}
+	if _, err := application.Service.History(t.Context()); err == nil {
+		t.Fatal("cleanup left storage open")
+	}
+}
+
+func TestNativeProviderAdapters(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	if _, err := (platform.Host{}).Inventory(ctx); !errors.Is(err, context.Canceled) {
+		t.Fatal(err)
+	}
+	if _, err := (platform.Host{}).Inventory(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := (wifi.Native{}).Current(ctx); !errors.Is(err, context.Canceled) {
+		t.Fatal(err)
+	}
+	if _, err := (wifi.Native{}).Reveal(ctx); !errors.Is(err, context.Canceled) {
+		t.Fatal(err)
+	}
+	if got := (tools.Runner{}).Inventory(ctx); len(got) != 2 {
+		t.Fatalf("tool inventory = %+v", got)
+	}
+	if _, err := (tools.Runner{}).RunNmap(ctx, "0.0.0.0/0", []int{80}); err == nil {
+		t.Fatal("invalid scope accepted")
+	}
+	if _, _, err := (capture.Native{}).Capture(ctx, capture.LiveRequest{}); err == nil {
+		t.Fatal("invalid capture accepted")
 	}
 }
 
@@ -70,7 +103,7 @@ func TestNewAppliesRetention(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = cleanup() })
-	history, err := application.Service.Store.History(t.Context())
+	history, err := application.Service.History(t.Context())
 	if err != nil || len(history) != 1 || history[0].ID != "recent" {
 		t.Fatalf("history = %+v, error = %v; want recent job only", history, err)
 	}

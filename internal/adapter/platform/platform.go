@@ -1,14 +1,18 @@
 package platform
 
-import "github.com/AlexGalhardo/kali-tools/internal/network"
+import (
+	"context"
 
-type Adapter struct {
-	Index    uint32   `json:"index"`
-	Name     string   `json:"name"`
-	Gateways []string `json:"gateways"`
-	DNS      []string `json:"dns"`
-}
-type Snapshot struct {
-	Adapters []Adapter         `json:"adapters"`
-	Counters []network.Counter `json:"counters"`
+	"github.com/AlexGalhardo/kali-tools/internal/app"
+)
+
+type Adapter = app.HostAdapter
+type Snapshot = app.HostSnapshot
+type Host struct{}
+
+func (Host) Inventory(ctx context.Context) (app.HostSnapshot, error) {
+	if err := ctx.Err(); err != nil {
+		return app.HostSnapshot{}, err
+	}
+	return Inventory()
 }

@@ -7,15 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlexGalhardo/kali-tools/internal/app"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 )
 
-type Tool struct {
-	Name    string `json:"name"`
-	State   string `json:"state"`
-	Version string `json:"version"`
-	Path    string `json:"path"`
-}
+type Tool = app.Tool
 
 func inspect(ctx context.Context, name string) Tool {
 	item := Tool{Name: name, State: "dependency_missing"}
@@ -43,41 +39,21 @@ func Inventory(ctx context.Context) []Tool {
 	return []Tool{inspect(ctx, "nmap"), inspect(ctx, "tshark")}
 }
 
-type Nmap struct {
-	XMLName  xml.Name     `xml:"nmaprun" json:"-"`
-	Scanner  string       `xml:"scanner,attr" json:"scanner"`
-	Version  string       `xml:"version,attr" json:"version"`
-	Finished NmapFinished `xml:"runstats>finished" json:"finished"`
-	Hosts    []NmapHost   `xml:"host" json:"hosts"`
-}
-type NmapFinished struct {
-	Exit string `xml:"exit,attr" json:"exit"`
-}
-type NmapState struct {
-	State string `xml:"state,attr" json:"state"`
-}
-type NmapAddress struct {
-	Address string `xml:"addr,attr" json:"address"`
-	Type    string `xml:"addrtype,attr" json:"type"`
-}
-type NmapService struct {
-	Name    string `xml:"name,attr" json:"name"`
-	Product string `xml:"product,attr" json:"product"`
-	Version string `xml:"version,attr" json:"version"`
-	Method  string `xml:"method,attr" json:"method"`
-}
-type NmapPort struct {
-	Service  NmapService `xml:"service" json:"service"`
-	Port     int         `xml:"portid,attr" json:"port"`
-	Protocol string      `xml:"protocol,attr" json:"protocol"`
-	State    NmapState   `xml:"state" json:"state"`
-}
-type NmapHost struct {
-	Status    NmapState     `xml:"status" json:"status"`
-	Addresses []NmapAddress `xml:"address" json:"addresses"`
-	Ports     []NmapPort    `xml:"ports>port" json:"ports"`
-}
+type Nmap = app.Nmap
+type NmapFinished = app.NmapFinished
+type NmapState = app.NmapState
+type NmapAddress = app.NmapAddress
+type NmapService = app.NmapService
+type NmapPort = app.NmapPort
+type NmapHost = app.NmapHost
 
+// Runner adapts optional executable operations to the application port.
+type Runner struct{}
+
+func (Runner) Inventory(ctx context.Context) []app.Tool { return Inventory(ctx) }
+func (Runner) RunNmap(ctx context.Context, cidr string, ports []int) (app.Nmap, error) {
+	return RunNmap(ctx, cidr, ports)
+}
 func ParseNmap(raw []byte) (Nmap, error) {
 	if len(raw) > 4<<20 {
 		return Nmap{}, domain.Invalid("Nmap output exceeds 4 MiB")
