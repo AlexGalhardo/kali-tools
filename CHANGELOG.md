@@ -14,6 +14,8 @@ Development checkpoint focused on architecture, hardening and contributor guidan
 - `book-to-skill` and the `clean-architecture-in-practice` agent skill generated from the owner's reference book. ([259b414](https://github.com/AlexGalhardo/kali-tools/commit/259b414))
 - Spec Driven Development guide with a 12-section template, global quality gates, per-spec delivery assertions and auditable evidence records; every open PLAN task links its spec. ([e465532](https://github.com/AlexGalhardo/kali-tools/commit/e465532))
 - `CLAUDE.md` and mandatory start-of-task skills (karpathy-guidelines, ponytail, clean-architecture-in-practice) in `AGENTS.md`. ([e465532](https://github.com/AlexGalhardo/kali-tools/commit/e465532))
+- Go agent skills adapted from AlexGalhardo/vukem for this architecture. ([28dcdcd](https://github.com/AlexGalhardo/kali-tools/commit/28dcdcd))
+- Implementation specs H01–H08 (hexagonal migration), C01 (complete CLI), W01 (web server) and W04 (web security). ([d152872](https://github.com/AlexGalhardo/kali-tools/commit/d152872))
 - Lefthook pre-commit that formats Go with gofmt -s and goimports, re-stages files, then runs golangci-lint and go vet; pre-push checks the formatting diff. ([eb7b060](https://github.com/AlexGalhardo/kali-tools/commit/eb7b060))
 
 ### Changed
@@ -25,6 +27,8 @@ Development checkpoint focused on architecture, hardening and contributor guidan
 
 ### Fixed
 
+- Updated Go to 1.27.3 for GO-2026-6809 (crypto/x509 verification reachable through the TLS diagnostic). ([bbaf1e8](https://github.com/AlexGalhardo/kali-tools/commit/bbaf1e8))
+- Agent rules Markdown lint. ([7af742f](https://github.com/AlexGalhardo/kali-tools/commit/7af742f))
 - Terminal job events are no longer dropped when the event buffer is full, so the UI cannot remain in "running"; service shutdown is idempotent. ([4dd28a3](https://github.com/AlexGalhardo/kali-tools/commit/4dd28a3))
 - 64-bit Windows ICMP option structure layout; Linux inventory no longer returns `null` gateway lists; DNS names with underscores are accepted. ([4dd28a3](https://github.com/AlexGalhardo/kali-tools/commit/4dd28a3))
 
