@@ -166,7 +166,7 @@ docs/, docs/adr/                architecture, research, decisions, evidence
   - [x] Document that host Wi-Fi, elevation, capture drivers and WebViews require native tests.
   - Assert: one documented command fails on wrong results and returns zero only after assertions pass.
 - [ ] S09 CI/CD implementation (activation authorized 2026-10-19).
-  - Hosted repair in progress: Windows inactive-WLAN state and macOS inventory/config-path assertions corrected; hosted rerun pending. [S09 evidence](docs/verification/specs/S09.md).
+  - Hosted repair verified: Windows inactive-WLAN state and macOS inventory/config-path assertions corrected; [run 39668017937](https://github.com/AlexGalhardo/kali-tools/actions/runs/39668017937) passes every job, including draft assembly. [S09 evidence](docs/verification/specs/S09.md).
   - [x] Prepare CI source for formatting/lint/typecheck/build, race tests, vulnerabilities and CLI lab. Active source passes actionlint and immutable-pin checks; execution acceptance is recorded separately.
   - [ ] Prepare native Wails build matrix with per-OS dependencies and capability tests.
   - [ ] Prepare release source for draft artifacts, checksums and source/dependency notices.
@@ -360,6 +360,7 @@ These are reusable delivery requirements, not a separate completed milestone. De
   - [ ] Qualify the actual separately installed Nmap executable; it is absent from this host.
   - Assert: core works without tools installed; optional results preserve provider/version and cannot execute arbitrary shell input.
 - [ ] A08 Integrated UI.
+  - [x] Owner-requested black/neon-green terminal theme, bundled JetBrains Mono, mobile layout and Impeccable review. [Theme spec](docs/specs/A08-terminal-theme.md); [evidence](docs/verification/specs/A08-theme.md). Shared styling applies to desktop and browser; HTTP implementation remains W01/W04.
   - [x] Dashboard, interfaces, diagnostics, Wi-Fi, packet inspector, toolkit, history and settings.
   - [ ] PT-BR/English catalogs, keyboard access, focus states and Base UI primitives.
   - [ ] Virtualized packet/result tables, loading/error/permission states and cancel controls.

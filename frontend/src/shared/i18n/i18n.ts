@@ -30,6 +30,7 @@ export const en = {
   invalidInputError: "The request is invalid. Check the entered values.",
   dashboard: "Overview",
   interfaces: "Interfaces",
+  viewInterfaces: "View interfaces",
   diagnostics: "Diagnostics",
   wifi: "Wi-Fi",
   packets: "Packet inspector",
@@ -136,6 +137,7 @@ export const en = {
     "TCP connect discovery stays inside the selected CIDR. A failed connection is reported as unreachable; it does not prove a closed port.",
 };
 export const pt: typeof en = {
+  viewInterfaces: "Ver interfaces",
   locationConsent: "Consentimento de localiza\u00e7\u00e3o necess\u00e1rio",
   locationConsentError:
     "\u00c9 necess\u00e1rio o consentimento de localiza\u00e7\u00e3o do Windows para ler os detalhes do Wi-Fi.",

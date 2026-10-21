@@ -1,4 +1,8 @@
 const paths: Record<string, string> = {
+  refresh:
+    "M20 7v5h-5 M4 17v-5h5 M5 8a8 8 0 0 1 13-3l2 3 M19 16a8 8 0 0 1-13 3l-2-3",
+  open: "M6 18 18 6 M6 6h12v12",
+  forward: "M4 12h16 M14 6l6 6-6 6",
   dashboard: "M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z",
   interfaces: "M3 7h17m-4-4 4 4-4 4 M21 17H4m4-4-4 4 4 4",
   diagnostics: "M2 12h5l3-8 4 16 3-8h5",

@@ -1,12 +1,105 @@
 {
-  "name": "Hacker Tools",
-  "source": "frontend/src/styles/style.css",
-  "mode": "operate",
-  "colors": {"background":"#0c1118","sidebar":"#10161e","surface":"#111923","border":"#24303c","text":"#dbe4ec","muted":"#94a6b8","primary":"#61e6af","primaryInk":"#062a20"},
-  "typography": {"body":{"family":"Segoe UI, system-ui, sans-serif","size":"14px","weight":400},"title":{"size":"30px","weight":550},"metadata":{"minimum":"11px"}},
-  "radius": {"control":"7px","panel":"10px"},
-  "motion": {"controlTransition":"150ms","decorativeEntrances":false},
-  "focus": {"color":"#61e6af","width":"2px","offset":"4px"},
-  "elevation": "border and tonal layers",
-  "viewports": {"desktop":{"width":1320,"height":900},"minimum":{"width":960,"height":680}}
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-21T20:16:29.116Z",
+  "title": "Design System: kali-tools",
+  "extensions": {
+    "shadows": [],
+    "motion": [
+      {
+        "name": "button-background",
+        "value": "background 0.15s",
+        "purpose": "Functional hover transition; removed for reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact",
+        "value": "1100px"
+      },
+      {
+        "name": "mobile",
+        "value": "720px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Runs the current operation.",
+      "html": "<button class=\"ds-primary\">Run diagnostic</button>",
+      "css": ".ds-primary{font:600 12px \"JetBrains Mono\",\"Cascadia Code\",Consolas,monospace;padding:10px 16px;border-radius:4px;cursor:pointer;transition:background .15s;background:var(--accent,#39ff14);color:var(--accent-ink,#061000);border:1px solid transparent}.ds-primary:hover{background:var(--accent-hover,#87ff70)}.ds-primary:active{background:var(--selected,#10290f);color:var(--accent,#39ff14)}.ds-primary:focus-visible{outline:2px solid var(--accent,#39ff14);outline-offset:4px}@media(prefers-reduced-motion:reduce){.ds-primary,.ds-secondary{transition:none}}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Supporting operation with a visible border.",
+      "html": "<button class=\"ds-secondary\">Refresh</button>",
+      "css": ".ds-secondary{font:600 12px \"JetBrains Mono\",\"Cascadia Code\",Consolas,monospace;padding:10px 16px;border-radius:4px;cursor:pointer;transition:background .15s;background:var(--raised,#101b12);color:var(--muted,#9bb5a0);border:1px solid var(--control-border,#3d6345)}.ds-secondary:hover{background:var(--hover,#142018)}.ds-secondary:active{background:var(--selected,#10290f);color:var(--accent,#39ff14)}.ds-secondary:focus-visible{outline:2px solid var(--accent,#39ff14);outline-offset:4px}@media(prefers-reduced-motion:reduce){.ds-primary,.ds-secondary{transition:none}}"
+    },
+    {
+      "name": "Target Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Labeled field for an operation target.",
+      "html": "<label class=\"ds-label\" for=\"ds-target\">Target</label><input class=\"ds-input\" id=\"ds-target\" placeholder=\"Enter target\">",
+      "css": ".ds-label{display:block;margin-bottom:10px;color:var(--muted,#9bb5a0);font:12px \"JetBrains Mono\",monospace}.ds-input{font:12px \"JetBrains Mono\",monospace;padding:11px 12px;background:var(--background,#000);color:var(--text,#e2f4e5);border:1px solid var(--control-border,#3d6345);border-radius:6px;caret-color:var(--accent,#39ff14)}.ds-input::placeholder{color:var(--muted,#9bb5a0)}.ds-input:focus-visible{outline:2px solid var(--accent,#39ff14);outline-offset:4px}"
+    },
+    {
+      "name": "Selected Navigation",
+      "kind": "nav",
+      "description": "Current destination combines color, surface and border.",
+      "html": "<nav><button class=\"ds-nav\" aria-current=\"page\">Interfaces</button></nav>",
+      "css": ".ds-nav{font:500 12px \"JetBrains Mono\",monospace;padding:12px 13px;text-align:left;border-radius:4px;border:1px solid var(--accent-border,#356b31);background:var(--selected,#10290f);color:var(--accent,#39ff14);cursor:pointer}.ds-nav:hover{background:var(--hover,#142018)}.ds-nav:focus-visible{outline:2px solid var(--accent,#39ff14);outline-offset:4px}"
+    },
+    {
+      "name": "Status Pill",
+      "kind": "chip",
+      "refersTo": "pill",
+      "description": "Text-backed available state.",
+      "html": "<span class=\"ds-pill\">Available</span>",
+      "css": ".ds-pill{display:inline-block;font:12px \"JetBrains Mono\",monospace;padding:4px 8px;border-radius:5px;color:var(--accent,#39ff14);background:var(--selected,#10290f);border:1px solid var(--accent-border,#356b31)}"
+    },
+    {
+      "name": "Work Panel",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Bordered result container with a distinct title strip.",
+      "html": "<section class=\"ds-card\"><h2 class=\"ds-title\">Interfaces</h2><p class=\"ds-body\">No interfaces found.</p></section>",
+      "css": ".ds-card{background:var(--surface,#080d09);color:var(--text,#e2f4e5);border:1px solid var(--border,#203627);border-radius:6px;overflow:hidden;font:12px \"JetBrains Mono\",monospace}.ds-title{font-size:13px;font-weight:600;margin:0;padding:20px 23px;background:var(--sidebar,#050805);border-bottom:1px solid var(--border,#203627)}.ds-body{padding:20px 23px;color:var(--muted,#9bb5a0)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Precise Terminal",
+    "overview": "Pure black, neon green and terminal typography give the shared desktop and browser interface its hacker/cyberpunk identity. This is an Operate surface: the identity supports real network tasks through familiar controls, clear results and explicit capability states.",
+    "keyCharacteristics": [
+      "Black workspace with green-tinted tonal layers.",
+      "Offline monospace typography and static terminal prompts.",
+      "Compact controls, visible focus and text-backed status colors."
+    ],
+    "rules": [
+      {
+        "name": "The Status Rule",
+        "body": "Pair semantic color with a readable state label; retain the distinct warning and failure palettes.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tonal Depth Rule",
+        "body": "Separate work areas through borders and green-tinted surface layers, without decorative shadows, glow or blur.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep targets and scope next to the action.",
+      "Do preserve visible keyboard focus and text-backed capability states.",
+      "Do use the shared semantic palette for charts and controls."
+    ],
+    "donts": [
+      "Don't add decorative animation, terminal rain or fabricated output.",
+      "Don't hide permission requirements or unavailable capabilities behind the theme.",
+      "Don't replace shared SVG icons with arbitrary Unicode glyphs."
+    ]
+  }
 }

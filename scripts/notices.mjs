@@ -35,6 +35,9 @@ for(const [location,pkg] of Object.entries(lock.packages)){
 }
 for(const skill of ["impeccable","ponytail"]){const directory=path.join(root,".agents/skills",skill);inventory.vendored.push({name:skill,source:".agents/skills/sources.json"});append(`Vendored development skill: ${skill}`,directory);}
 const karpathy=path.join(root,"docs/licenses/karpathy-guidelines.txt");
+const fontLicense=path.join(root,"docs/licenses/jetbrains-mono.txt");
+sections.push("\nBundled font: JetBrains Mono 2.304 (OFL-1.1)\n"+readFileSync(fontLicense,"utf8"));
+inventory.vendored.push({name:"JetBrains Mono",version:"2.304",license:"OFL-1.1",source:"https://github.com/JetBrains/JetBrainsMono/tree/v2.304"});
 if(existsSync(karpathy)){sections.push("\nVendored development skill: karpathy-guidelines\n"+readFileSync(karpathy,"utf8"));inventory.vendored.push({name:"karpathy-guidelines",source:".agents/skills/sources.json"});}
 writeFileSync(path.join(output,"THIRD_PARTY_NOTICES.txt"),"kali-tools third-party notices\n\nProject code is MIT licensed. Dependencies retain their own licenses.\nNmap and TShark are not included.\n"+sections.join("\n"));
 writeFileSync(path.join(output,"dependencies.json"),JSON.stringify(inventory,null,2)+"\n");

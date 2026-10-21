@@ -31,6 +31,21 @@ test("all screens have no serious or critical accessibility violations",async({p
 test("browser without Wails shows explicit limitation",async({page})=>{await page.goto("/");await expect(page.getByText("Native bridge unavailable. Launch the desktop app to access your network.")).toBeVisible();await expect(page.getByRole("button",{name:/Refresh/})).toBeDisabled();});
 test("desktop and compact visual evidence",async({page})=>{await page.setViewportSize({width:1320,height:900});await connect(page);await page.screenshot({path:"../.impeccable/review/desktop.png",fullPage:true});await page.setViewportSize({width:960,height:768});await page.getByRole("button",{name:"Diagnostics",exact:true}).click();await page.screenshot({path:"../.impeccable/review/compact.png",fullPage:true});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);});
 
+test("terminal theme stays readable and usable on narrow screens", async ({page}) => {
+ await page.setViewportSize({width:390,height:844});
+ await connect(page);
+ await page.evaluate(() => document.fonts.ready);
+ expect(await page.evaluate(() => document.fonts.check('14px "JetBrains Mono"'))).toBe(true);
+ await expect(page.locator("html")).toHaveCSS("background-color", "rgb(0, 0, 0)");
+ for (const name of ["Overview","Interfaces","Diagnostics","Wi-Fi","Packet inspector","Discovery & tools","History","Settings"]) {
+  await page.getByRole("button", {name, exact:true}).click();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), name).toBe(true);
+ }
+ await page.getByLabel("Language", {exact:true}).first().selectOption("pt-BR");
+ expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+ await page.screenshot({path:"../.impeccable/review/mobile.png", fullPage:true});
+});
+
 test("overview uses provider capability states", async ({page}) => {
  await connect(page);
  await page.evaluate(() => {

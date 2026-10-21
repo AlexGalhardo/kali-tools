@@ -6,6 +6,8 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ### Changed
 
+- Applied a shared black/neon-green terminal theme with bundled JetBrains Mono, responsive navigation and accessible SVG actions. [Theme evidence](docs/verification/specs/A08-theme.md).
+
 - Corrected native CI assumptions for macOS config paths and unsupported inventory, and report an inactive Windows WLAN service as unsupported. [S09 evidence](docs/verification/specs/S09.md).
 
 - Corrected H07 capture contract selection to use an active interface; Wi-Fi, ICMP, host inventory and elevated live capture now pass with real data on Windows build 26300. [Evidence](docs/verification/specs/H07.md#native-capture-correction-2026-10-21).

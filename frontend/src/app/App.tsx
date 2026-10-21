@@ -366,7 +366,7 @@ export function App() {
               disabled={!connected() || busy}
               onClick={() => execute(refresh)}
             >
-              ↻ {t.refresh}
+              <NavIcon page="refresh" /> {t.refresh}
             </Button>
           </div>
           {!connected() && <div className="notice">{t.native}</div>}
@@ -425,7 +425,7 @@ export function App() {
                         x2="800"
                         y1={y}
                         y2={y}
-                        stroke="#243140"
+                        stroke="var(--border)"
                         strokeDasharray="3 6"
                       />
                     ))}
@@ -433,7 +433,11 @@ export function App() {
                       <polyline
                         key={series}
                         fill="none"
-                        stroke={series === 0 ? "#54e4ad" : "#7f9bfa"}
+                        stroke={
+                          series === 0
+                            ? "var(--accent)"
+                            : "var(--graph-secondary)"
+                        }
                         strokeWidth="2"
                         points={rates
                           .map(
@@ -465,9 +469,10 @@ export function App() {
                     <h2>{t.interfaces}</h2>
                     <Button
                       className="text-button"
+                      aria-label={t.viewInterfaces}
                       onClick={() => nav("interfaces")}
                     >
-                      ↗
+                      <NavIcon page="open" />
                     </Button>
                   </div>
                   {interfaces.slice(0, 4).map((i) => (
@@ -644,7 +649,7 @@ export function App() {
                     disabled={busy || !connected() || Boolean(activeJob)}
                     onClick={diagnosticRun}
                   >
-                    {busy ? t.loading : t.run} →
+                    {busy ? t.loading : t.run} <NavIcon page="forward" />
                   </Button>
                   {activeJob && (
                     <Button

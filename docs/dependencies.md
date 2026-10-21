@@ -11,6 +11,7 @@ Development baseline: 2026-10-19. Exact Go dependencies are in go.mod/go.sum; fr
 | modernc.org/sqlite | Pure Go local SQLite | BSD-3-Clause; SQLite public domain |
 | gopacket 1.7.4 | Packet decoding and PCAP/PCAPNG | BSD-3-Clause |
 | React / React DOM | Frontend | MIT |
+| JetBrains Mono 2.304 | Bundled offline terminal typography (regular and semibold WOFF2) | SIL Open Font License 1.1; [license](licenses/jetbrains-mono.txt), [upstream](https://github.com/JetBrains/JetBrainsMono/tree/v2.304) |
 | Base UI | Accessible button primitives | MIT |
 | Tailwind / Vite | Frontend build | MIT |
 | Impeccable | Development design skill | Apache-2.0 |
