@@ -174,3 +174,33 @@ func TestCoreDoesNotImportAdapters(t *testing.T) {
 		}
 	}
 }
+
+func TestDrivingRootsImportOnlyApplication(t *testing.T) {
+	for _, root := range []struct {
+		path    string
+		allowed []string
+	}{
+		{"../../app.go", []string{"app", "domain", "job", "network", "capture", "wifi"}},
+		{"../../cmd/kali-tools/main.go", []string{"bootstrap", "app", "domain", "job", "network", "capture"}},
+	} {
+		file, err := parser.ParseFile(token.NewFileSet(), root.path, nil, parser.ImportsOnly)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, name := range importNames(t, file) {
+			const prefix = "github.com/AlexGalhardo/kali-tools/"
+			if !strings.HasPrefix(name, prefix) {
+				continue
+			}
+			allowed := false
+			for _, pkg := range root.allowed {
+				if name == prefix+"internal/"+pkg {
+					allowed = true
+				}
+			}
+			if !allowed {
+				t.Errorf("%s imports %s", root.path, name)
+			}
+		}
+	}
+}

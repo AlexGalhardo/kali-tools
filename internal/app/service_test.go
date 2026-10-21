@@ -25,17 +25,17 @@ func TestCancellationAndRedaction(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = store.Close() })
 	s := app.New(app.Deps{Jobs: store, Settings: store, Diagnostics: network.Diagnostics{}})
-	events, _ := s.Jobs.Subscribe(t.Context())
+	events, _ := s.Subscribe(t.Context())
 	defer func() {
 		if e := s.Close(); e != nil {
 			t.Error(e)
 		}
 	}()
-	j, e := s.Start(t.Context(), network.Request{Kind: "http", Target: server.URL + "?secret=synthetic-psk", TimeoutMS: 30000})
+	j, e := s.StartDiagnostic(t.Context(), network.Request{Kind: "http", Target: server.URL + "?secret=synthetic-psk", TimeoutMS: 30000})
 	if e != nil {
 		t.Fatal(e)
 	}
-	if !s.Cancel(string(j.ID)) {
+	if !s.CancelJob(t.Context(), j.ID) {
 		t.Fatal("missing active job")
 	}
 	deadline := time.NewTimer(2 * time.Second)
@@ -117,7 +117,7 @@ func TestConcurrentDiagnosticsBoundAndShutdown(t *testing.T) {
 		}
 	}()
 	for range 8 {
-		if _, err := service.Start(t.Context(), network.Request{Kind: "http", Target: server.URL, TimeoutMS: 30000}); err != nil {
+		if _, err := service.StartDiagnostic(t.Context(), network.Request{Kind: "http", Target: server.URL, TimeoutMS: 30000}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -128,7 +128,7 @@ func TestConcurrentDiagnosticsBoundAndShutdown(t *testing.T) {
 			t.Fatal("diagnostic did not reach fixture")
 		}
 	}
-	if _, err := service.Start(t.Context(), network.Request{Kind: "http", Target: server.URL, TimeoutMS: 30000}); err == nil {
+	if _, err := service.StartDiagnostic(t.Context(), network.Request{Kind: "http", Target: server.URL, TimeoutMS: 30000}); err == nil {
 		t.Fatal("unbounded concurrent diagnostics")
 	}
 	if err := service.Close(); err != nil {
@@ -141,7 +141,7 @@ func TestConcurrentDiagnosticsBoundAndShutdown(t *testing.T) {
 			t.Fatal("shutdown left a request alive")
 		}
 	}
-	if _, err := service.Start(t.Context(), network.Request{Kind: "tcp", Target: "localhost", Port: 80, TimeoutMS: 100}); err == nil {
+	if _, err := service.StartDiagnostic(t.Context(), network.Request{Kind: "tcp", Target: "localhost", Port: 80, TimeoutMS: 100}); err == nil {
 		t.Fatal("closed service accepted a job")
 	}
 }
@@ -175,11 +175,11 @@ func TestTerminalEventSurvivesFullEventBuffer(t *testing.T) {
 	t.Cleanup(func() { _ = store.Close() })
 	s := app.New(app.Deps{Jobs: store, Settings: store, Diagnostics: network.Diagnostics{}})
 	defer func() { _ = s.Close() }()
-	events, _ := s.Jobs.Subscribe(t.Context())
+	events, _ := s.Subscribe(t.Context())
 	for range job.DefaultSubscriberBuffer {
-		s.Jobs.Publish(job.TopicMetrics, nil)
+		s.PublishForTest(job.TopicMetrics, nil)
 	}
-	j, err := s.Start(t.Context(), network.Request{Kind: "tcp", Target: "127.0.0.1", Port: port, TimeoutMS: 500})
+	j, err := s.StartDiagnostic(t.Context(), network.Request{Kind: "tcp", Target: "127.0.0.1", Port: port, TimeoutMS: 500})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -210,7 +210,7 @@ func TestDiagnosticOutlivesStartingRequest(t *testing.T) {
 	defer func() { _ = service.Close() }()
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	st, err := service.Start(ctx, network.Request{Kind: "http", Target: server.URL, TimeoutMS: 30000})
+	st, err := service.StartDiagnostic(ctx, network.Request{Kind: "http", Target: server.URL, TimeoutMS: 30000})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -219,7 +219,7 @@ func TestDiagnosticOutlivesStartingRequest(t *testing.T) {
 	case <-time.After(3 * time.Second):
 		t.Fatal("request cancellation leaked into job context")
 	}
-	if !service.Cancel(string(st.ID)) {
+	if !service.CancelJob(t.Context(), st.ID) {
 		t.Fatal("job ended with its starting request")
 	}
 }

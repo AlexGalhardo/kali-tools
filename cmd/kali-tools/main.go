@@ -13,16 +13,15 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
-	"github.com/AlexGalhardo/kali-tools/internal/adapter/platform"
-	"github.com/AlexGalhardo/kali-tools/internal/adapter/tools"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
 	"github.com/AlexGalhardo/kali-tools/internal/bootstrap"
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
+	"github.com/AlexGalhardo/kali-tools/internal/job"
 	"github.com/AlexGalhardo/kali-tools/internal/network"
-	"github.com/AlexGalhardo/kali-tools/internal/wifi"
 )
 
 type envelope struct {
@@ -70,13 +69,14 @@ func run(ctx context.Context, args []string, getenv func(string) string, out, er
 			case "version":
 				data = map[string]string{"version": domain.Version, "go": runtime.Version(), "os": runtime.GOOS, "arch": runtime.GOARCH}
 			case "doctor":
-				data = map[string]any{"os": runtime.GOOS, "arch": runtime.GOARCH, "capabilities": app.Capabilities(), "tools": tools.Inventory(ctx), "capture": "Windows raw IPv4 requires administrator authorization; no external driver. Other platforms unavailable.", "wifi": "Windows WLAN API; explicit reveal only in desktop"}
+				inventory, _ := application.Tools(ctx)
+				data = map[string]any{"os": runtime.GOOS, "arch": runtime.GOARCH, "capabilities": application.Capabilities(ctx), "tools": inventory, "capture": "Windows raw IPv4 requires administrator authorization; no external driver. Other platforms unavailable.", "wifi": "Windows WLAN API; explicit reveal only in desktop"}
 			case "interfaces":
-				data, err = network.Interfaces()
+				data, err = application.Interfaces(ctx)
 			case "inventory":
-				data, err = platform.Inventory()
+				data, err = application.Inventory(ctx)
 			case "diagnose":
-				data, err = application.Service.Diagnostics.Diagnose(ctx, network.Request{Kind: *kind, Target: *target, Port: *port, TimeoutMS: *timeout, RecordType: *recordType})
+				data, err = application.Diagnose(ctx, network.Request{Kind: *kind, Target: *target, Port: *port, TimeoutMS: *timeout, RecordType: *recordType})
 			case "discover", "inspect":
 				if *format != "json" && *format != "csv" {
 					err = domain.Invalid("format must be json or csv")
@@ -100,12 +100,12 @@ func run(ctx context.Context, args []string, getenv func(string) string, out, er
 						err = domain.Invalid("service inspection supports JSON only")
 						break
 					}
-					data, err = tools.RunNmap(ctx, *target, numbers)
+					data, err = application.InspectServices(ctx, *target, numbers)
 					break
 				}
 				if err == nil {
 					var results []network.PortResult
-					results, err = network.Discover(ctx, *target, numbers, time.Duration(*timeout)*time.Millisecond)
+					results, err = application.Discover(ctx, *target, numbers, time.Duration(*timeout)*time.Millisecond)
 					data = results
 					if err == nil && *format == "csv" {
 						writer := csv.NewWriter(out)
@@ -125,33 +125,20 @@ func run(ctx context.Context, args []string, getenv func(string) string, out, er
 					}
 				}
 			case "wifi":
-				data, err = wifi.Current()
+				data, err = application.CurrentWiFi(ctx)
 			case "capture", "import":
 				if *output != "" && *format != "pcap" && *format != "pcapng" {
 					err = domain.Invalid("packet export requires --format pcap or pcapng")
 					break
 				}
-				var artifact *capture.Artifact
 				if args[0] == "capture" {
 					request := capture.LiveRequest{Address: *target, DurationSeconds: *duration, PacketLimit: *limit}
-					if *output == "" {
-						data, err = capture.Live(ctx, request)
-					} else {
-						data, artifact, err = capture.LiveSession(ctx, request)
-					}
+					data, err = runCapture(ctx, application, request)
 				} else {
-					if *output == "" {
-						data, err = capture.ReadFile(*file)
-					} else {
-						data, artifact, err = capture.ReadArtifactFile(*file)
-					}
+					data, err = application.ImportCapture(ctx, *file)
 				}
 				if err == nil && *output != "" {
-					if artifact == nil {
-						err = domain.Invalid("capture has no packets to export")
-					} else {
-						err = artifact.Save(ctx, *output, *format)
-					}
+					err = application.ExportCapture(ctx, *output, *format)
 				}
 			default:
 				err = domain.Invalid("unknown command %q", args[0])
@@ -180,6 +167,46 @@ func run(ctx context.Context, args []string, getenv func(string) string, out, er
 		return 1
 	}
 	return code
+}
+
+const captureWaitSlack = 10 * time.Second
+
+func runCapture(ctx context.Context, application *app.Application, request capture.LiveRequest) (capture.LiveResult, error) {
+	subCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	events, _ := application.Subscribe(subCtx)
+	if err := application.StartCapture(ctx, request); err != nil {
+		return capture.LiveResult{}, err
+	}
+	return awaitCapture(ctx, events, func() { application.StopCapture(context.Background()) }, time.Duration(request.DurationSeconds)*time.Second+captureWaitSlack)
+}
+
+func awaitCapture(ctx context.Context, events <-chan job.Event, stop func(), limit time.Duration) (capture.LiveResult, error) {
+	timer := time.NewTimer(limit)
+	defer timer.Stop()
+	stopOnce := sync.OnceFunc(stop)
+	cancelled := ctx.Done()
+	for {
+		select {
+		case event, ok := <-events:
+			if !ok {
+				return capture.LiveResult{}, job.ErrClosed
+			}
+			if event.Topic != job.TopicCapture {
+				continue
+			}
+			outcome, ok := event.Data.(app.CaptureEvent)
+			if ok {
+				return outcome.Result, outcome.Err
+			}
+		case <-cancelled:
+			stopOnce()
+			cancelled = nil
+		case <-timer.C:
+			stopOnce()
+			return capture.LiveResult{}, &domain.Error{Code: "timeout", Message: "Capture completion timed out"}
+		}
+	}
 }
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)

@@ -43,11 +43,10 @@ func New(ctx context.Context, cfg Config) (*app.Application, func() error, error
 	if err != nil {
 		return nil, nil, fmt.Errorf("bootstrap: open storage: %w", err)
 	}
-	service := app.New(app.Deps{
+	application := app.New(app.Deps{
 		Jobs: store, Settings: store, Diagnostics: network.Diagnostics{Prober: probe.ICMP{}},
 		Host: platform.Host{}, Tools: tools.Runner{}, WiFi: wifi.Native{}, Capture: capture.Native{}, Clock: now,
 	})
-	application := &app.Application{Service: service}
 	var once sync.Once
 	var closeErr error
 	cleanup := func() error {

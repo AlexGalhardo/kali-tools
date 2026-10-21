@@ -19,11 +19,11 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/job"
 )
 
-func newService(t *testing.T) *app.Service {
+func newService(t *testing.T) *app.Application {
 	return serviceWithDeps(t, fakeDeps())
 }
 
-func serviceWithDeps(t *testing.T, deps app.Deps) *app.Service {
+func serviceWithDeps(t *testing.T, deps app.Deps) *app.Application {
 	t.Helper()
 	s := app.New(deps)
 	t.Cleanup(func() {
@@ -63,17 +63,17 @@ func captureFixture(t *testing.T) string {
 
 func TestCaptureImportExportRoundTrip(t *testing.T) {
 	s := newService(t)
-	expectMessage(t, s.CanExportCapture("pcap"), "import or finish a capture before saving")
-	expectMessage(t, s.CanExportCapture("txt"), "capture format must be pcap or pcapng")
+	expectMessage(t, s.CanExportCapture(t.Context(), "pcap"), "import or finish a capture before saving")
+	expectMessage(t, s.CanExportCapture(t.Context(), "txt"), "capture format must be pcap or pcapng")
 	source := captureFixture(t)
-	result, err := s.ImportCapture(source)
+	result, err := s.ImportCapture(t.Context(), source)
 	if err != nil || len(result.Packets) != 1 {
 		t.Fatalf("import = %+v, err = %v", result, err)
 	}
-	if _, err := s.ImportCapture(filepath.Join(t.TempDir(), "missing")); err == nil {
+	if _, err := s.ImportCapture(t.Context(), filepath.Join(t.TempDir(), "missing")); err == nil {
 		t.Fatal("missing input accepted")
 	}
-	if err := s.CanExportCapture("pcap"); err != nil {
+	if err := s.CanExportCapture(t.Context(), "pcap"); err != nil {
 		t.Fatal(err)
 	}
 	destination := filepath.Join(t.TempDir(), "output.pcap")
@@ -90,7 +90,7 @@ func TestCaptureImportExportRoundTrip(t *testing.T) {
 	if err := s.Close(); err != nil {
 		t.Fatal(err)
 	}
-	expectMessage(t, s.CanImportCapture(), "application is shutting down")
+	expectMessage(t, s.CanImportCapture(t.Context()), "application is shutting down")
 }
 
 func captureAddress(t *testing.T) string {
@@ -123,12 +123,12 @@ func TestCaptureSessionStates(t *testing.T) {
 		return capture.LiveResult{Packets: []capture.Packet{}}, nil, ctx.Err()
 	}}
 	s := serviceWithDeps(t, deps)
-	events, _ := s.Jobs.Subscribe(t.Context())
+	events, _ := s.Subscribe(t.Context())
 	request := capture.LiveRequest{Address: address, DurationSeconds: 1, PacketLimit: 1}
-	if err := s.StartCapture(capture.LiveRequest{}); err == nil {
+	if err := s.StartCapture(t.Context(), capture.LiveRequest{}); err == nil {
 		t.Fatal("invalid request accepted")
 	}
-	if err := s.StartCapture(request); err != nil {
+	if err := s.StartCapture(t.Context(), request); err != nil {
 		t.Fatal(err)
 	}
 	select {
@@ -136,15 +136,15 @@ func TestCaptureSessionStates(t *testing.T) {
 	case <-time.After(3 * time.Second):
 		t.Fatal("capture did not start")
 	}
-	expectMessage(t, s.StartCapture(request), "capture already running")
-	expectMessage(t, s.CanImportCapture(), "stop capture before importing a file")
-	if _, err := s.ImportCapture("unused"); err == nil {
+	expectMessage(t, s.StartCapture(t.Context(), request), "capture already running")
+	expectMessage(t, s.CanImportCapture(t.Context()), "stop capture before importing a file")
+	if _, err := s.ImportCapture(t.Context(), "unused"); err == nil {
 		t.Fatal("import accepted during capture")
 	}
-	if err := s.CanExportCapture("pcap"); err == nil {
+	if err := s.CanExportCapture(t.Context(), "pcap"); err == nil {
 		t.Fatal("export accepted during capture")
 	}
-	s.StopCapture()
+	s.StopCapture(t.Context())
 	select {
 	case event := <-events:
 		outcome, ok := event.Data.(app.CaptureEvent)
@@ -173,5 +173,5 @@ func TestCaptureSessionStates(t *testing.T) {
 	if err := s.Close(); err != nil {
 		t.Fatal(err)
 	}
-	expectMessage(t, s.StartCapture(request), "application is shutting down")
+	expectMessage(t, s.StartCapture(t.Context(), request), "application is shutting down")
 }

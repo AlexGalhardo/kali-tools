@@ -29,6 +29,8 @@ kali-tools is one Go core with three driving interfaces. It uses the hexagonal (
 
 The three interfaces must show the same capabilities, results and errors. All three receive the same application value and differ only in transport and presentation.
 
+H04 implements that shared value as `app.Application`, one concrete struct with private dependencies and methods for every operation. Desktop bindings and CLI commands call it directly; job state and provider details are not exposed as mutable fields. `bootstrap.New` returns the application plus its cleanup without a transitional Service wrapper.
+
 ## 2. Repository map
 
 ```text
@@ -44,7 +46,7 @@ kali-tools/
 │
 ├── internal/                       all Go logic; not importable by other modules
 │   ├── domain/                     shared kernel: Error{Code,Message}, Capability, Version, SchemaVersion
-│   ├── app/                        application layer: Service (jobs, history, discovery, Nmap inspection), capability registry
+│   ├── app/                        application layer: Application (jobs, history, discovery, Nmap inspection), capability registry
 │   ├── job/                        manager-owned job lifecycle, bounded subscriptions and ordered event fan-out
 │   ├── network/                    capability: interfaces, DNS/TCP/HTTP/TLS/ping/trace diagnostics, TCP discovery, counter deltas
 │   ├── capture/                    capability: live capture (Windows raw IPv4), PCAP/PCAPNG import/export, gopacket decoding
@@ -131,14 +133,13 @@ A port is a small Go interface declared **in the package that consumes it**. Ada
 
 | Consumer | Port (current form) | Implementation |
 | --- | --- | --- |
-| `app.Service` | `JobStore`, `SettingsStore` | `*storage.Store`, hand-written in-memory test fakes |
-| `app.Service` | `job.Manager` with injected clock function | `internal/job`; `bootstrap.Config.Now` or UTC system clock |
-| `app.Service` | `HostNetwork` | `platform.Host` |
-| `app.Service` | `ToolRunner` (including service inspection) | `tools.Runner` |
-| `app.Service` | `WiFiProvider` | `wifi.Native` (used by the facade in H04) |
-| `app.Service` | `CaptureProvider` alias of `capture.LiveProvider` | `capture.Native` selected by build constraints |
+| `app.Application` | `JobStore`, `SettingsStore` | `*storage.Store`, hand-written in-memory test fakes |
+| `app.Application` | `job.Manager` with injected clock function | `internal/job`; `bootstrap.Config.Now` or UTC system clock |
+| `app.Application` | `HostNetwork` | `platform.Host` |
+| `app.Application` | `ToolRunner` (including service inspection) | `tools.Runner` |
+| `app.Application` | `WiFiProvider` | `wifi.Native` |
+| `app.Application` | `CaptureProvider` alias of `capture.LiveProvider` | `capture.Native` selected by build constraints |
 | `network.Diagnostics` | `network.Prober` interface (injected by `bootstrap.New` for both roots) | `probe.ICMP` in `adapter/probe` |
-| `app.go` / CLI | direct calls to `platform.Snapshot`, `wifi`, `capture`, `tools.Inventory` | respective packages |
 
 ### 4.3 Implemented driven ports (H03)
 
@@ -159,13 +160,13 @@ H03 compile-time assertions live only in `internal/bootstrap/assert.go`. No inne
 
 ```text
 React (bridge.ts) ──StartDiagnostic(req)──► app.go (Wails binding)
-   app.go ──► app.Service.Start(ctx, req)
+   app.go ──► app.Application.StartDiagnostic(ctx, req)
                 ├─ network.Validate(req)              domain validation, typed errors
                 └─ job.Manager.Start                  manager-owned context, maximum 8 active jobs
                      ├─ OnChange ──► storage.PutJob    bounded writes, no secrets/payloads
-                     └─ Service.Diagnostics.Diagnose  injected Prober, bounded deadline, cancellable
+                     └─ Application.Diagnose  injected Prober, bounded deadline, cancellable
                           └─ Subscribe ──► app.go forwarder ──► runtime.EventsEmit("job") ──► React
-CancelJob(id) ──► app.Service.Cancel(id) ──► job.Manager.Cancel ──► job state cancelled
+CancelJob(id) ──► app.Application.CancelJob(ctx, id) ──► job.Manager.Cancel ──► job state cancelled
 ```
 
 ### 5.2 Same flow in the target architecture (all interfaces)
@@ -185,10 +186,10 @@ The job context derives from the manager (application lifetime), never from a re
 | Event | Producer today | Payload | Rule |
 | --- | --- | --- | --- |
 | `job` | `job.Manager` via `app.go` | `{schema_version, seq, job, result?}` | Stable ID and state machine `queued → running → completed/failed/cancelled` |
-| `metrics` | `app.Service` metrics loop | interface rates | Samples every 2 s; reset never produces a negative spike |
-| `capture` | `app.Service` capture session | `{result, error}` | Bounded packet count, retained bytes and duration; no capture payloads in history |
+| `metrics` | `app.Application` metrics loop | interface rates | Samples every 2 s; reset never produces a negative spike |
+| `capture` | `app.Application` capture session | `{result, error}` | Bounded packet count, retained bytes and duration; no capture payloads in history |
 
-H02 moves all three streams through `job.Manager`. `Subscribe(ctx)` uses a default buffer of 256 (maximum 4096) and reports dropped events. Each manager assigns monotonically increasing `seq` values; non-terminal delivery drops without blocking, while terminal job and capture events share a maximum 2 s delivery wait per publication. `Snapshot` and `Wait` retain at most 256 finished statuses. `Service.Close` stops capture and metrics, closes the manager, then closes storage.
+H02 moves all three streams through `job.Manager`. `Subscribe(ctx)` uses a default buffer of 256 (maximum 4096) and reports dropped events. Each manager assigns monotonically increasing `seq` values; non-terminal delivery drops without blocking, while terminal job and capture events share a maximum 2 s delivery wait per publication. `Snapshot` and `Wait` retain at most 256 finished statuses. `Application.Close` stops capture and metrics and closes the manager; bootstrap then closes storage.
 
 ## 6. Interfaces (driving adapters)
 
@@ -196,6 +197,7 @@ H02 moves all three streams through `job.Manager`. `Subscribe(ctx)` uses a defau
 
 - `main.go` (build tags `desktop || bindings`) embeds `frontend/dist` and calls `wails.Run` with the `App` facade bound.
 - `main` delegates to `run(ctx, args, getenv, stdout, stderr) int`. The startup hook calls `bootstrap.New` to open storage, apply retention and inject the ICMP prober; shutdown calls the returned idempotent cleanup. H01 keeps the existing bindings and event loops.
+- `NewApp` in `main.go` injects a bootstrap function into the binding adapter in `app.go`. Every binding delegates to `app.Application`; native dialogs and event translation stay in the adapter. H04 preserves the binding method set and generated files.
 - **Why it stays at the repository root:**
   - Wails v2 builds the project-root package next to `wails.json`.
   - `//go:embed` cannot reference parent directories.
@@ -226,6 +228,7 @@ H02 moves all three streams through `job.Manager`. `Subscribe(ctx)` uses a defau
 ### 6.3 CLI
 
 - `cmd/kali-tools/main.go` uses stdlib `flag`. Commands: `version`, `doctor`, `interfaces`, `inventory`, `diagnose`, `discover`/`inspect`, `wifi`, `capture`/`import`.
+- All capability commands route through `app.Application`. CLI capture subscribes before starting and waits at most the requested duration plus 10 s; cancellation stops capture and waits for its typed completion. Import/export use application-managed artifacts and the shared 30 s export bound. Discovery and inspection keep count-only history in the CLI's in-memory store.
 - The root exposes `run(ctx, args, getenv, stdout, stderr) int` and obtains its application from `bootstrap.New` after usage and flag validation. It uses an in-memory store until C01, so invocations write no history or preferences to disk. Diagnostic calls use the shared application's injected prober. H01 reads no environment variables through `getenv`.
 - `--json` output includes `schema_version`. Invalid input exits with a stable non-zero code.
 - The target moves the command tree into `internal/adapter/cli` (with signature `Run(ctx, app, args, stdout, stderr) int`), routes every command through `app.Application`, and adds `serve`, `history`, `settings`, `export` and `jobs` commands, so the CLI is complete for SSH use.
@@ -261,10 +264,10 @@ Use `git mv`, then rewrite import paths and run `gofmt`. Run `go vet ./...` for 
 | # | Deviation | Why it matters | PLAN task |
 | --- | --- | --- | --- |
 | D1 | ~~`internal/network` imports `internal/adapter/probe`~~ — resolved 2026-10-21 by the `network.Prober` port | — | H03 (done) |
-| D2 | `app.go` and the CLI call `platform`, `wifi`, `capture` and `tools` directly instead of going through `app` | Logic and wiring are duplicated per interface; the web server would duplicate them again | H04, H05 |
-| D3 | Resolved 2026-10-21: `app.Service` owns metrics and capture; all producers publish through `job.Manager` | Native desktop acceptance remains pending under the owner's headless workflow | H02 |
+| D2 | Resolved 2026-10-21: all desktop and CLI operations route through `app.Application`; neither driving file imports adapters | Extraction to `adapter/cli` and `adapter/wailsui` remains H05; native acceptance pending | H04, H05 |
+| D3 | Resolved 2026-10-21: `app.Application` owns metrics and capture; all producers publish through `job.Manager` | Native desktop acceptance remains pending under the owner's headless workflow | H02 |
 | D4 | Bindings now expose `job.Status` and `app.Settings`, but transport DTO separation and error mapping remain pending | H03 removes storage namespaces; H06 defines transport contracts | H06 |
-| D5 | Resolved for dependency inversion 2026-10-21: `app.Service` consumes `JobStore` and `SettingsStore`; real/fake contract suites remain H07 | Diagnostic, inspection, settings and history tests run with fakes | H03, H07 |
+| D5 | Resolved for dependency inversion 2026-10-21: `app.Application` consumes `JobStore` and `SettingsStore`; real/fake contract suites remain H07 | Diagnostic, inspection, settings and history tests run with fakes | H03, H07 |
 | D6 | `capture`, `network`, `wifi` mix domain rules with OS or network I/O in one package | Harder to test without hardware | H03 (split only where a port is needed) |
 | D7 | `frontend/src/app/App.tsx` (about 1,250 lines) holds every page | Hard to evolve per feature | W02 |
 | D8 | No mechanical check of the dependency rule | Rules decay silently | H08 |

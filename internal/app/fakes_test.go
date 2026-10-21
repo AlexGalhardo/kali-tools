@@ -159,13 +159,13 @@ func TestDiagnosticJobWithFakes(t *testing.T) {
 	deps.Diagnostics = network.Diagnostics{Prober: fakeProber{}}
 	s := app.New(deps)
 	defer func() { _ = s.Close() }()
-	st, err := s.Start(t.Context(), network.Request{Kind: "ping", Target: "synthetic-target.invalid", TimeoutMS: 100})
+	st, err := s.StartDiagnostic(t.Context(), network.Request{Kind: "ping", Target: "synthetic-target.invalid", TimeoutMS: 100})
 	if err != nil {
 		t.Fatal(err)
 	}
 	ctx, cancel := context.WithTimeout(t.Context(), 3*time.Second)
 	defer cancel()
-	if _, err := s.Jobs.Wait(ctx, st.ID); err != nil {
+	if _, err := s.WaitForTest(ctx, st.ID); err != nil {
 		t.Fatal(err)
 	}
 	rows, err := s.History(t.Context())
@@ -221,7 +221,7 @@ func TestMissingProvidersAreUnsupported(t *testing.T) {
 		t.Fatal(err)
 	}
 	request := capture.LiveRequest{Address: captureAddress(t), DurationSeconds: 1, PacketLimit: 1}
-	err = s.StartCapture(request)
+	err = s.StartCapture(t.Context(), request)
 	if !errors.As(err, &typed) || typed.Code != "unsupported" {
 		t.Fatal(err)
 	}

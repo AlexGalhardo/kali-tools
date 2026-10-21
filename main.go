@@ -12,10 +12,19 @@ import (
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+
+	"github.com/AlexGalhardo/kali-tools/internal/app"
+	"github.com/AlexGalhardo/kali-tools/internal/bootstrap"
 )
 
 //go:embed all:frontend/dist
 var assets embed.FS
+
+func NewApp() *App {
+	return &App{boot: func(ctx context.Context) (*app.Application, func() error, error) {
+		return bootstrap.New(ctx, bootstrap.Config{})
+	}}
+}
 
 func main() {
 	os.Exit(run(context.Background(), os.Args[1:], os.Getenv, os.Stdout, os.Stderr))

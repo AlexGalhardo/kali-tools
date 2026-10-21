@@ -230,7 +230,8 @@ These tasks remove the deviations listed in [architecture §8](docs/architecture
   - Assert: `internal/network`, `internal/capture`, `internal/wifi` and `internal/app` import no `internal/adapter/*` package.
 - [ ] H04 Single application facade.
   - Spec: [H04-application-facade](docs/specs/H04-application-facade.md)
-  - [ ] `app.Application` exposes every operation currently called directly by `app.go` or the CLI: interfaces, inventory, tools, diagnostics, discovery, inspection, Wi-Fi, capture, import/export, history and settings (D2).
+  - [x] `app.Application` exposes every operation currently called directly by `app.go` or the CLI: interfaces, inventory, tools, diagnostics, discovery, inspection, Wi-Fi, capture, import/export, history and settings (D2). [Evidence](docs/verification/specs/H04.md).
+  - Acceptance pending: complete native desktop workflow (AC-12); sequential headless implementation is owner-authorized.
   - Assert: `app.go` and the CLI import only `app`, `domain` and DTO packages.
 - [ ] H05 Driving adapters extracted.
   - Spec: [H05-driving-adapters](docs/specs/H05-driving-adapters.md)

@@ -268,6 +268,8 @@ type Application struct {
 }
 ```
 
+H04 implementation note (2026-10-21): the preceding Application sketch is illustrative. The implemented `app.Application` is a single struct with unexported dependencies and ctx-first methods, not exported handler fields. Both driving roots receive it from bootstrap; only native dialogs, event translation and CLI encoding stay in the adapters.
+
 ### 6.2 Driven ports are declared by the consumer
 
 ```go

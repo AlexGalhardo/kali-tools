@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | H04 |
-| Status | Ready |
+| Status | Implementation complete 2026-10-21; native AC-12 pending ([evidence](../verification/specs/H04.md)) |
 | Depends on | H01, H02, H03 |
 | Risk | Medium: every desktop binding and every CLI command is re-routed; the CLI capture path changes from a direct call to start, subscribe and wait |
 

@@ -26,7 +26,7 @@ linters:
         - (net.Listener).Close
         - (*os.File).Close
         - github.com/AlexGalhardo/kali-tools/internal/adapter/storage.(*Store).Close
-        - github.com/AlexGalhardo/kali-tools/internal/app.(*Service).Close
+        - github.com/AlexGalhardo/kali-tools/internal/app.(*Application).Close
         - golang.org/x/sys/windows.Closesocket
         - golang.org/x/sys/windows.WSACleanup
         - (golang.org/x/sys/windows.LazyProc).Call

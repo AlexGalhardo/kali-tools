@@ -14,6 +14,7 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/tools"
 	"github.com/AlexGalhardo/kali-tools/internal/bootstrap"
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
+	"github.com/AlexGalhardo/kali-tools/internal/network"
 	"github.com/AlexGalhardo/kali-tools/internal/wifi"
 )
 
@@ -26,10 +27,13 @@ func TestNewWiresStoreAndProber(t *testing.T) {
 		t.Fatal("missing application or cleanup")
 	}
 	t.Cleanup(func() { _ = cleanup() })
-	if _, ok := application.Service.Diagnostics.Prober.(probe.ICMP); !ok {
-		t.Fatalf("prober = %T, want probe.ICMP", application.Service.Diagnostics.Prober)
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	result, _ := application.Diagnose(ctx, network.Request{Kind: "ping", Target: "127.0.0.1", TimeoutMS: 100})
+	if result.Provider != (probe.ICMP{}).Provider() {
+		t.Fatalf("provider=%q, want native probe", result.Provider)
 	}
-	if _, err := application.Service.History(t.Context()); err != nil {
+	if _, err := application.History(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -45,7 +49,7 @@ func TestCleanupIsIdempotent(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if _, err := application.Service.History(t.Context()); err == nil {
+	if _, err := application.History(t.Context()); err == nil {
 		t.Fatal("cleanup left storage open")
 	}
 }
@@ -103,7 +107,7 @@ func TestNewAppliesRetention(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = cleanup() })
-	history, err := application.Service.History(t.Context())
+	history, err := application.History(t.Context())
 	if err != nil || len(history) != 1 || history[0].ID != "recent" {
 		t.Fatalf("history = %+v, error = %v; want recent job only", history, err)
 	}

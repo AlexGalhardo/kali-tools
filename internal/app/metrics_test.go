@@ -22,7 +22,7 @@ func TestMetricsPublishesOnTick(t *testing.T) {
 		return app.HostSnapshot{Counters: []network.Counter{{ID: "synthetic", Received: uint64(calls) * 100, Sent: uint64(calls) * 20}}}, nil
 	}}
 	s := serviceWithDeps(t, deps)
-	events, _ := s.Jobs.Subscribe(t.Context())
+	events, _ := s.Subscribe(t.Context())
 	ticks := make(chan time.Time)
 	stopped := make(chan struct{})
 	go func() { defer close(stopped); s.RunMetricsForTest(ticks) }()
@@ -60,14 +60,14 @@ func TestMetricsPublishesOnTick(t *testing.T) {
 
 func TestStartMetricsIsIdempotent(t *testing.T) {
 	s := newService(t)
-	s.StartMetrics() // A nil sampler must leave StartMetrics available for wiring.
+	s.StartMetrics(t.Context()) // A nil sampler must leave StartMetrics available for wiring.
 	deps := fakeDeps()
 	deps.Host = fakeHost{inventory: func(context.Context) (app.HostSnapshot, error) { return app.HostSnapshot{}, nil }}
 	s = serviceWithDeps(t, deps)
-	s.StartMetrics()
-	s.StartMetrics()
+	s.StartMetrics(t.Context())
+	s.StartMetrics(t.Context())
 	if err := s.Close(); err != nil {
 		t.Fatal(err)
 	}
-	s.StartMetrics()
+	s.StartMetrics(t.Context())
 }

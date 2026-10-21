@@ -5,14 +5,10 @@ package main
 import (
 	"context"
 	"sync"
-	"time"
 
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 
-	"github.com/AlexGalhardo/kali-tools/internal/adapter/platform"
-	"github.com/AlexGalhardo/kali-tools/internal/adapter/tools"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
-	"github.com/AlexGalhardo/kali-tools/internal/bootstrap"
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/job"
@@ -25,13 +21,12 @@ type App struct {
 	closed  bool
 	ctx     context.Context
 	cancel  context.CancelFunc
-	service *app.Service
-	config  bootstrap.Config
+	app     *app.Application
+	boot    func(context.Context) (*app.Application, func() error, error)
 	cleanup func() error
 	initErr error
 }
 
-func NewApp() *App { return &App{} }
 func (a *App) startup(ctx context.Context) {
 	a.initMu.Lock()
 	defer a.initMu.Unlock()
@@ -39,21 +34,21 @@ func (a *App) startup(ctx context.Context) {
 		return
 	}
 	a.ctx, a.cancel = context.WithCancel(ctx)
-	application, cleanup, err := bootstrap.New(a.ctx, a.config)
+	application, cleanup, err := a.boot(a.ctx)
 	if err != nil {
 		a.initErr = err
 		return
 	}
-	a.service = application.Service
+	a.app = application
 	a.cleanup = cleanup
-	events, _ := a.service.Jobs.Subscribe(a.ctx)
+	events, _ := a.app.Subscribe(a.ctx)
 	go func() {
 		for event := range events {
 			name, payload := wailsEvent(event)
 			wruntime.EventsEmit(a.ctx, name, payload)
 		}
 	}()
-	a.service.StartMetrics()
+	a.app.StartMetrics(a.ctx)
 }
 
 type jobEventPayload struct {
@@ -95,76 +90,101 @@ func (a *App) readyLocked() error {
 	if a.initErr != nil {
 		return a.initErr
 	}
-	if a.service == nil {
+	if a.app == nil {
 		return domain.Invalid("application is starting")
 	}
 	return nil
 }
-func (a *App) Version() string                              { return domain.Version }
-func (a *App) Capabilities() []domain.Capability            { return app.Capabilities() }
-func (a *App) Interfaces() ([]network.InterfaceInfo, error) { return network.Interfaces() }
-func (a *App) Inventory() (platform.Snapshot, error)        { return platform.Inventory() }
-func (a *App) Tools() ([]tools.Tool, error) {
+func (a *App) Version() string { return domain.Version }
+func (a *App) Capabilities() []domain.Capability {
+	if a.ready() != nil {
+		return []domain.Capability{}
+	}
+	return a.app.Capabilities(a.ctx)
+}
+func (a *App) Interfaces() ([]network.InterfaceInfo, error) {
+	if err := a.ready(); err != nil {
+		return nil, err
+	}
+	return a.app.Interfaces(a.ctx)
+}
+func (a *App) Inventory() (app.HostSnapshot, error) {
+	if err := a.ready(); err != nil {
+		return app.HostSnapshot{}, err
+	}
+	return a.app.Inventory(a.ctx)
+}
+func (a *App) Tools() ([]app.Tool, error) {
 	if e := a.ready(); e != nil {
 		return nil, e
 	}
-	return tools.Inventory(a.ctx), nil
+	return a.app.Tools(a.ctx)
 }
 func (a *App) Diagnose(r network.Request) (network.Result, error) {
 	if e := a.ready(); e != nil {
 		return network.Result{}, e
 	}
-	return a.service.Diagnostics.Diagnose(a.ctx, r)
+	return a.app.Diagnose(a.ctx, r)
 }
 func (a *App) StartDiagnostic(r network.Request) (job.Status, error) {
 	if e := a.ready(); e != nil {
 		return job.Status{}, e
 	}
-	return a.service.Start(a.ctx, r)
+	return a.app.StartDiagnostic(a.ctx, r)
 }
 func (a *App) CancelJob(id string) bool {
 	if a.ready() != nil {
 		return false
 	}
-	return a.service.Cancel(id)
+	return a.app.CancelJob(a.ctx, job.ID(id))
 }
 func (a *App) History() ([]job.Status, error) {
 	if e := a.ready(); e != nil {
 		return nil, e
 	}
-	return a.service.History(a.ctx)
+	return a.app.History(a.ctx)
 }
 func (a *App) ClearHistory() error {
 	if e := a.ready(); e != nil {
 		return e
 	}
-	return a.service.ClearHistory(a.ctx)
+	return a.app.ClearHistory(a.ctx)
 }
 func (a *App) Settings() (app.Settings, error) {
 	if e := a.ready(); e != nil {
 		return app.Settings{}, e
 	}
-	return a.service.Settings(a.ctx)
+	return a.app.Settings(a.ctx)
 }
 func (a *App) SaveSettings(v app.Settings) error {
 	if e := a.ready(); e != nil {
 		return e
 	}
-	return a.service.SaveSettings(a.ctx, v)
+	return a.app.SaveSettings(a.ctx, v)
 }
-func (a *App) CurrentWiFi() (wifi.Network, error) { return wifi.Current() }
-func (a *App) RevealWiFi() (wifi.Secret, error)   { return wifi.Reveal() }
+func (a *App) CurrentWiFi() (wifi.Network, error) {
+	if err := a.ready(); err != nil {
+		return wifi.Network{}, err
+	}
+	return a.app.CurrentWiFi(a.ctx)
+}
+func (a *App) RevealWiFi() (wifi.Secret, error) {
+	if err := a.ready(); err != nil {
+		return wifi.Secret{}, err
+	}
+	return a.app.RevealWiFi(a.ctx)
+}
 func (a *App) Discover(cidr string, ports []int) ([]network.PortResult, error) {
 	if e := a.ready(); e != nil {
 		return nil, e
 	}
-	return a.service.Discover(a.ctx, cidr, ports, 500*time.Millisecond)
+	return a.app.Discover(a.ctx, cidr, ports, app.DefaultDiscoveryTimeout)
 }
 func (a *App) ImportCapture() (capture.ImportResult, error) {
 	if err := a.ready(); err != nil {
 		return capture.ImportResult{}, err
 	}
-	if err := a.service.CanImportCapture(); err != nil {
+	if err := a.app.CanImportCapture(a.ctx); err != nil {
 		return capture.ImportResult{}, err
 	}
 	path, err := wruntime.OpenFileDialog(a.ctx, wruntime.OpenDialogOptions{Title: "Import capture", Filters: []wruntime.FileFilter{{DisplayName: "Packet capture", Pattern: "*.pcap;*.pcapng"}}})
@@ -174,19 +194,19 @@ func (a *App) ImportCapture() (capture.ImportResult, error) {
 	if path == "" {
 		return capture.ImportResult{Packets: []capture.Packet{}}, nil
 	}
-	return a.service.ImportCapture(path)
+	return a.app.ImportCapture(a.ctx, path)
 }
 
 func (a *App) StartCapture(request capture.LiveRequest) error {
 	if err := a.ready(); err != nil {
 		return err
 	}
-	return a.service.StartCapture(request)
+	return a.app.StartCapture(a.ctx, request)
 }
 
 func (a *App) StopCapture() {
 	if a.ready() == nil {
-		a.service.StopCapture()
+		a.app.StopCapture(a.ctx)
 	}
 }
 
@@ -194,21 +214,21 @@ func (a *App) SaveCapture(format string) (bool, error) {
 	if err := a.ready(); err != nil {
 		return false, err
 	}
-	if err := a.service.CanExportCapture(format); err != nil {
+	if err := a.app.CanExportCapture(a.ctx, format); err != nil {
 		return false, err
 	}
 	path, err := wruntime.SaveFileDialog(a.ctx, wruntime.SaveDialogOptions{Title: "Save capture", DefaultFilename: "capture." + format, Filters: []wruntime.FileFilter{{DisplayName: "Packet capture", Pattern: "*." + format}}})
 	if err != nil || path == "" {
 		return false, err
 	}
-	if err := a.service.ExportCapture(a.ctx, path, format); err != nil {
+	if err := a.app.ExportCapture(a.ctx, path, format); err != nil {
 		return false, err
 	}
 	return true, nil
 }
-func (a *App) InspectServices(cidr string, ports []int) (tools.Nmap, error) {
+func (a *App) InspectServices(cidr string, ports []int) (app.Nmap, error) {
 	if e := a.ready(); e != nil {
-		return tools.Nmap{}, e
+		return app.Nmap{}, e
 	}
-	return a.service.InspectServices(a.ctx, cidr, ports)
+	return a.app.InspectServices(a.ctx, cidr, ports)
 }
