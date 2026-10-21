@@ -1,8 +1,8 @@
 # kali-tools
 
-A local desktop network toolkit built with Go, Wails, React, TypeScript, Base UI, Tailwind CSS v4 and SQLite. The interface supports English and Brazilian Portuguese.
+A local network and security toolkit inspired by the Kali Linux ecosystem, built with Go, Wails, React, TypeScript, Base UI, Tailwind CSS v4 and SQLite. One Go core serves three interfaces: the native desktop GUI (primary), a web server with the same UI (planned) and a complete CLI for headless/SSH hosts (in progress). The interface supports English and Brazilian Portuguese.
 
-**Development preview:** core workflows are implemented and tested; hardware qualification is still open. Windows 11 leads development. Linux/macOS binaries do not imply Wi-Fi or capture parity. See [PLAN.md](PLAN.md) and [verification evidence](docs/verification/0.1.0-alpha.1-dev.md).
+**Development preview:** core workflows are implemented and tested; hardware qualification is still open. Windows 11 leads development. Linux/macOS binaries do not imply Wi-Fi or capture parity. See [PLAN.md](PLAN.md) and [verification evidence](docs/verification/0.1.0-alpha.2-dev.md).
 
 ## What it does
 
@@ -229,11 +229,29 @@ Windows raw capture is limited to IPv4, requires administrator authorization, re
 ## Guides
 
 - [Delivery plan](PLAN.md)
+- [Architecture (hexagonal, binding reference)](docs/architecture.md) and [architecture research](docs/architecture-research.md)
+- [Spec Driven Development specs](docs/specs/README.md): what to implement next, with auditable quality gates
+- [Tools, licenses and platform research](docs/tools-research.md)
 - [Development and native acceptance](docs/development.md)
 - [Dependency inventory](docs/dependencies.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)
-- [Verification evidence](docs/verification/0.1.0-alpha.1-dev.md)
+- [Verification evidence](docs/verification/0.1.0-alpha.2-dev.md) ([previous](docs/verification/0.1.0-alpha.1-dev.md))
+
+## Repository layout
+
+```text
+main.go, app.go          Wails desktop composition root (must stay at the root for Wails v2)
+cmd/kali-tools/          CLI
+internal/domain, app     shared kernel and application services
+internal/network|capture|wifi   capability packages
+internal/adapter/        SQLite, external tools, ICMP, OS platform (+ future cli, wailsui, httpapi)
+frontend/src/            app/, features/, shared/{api,i18n,ui}/, styles/
+scripts/, scripts/setup/ task runners and per-OS setup entry points
+docs/                    architecture, research, specs, ADRs, releases, verification
+```
+
+Formatting and linting are enforced: run `lefthook install` once; each commit runs `golangci-lint fmt` (gofmt -s + goimports), `golangci-lint run` and `go vet`.
 
 ## License and contribution
 

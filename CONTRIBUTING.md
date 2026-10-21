@@ -6,4 +6,6 @@ Keep the domain in Go. Desktop methods are thin typed facades; the CLI invokes t
 
 Run `node scripts/task.mjs check`, `node scripts/task.mjs race`, `node scripts/task.mjs fuzz` and `node scripts/task.mjs workflows`. Install Lefthook with `frontend/node_modules/.bin/lefthook install` after dependencies are installed. Commit messages follow Conventional Commits, for example `feat(network): add bounded TCP diagnostics`.
 
+The pre-commit hook formats staged Go files with the pinned `golangci-lint fmt` (gofmt -s and goimports, local prefix `github.com/AlexGalhardo/kali-tools`), re-stages them, then runs `golangci-lint run` and `go vet`. Do not bypass hooks. New work starts from a spec in [docs/specs](docs/specs/README.md) and must satisfy its quality gates and delivery assertions, with an evidence record under `docs/verification/specs/`. Read [docs/architecture.md](docs/architecture.md) before structural changes.
+
 Every completed plan item requires evidence in `docs/verification/`. Native hardware acceptance and cross compilation are different evidence. CI/CD was activated by explicit owner instruction on 2026-10-19. Pull requests run the same checks as main; development releases remain clearly labeled. Do not tag a release before its acceptance criteria pass or represent a development preview as qualified. Contributions are licensed under [MIT](LICENSE.md).
