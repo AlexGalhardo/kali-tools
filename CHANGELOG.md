@@ -6,6 +6,8 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ### Changed
 
+- Enforced the architecture dependency matrix with eight depguard rules, deliberate-violation checks and CI wiring; documented the stdlib CLI parser decision and revisit triggers. [H08/H09 evidence](docs/verification/specs/H08.md).
+
 - Applied a shared black/neon-green terminal theme with bundled JetBrains Mono, responsive navigation and accessible SVG actions. [Theme evidence](docs/verification/specs/A08-theme.md).
 
 - Corrected native CI assumptions for macOS config paths and unsupported inventory, and report an inactive Windows WLAN service as unsupported. [S09 evidence](docs/verification/specs/S09.md).

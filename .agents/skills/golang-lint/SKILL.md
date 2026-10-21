@@ -49,14 +49,14 @@ GOOS=linux go vet ./... && GOOS=darwin go vet ./...
 
 ## Dependency rule (PLAN H08)
 
-The target enforcement is depguard in `.golangci.yml` (or a pinned go-arch-lint), using the matrix in `docs/architecture.md` §3:
+Enforcement is depguard in `.golangci.yml`, using the matrix in `docs/architecture.md` §3:
 
 - `internal/domain`: stdlib only.
 - `internal/network`, `internal/capture`, `internal/wifi`: no `internal/adapter/*`, `internal/app`, Wails or `database/sql`.
 - `internal/app`, `internal/job`: no `internal/adapter/*`, Wails, `net/http` or `os/exec`.
 - Wails only in the desktop root and `internal/adapter/wailsui`.
 
-Until H08 lands, this is checked by review. A deliberately forbidden import must fail the check locally and in CI when it is added. Known violation D1 (`network` imports `adapter/probe`) is tracked in PLAN H03.
+The eight rules are `domain`, `capabilities`, `application`, `driven-adapters`, `driving-adapters`, `wails`, `bootstrap` and `porttest`. Run `node scripts/task.mjs arch` to prove each rejects its deliberate violation and leaves no planted file. Domain tests may import their own exact package; every other non-stdlib import stays forbidden.
 
 ## Suppressing warnings
 

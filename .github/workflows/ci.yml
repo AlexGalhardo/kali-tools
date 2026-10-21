@@ -39,6 +39,7 @@ jobs:
       - run: npm exec -- playwright install --with-deps chromium
         working-directory: frontend
       - run: node scripts/task.mjs check
+      - run: node scripts/task.mjs arch
       - run: node scripts/task.mjs race
       - run: node scripts/task.mjs fuzz
       - run: node scripts/task.mjs workflows

@@ -282,6 +282,7 @@ These are reusable delivery requirements, not a separate completed milestone. De
   - Progress: [H07 evidence](docs/verification/specs/H07.md). The ICMP correction, seven real/fake suites, race checks and direct/CLI/Wails acceptance matrix pass. H07 remains open for native qualification. HTTP remains W01; CLI history remains C01.
   - Assert: each fake passes the same suite as its adapter; at least the diagnostics, discovery and history specifications run through two drivers.
 - [ ] H08 Enforce the dependency rule.
+  - Local implementation verified: eight depguard cases, wrong-version guard, cleanup and actual commit-hook rejection pass; hosted positive/negative proof pending. [Evidence](docs/verification/specs/H08.md).
   - Spec: [H08-dependency-rule](docs/specs/H08-dependency-rule.md)
   - [ ] Configure depguard in `.golangci.yml` (or pinned go-arch-lint) with the matrix in architecture §3. Run it in CI and in Lefthook.
   - [ ] Use the spec's pinned depguard configuration, including test-only porttest and composition-root restrictions.
@@ -289,6 +290,7 @@ These are reusable delivery requirements, not a separate completed milestone. De
   - [ ] Wire the architecture check into the existing pinned CI job; record QG/AC/DA evidence in `docs/verification/specs/H08.md`.
   - Assert: a deliberately forbidden import fails the check locally and in CI.
 - [ ] H09 Decide the CLI parser.
+  - ADR 004 selects stdlib using the specified rule, with verified alternative licenses/pins and concrete revisit triggers. Status stays proposed pending owner approval. [ADR](docs/adr/004-cli-parser.md).
   - Spec: [H08-dependency-rule](docs/specs/H08-dependency-rule.md)
   - [ ] Record an ADR: stdlib `flag` versus Cobra, based on the C-phase command tree, completion needs and license review.
   - [ ] Write ADR 004 using H08 §4.5's decision rule and revisit triggers; keep its status `proposed` until owner approval.

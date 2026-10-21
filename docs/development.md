@@ -73,6 +73,8 @@ Reviewed 2026-10-19 against the installed Wails v2.17.0 CLI and official documen
 
 ## Active CI/CD and packaging
 
+Run `node scripts/task.mjs arch` to prove each of eight dependency rules rejects a deliberate forbidden import and cleans up afterward. It requires golangci-lint 2.15.0 on PATH; the existing lint hook enforces the same rules on commits.
+
 The owner authorized workflow activation on 2026-10-19. See [the CI/CD guide](ci/README.md). `node scripts/task.mjs workflows` checks active source/pins; `go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12` performs full workflow static validation.
 
 After a native CLI/desktop build, `go mod download all` and `node scripts/package.mjs` assemble that host's release archive with notices and source metadata. Go/production frontend licenses are collected from pinned installed sources; missing notice files fail packaging. Native CI supplies Windows x64, Linux x64 and both Mac architectures.

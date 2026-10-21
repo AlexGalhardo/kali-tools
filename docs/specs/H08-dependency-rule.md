@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | H08, H09 |
-| Status | Ready |
+| Status | In progress 2026-10-21 |
 | Depends on | H03, H05, H06, H07 |
 | Risk | Low for builds (lint configuration only); Medium for correctness: a wrong glob silently matches no file, so a deliberate-violation check is mandatory |
 
@@ -35,6 +35,8 @@ Facts at commit `8cbf25e` (re-verify):
 - CLI parser today: one stdlib `flag.FlagSet` per invocation, dispatch by `args[0]` (`cmd/kali-tools/main.go:41-60`, moved to `internal/adapter/cli` by H05). PLAN C01 lists 16 top-level commands, subcommands under `diagnose` (6), `wifi` (2), `capture` (3), `jobs` (3), `history` (2), `settings` (2), and global flags `--json`, `--timeout`, `--no-color`, `--lang`. No PLAN item requires shell completion. `docs/architecture-research.md` §7.2 says to re-evaluate "when the command tree grows beyond about six subcommands or shell completion is required".
 
 ## 4. Design
+
+Verified checkout correction (2026-10-21): the external `domain_test` package imports its own domain package. The strict `domain` rule must allow that exact import (`internal/domain$`) in addition to stdlib. This cannot introduce an outward production edge: importing the package itself would be a Go import cycle. No production violation was found. The eight deliberate negative cases remain unchanged.
 
 ### 4.1 depguard semantics used
 

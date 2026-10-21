@@ -111,11 +111,13 @@ Folders marked *(empty)* contain only `.gitkeep`. They mark target locations fro
 | --- | --- | --- | --- |
 | Shared kernel | `internal/domain` | stdlib | anything in the module |
 | Capabilities (inner hexagon) | `internal/network`, `internal/capture`, `internal/wifi` | `domain`, stdlib, pure libraries (gopacket) | `adapter/*`, `app`, Wails, `database/sql` |
-| Application | `internal/app`, `internal/job` | `domain`, capability packages, `job` | `adapter/*`, Wails, `net/http`, `os/exec` |
+| Application | `internal/app`, `internal/job` | `domain`, capability packages, `job` | `adapter/*`, Wails, `net/http`, `os/exec`, `database/sql` |
 | Driven adapters | `internal/adapter/{storage,tools,probe,platform}` | `domain`, capability packages, OS/driver libraries | driving adapters, `cmd`, `app` (except for types) |
 | Driving adapters | `internal/adapter/{wailsui,cli}`; `httpapi` planned | `app`, `domain`, `adapter/contract` DTO types | driven adapters directly (they go through `app`) |
 | Frontend contract | `internal/adapter/contract` | `domain`, `app`, `job`, capability packages | other adapters, Wails, `net/http`, `os/exec`, `database/sql` |
 | Composition roots | `main.go`, `cmd/*`, `internal/bootstrap` | everything | nothing imports them |
+
+The matrix is enforced by depguard rules in `.golangci.yml` (rule names `domain`, `capabilities`, `application`, `driven-adapters`, `driving-adapters`, `wails`, `bootstrap`, `porttest`); `node scripts/task.mjs arch` proves each rule fires. External domain tests may import their own exact package; production self-imports are Go import cycles.
 
 Rules that hold in every layer, from AGENTS.md and PLAN.md:
 
@@ -287,7 +289,7 @@ Use `git mv`, then rewrite import paths and run `gofmt`. Run `go vet ./...` for 
 | D5 | Resolved: storage ports have shared suites run against SQLite and in-memory fakes; H07 also wires the ICMP regression after target validation | Native OS-port data-branch qualification remains pending | H03, H07 |
 | D6 | `capture`, `network`, `wifi` mix domain rules with OS or network I/O in one package | Harder to test without hardware | H03 (split only where a port is needed) |
 | D7 | `frontend/src/app/App.tsx` (about 1,250 lines) holds every page | Hard to evolve per feature | W02 |
-| D8 | No mechanical check of the dependency rule | Rules decay silently | H08 |
+| D8 | Resolved by eight depguard rules and deliberate violations via `node scripts/task.mjs arch` | Hosted proof recorded in H08 evidence | H08 |
 
 ## 9. Verification commands
 
@@ -297,6 +299,7 @@ GOOS=linux go vet ./... && GOOS=darwin go vet ./...
 go test ./...                      # add -race where the toolchain supports it
 cd frontend && bun run typecheck && bun run lint && bun run build && bunx playwright test
 node scripts/task.mjs fuzz         # parser fuzz smoke
+node scripts/task.mjs arch         # prove eight dependency rules reject violations
 bash scripts/setup/setup-linux-docker.sh test   # Docker CLI lab (or the Windows/macOS variant)
 ```
 

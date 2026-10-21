@@ -4,6 +4,7 @@ run:
 linters:
   default: standard
   enable:
+    - depguard
     - bodyclose
     - durationcheck
     - errorlint
@@ -17,6 +18,126 @@ linters:
     - predeclared
     - unconvert
   settings:
+    depguard:
+      rules:
+        domain:
+          list-mode: strict
+          files:
+            - "**/internal/domain/**"
+          allow:
+            - $gostd
+            - github.com/AlexGalhardo/kali-tools/internal/domain$
+        capabilities:
+          list-mode: lax
+          files:
+            - "**/internal/network/**"
+            - "**/internal/capture/**"
+            - "**/internal/wifi/**"
+            - "!$test"
+          deny:
+            - pkg: github.com/AlexGalhardo/kali-tools/internal/adapter
+              desc: "capabilities declare ports; adapters are injected (architecture §3)"
+            - pkg: github.com/AlexGalhardo/kali-tools/internal/app
+              desc: "capabilities sit below the application layer"
+            - pkg: github.com/AlexGalhardo/kali-tools/internal/job
+              desc: "capabilities sit below the application layer"
+            - pkg: github.com/AlexGalhardo/kali-tools/internal/bootstrap
+              desc: "only composition roots wire"
+            - pkg: github.com/wailsapp/wails
+              desc: "Wails is confined to adapter/wailsui and the desktop root"
+            - pkg: database/sql
+              desc: "SQL belongs to adapter/storage"
+        application:
+          list-mode: lax
+          files:
+            - "**/internal/app/**"
+            - "**/internal/job/**"
+            - "!$test"
+          deny:
+            - pkg: github.com/AlexGalhardo/kali-tools/internal/adapter
+              desc: "the application declares ports; adapters implement them (architecture §3)"
+            - pkg: github.com/AlexGalhardo/kali-tools/internal/bootstrap
+              desc: "only composition roots wire"
+            - pkg: github.com/wailsapp/wails
+              desc: "Wails is confined to adapter/wailsui and the desktop root"
+            - pkg: net/http
+              desc: "HTTP belongs to adapter/httpapi or a capability"
+            - pkg: os/exec
+              desc: "processes belong to adapter/tools"
+            - pkg: database/sql
+              desc: "SQL belongs to adapter/storage"
+        driven-adapters:
+          list-mode: lax
+          files:
+            - "**/internal/adapter/storage/**"
+            - "**/internal/adapter/tools/**"
+            - "**/internal/adapter/probe/**"
+            - "**/internal/adapter/platform/**"
+            - "!$test"
+          deny:
+            - pkg: github.com/AlexGalhardo/kali-tools/internal/adapter/wailsui
+              desc: "driven adapters never call driving adapters"
+            - pkg: github.com/AlexGalhardo/kali-tools/internal/adapter/httpapi
+              desc: "driven adapters never call driving adapters"
+            - pkg: github.com/AlexGalhardo/kali-tools/internal/adapter/cli
+              desc: "driven adapters never call driving adapters"
+            - pkg: github.com/AlexGalhardo/kali-tools/internal/adapter/contract
+              desc: "the frontend contract belongs to driving adapters"
+            - pkg: github.com/AlexGalhardo/kali-tools/internal/bootstrap
+              desc: "only composition roots wire"
+            - pkg: github.com/wailsapp/wails
+              desc: "Wails is confined to adapter/wailsui and the desktop root"
+        driving-adapters:
+          list-mode: lax
+          files:
+            - "**/internal/adapter/wailsui/**"
+            - "**/internal/adapter/httpapi/**"
+            - "**/internal/adapter/cli/**"
+            - "**/internal/adapter/contract/**"
+            - "!$test"
+          deny:
+            - pkg: github.com/AlexGalhardo/kali-tools/internal/adapter/storage
+              desc: "driving adapters go through app.Application (architecture §3)"
+            - pkg: github.com/AlexGalhardo/kali-tools/internal/adapter/tools
+              desc: "driving adapters go through app.Application"
+            - pkg: github.com/AlexGalhardo/kali-tools/internal/adapter/probe
+              desc: "driving adapters go through app.Application"
+            - pkg: github.com/AlexGalhardo/kali-tools/internal/adapter/platform
+              desc: "driving adapters go through app.Application"
+            - pkg: github.com/AlexGalhardo/kali-tools/internal/bootstrap
+              desc: "only composition roots wire"
+            - pkg: database/sql
+              desc: "SQL belongs to adapter/storage"
+            - pkg: os/exec
+              desc: "processes belong to adapter/tools"
+        wails:
+          list-mode: lax
+          files:
+            - "**/internal/**"
+            - "**/cmd/**"
+            - "**/tests/**"
+            - "!**/internal/adapter/wailsui/**"
+          deny:
+            - pkg: github.com/wailsapp/wails
+              desc: "Wails is confined to adapter/wailsui and the desktop root (main.go)"
+        bootstrap:
+          list-mode: lax
+          files:
+            - "**/internal/**"
+            - "!**/internal/bootstrap/**"
+            - "!$test"
+          deny:
+            - pkg: github.com/AlexGalhardo/kali-tools/internal/bootstrap
+              desc: "bootstrap is imported only by composition roots (main.go, cmd/*) and tests"
+        porttest:
+          list-mode: lax
+          files:
+            - "$all"
+            - "!$test"
+            - "!**/internal/porttest/**"
+          deny:
+            - pkg: github.com/AlexGalhardo/kali-tools/internal/porttest
+              desc: "contract suites and fakes are test-only"
     errcheck:
       exclude-functions:
         - (io.Closer).Close

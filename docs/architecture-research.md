@@ -515,7 +515,7 @@ func JobStoreContract(t *testing.T, newStore func(t *testing.T) app.JobStore)
 
 ## 11. Enforcing the dependency rule
 
-Pick one tool, pin it and run it in CI next to `go vet`:
+H08 selects depguard bundled with golangci-lint 2.15.0. Eight rules enforce the matrix; `node scripts/task.mjs arch` plants and removes one forbidden import per rule to prove enforcement in CI. The alternatives considered were:
 
 - **depguard**, already available through golangci-lint ([configuration](https://golangci-lint.run/docs/linters/configuration/)). Deny Wails, `os/exec`, `database/sql` and `net/http` in domain and application packages. Deny Wails everywhere except the Wails adapter and the desktop root.
 - **go-arch-lint** ([repo](https://github.com/fe3dback/go-arch-lint)) declares components and a `mayDependOn` graph in `.go-arch-lint.yml`.
@@ -560,10 +560,10 @@ Violation recorded and fixed on 2026-10-21: `internal/network` imported `interna
 | Events | Core `job` manager with bounded fan-out; adapters forward | One lifecycle, three transports |
 | Web transport | REST plus SSE; WebSocket only if bidirectional | Stdlib only; automatic reconnect |
 | Web delivery | `kali-tools serve` subcommand | One headless binary for SSH hosts |
-| CLI parser | Stdlib `flag` until completion or depth justifies Cobra (ADR) | Fewer dependencies |
+| CLI parser | Stdlib `flag`; [ADR 004](adr/004-cli-parser.md) records the decision and revisit triggers | Fewer dependencies |
 | Transactions | Update function first; unit of work on the first multi-repository write | Keeps SQL out of `app` |
 | Tests | Fakes, contract suites, per-adapter acceptance drivers | Fakes cannot drift; adapters stay thin |
-| Enforcement | depguard in golangci-lint (or go-arch-lint) | Rules hold as the code grows |
+| Enforcement | depguard in golangci-lint plus deliberate-violation script | Rules hold as the code grows |
 | Local server security | Loopback, Host allowlist, token, cross-origin protection | Blocks DNS rebinding and CSRF |
 
 ## 14. Sources
