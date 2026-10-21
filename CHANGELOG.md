@@ -6,6 +6,7 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ### Changed
 
+- Extracted CLI parsing/output and Wails bindings into dedicated driving adapters; roots now only compose and clean up. The bridge and headless workflows use `wailsui.Bindings`, with unchanged pre-extraction CLI fixture bytes and job sequence fields. ([5954c1a](https://github.com/AlexGalhardo/kali-tools/commit/5954c1a), [H05 evidence](docs/verification/specs/H05.md))
 - Routed all desktop and CLI operations through one `app.Application` with private dependencies, context propagation and shared capture/export bounds; removed direct adapter calls from driving roots. Native acceptance remains open. ([4937c09](https://github.com/AlexGalhardo/kali-tools/commit/4937c09), [H04 evidence](docs/verification/specs/H04.md))
 - Declared consumer-side storage, host, tool, Wi-Fi and capture ports; bootstrap owns adapter cleanup and the core no longer imports driven adapters. Generated model namespaces now follow application-owned types with unchanged JSON. ([18c178f](https://github.com/AlexGalhardo/kali-tools/commit/18c178f), [H03 evidence](docs/verification/specs/H03.md))
 - Extracted bounded job lifecycles and ordered subscriptions into `internal/job`; application services now own metrics and capture streams, with unchanged Wails payloads plus job sequence numbers. Native desktop acceptance remains open. ([772e3d1](https://github.com/AlexGalhardo/kali-tools/commit/772e3d1), [H02 evidence](docs/verification/specs/H02.md))
