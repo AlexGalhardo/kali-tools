@@ -3,7 +3,7 @@ package domain
 import "fmt"
 
 const SchemaVersion = 1
-const Version = "0.1.0-alpha.1-dev"
+const Version = "0.1.0-alpha.2-dev"
 
 type Error struct {
 	Code    string `json:"code"`

@@ -1,7 +1,7 @@
 {
   "name": "kali-tools-frontend",
   "private": true,
-  "version": "0.1.0-alpha.1-dev",
+  "version": "0.1.0-alpha.2-dev",
   "type": "module",
   "packageManager": "bun@1.4.3",
   "scripts": {

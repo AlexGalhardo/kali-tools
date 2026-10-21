@@ -65,7 +65,7 @@ func TestNativeBridge(t *testing.T) {
 		timer = time.AfterFunc(20*time.Second, func() { smoke.Complete(false) })
 		close(smoke.ready)
 	}, OnDomReady: func(ctx context.Context) {
-		wruntime.WindowExecJS(ctx, `Promise.all([window.go.main.App.Interfaces(),window.go.main.App.Settings(),window.go.main.App.Version(),window.go.main.App.CancelJob("missing"),window.go.main.App.SaveCapture("invalid").then(()=>false,()=>true),window.go.main.App.InspectServices("0.0.0.0/0",[80]).then(()=>false,()=>true)]).then(([interfaces,settings,version,cancelled,invalidSave,invalidScope])=>window.go.main.SmokeBridge.Complete(interfaces.length>0&&settings.language==='en'&&version==='0.1.0-alpha.1-dev'&&cancelled===false&&invalidSave===true&&invalidScope===true)).catch(()=>window.go.main.SmokeBridge.Complete(false));`)
+		wruntime.WindowExecJS(ctx, `Promise.all([window.go.main.App.Interfaces(),window.go.main.App.Settings(),window.go.main.App.Version(),window.go.main.App.CancelJob("missing"),window.go.main.App.SaveCapture("invalid").then(()=>false,()=>true),window.go.main.App.InspectServices("0.0.0.0/0",[80]).then(()=>false,()=>true)]).then(([interfaces,settings,version,cancelled,invalidSave,invalidScope])=>window.go.main.SmokeBridge.Complete(interfaces.length>0&&settings.language==='en'&&version==='0.1.0-alpha.2-dev'&&cancelled===false&&invalidSave===true&&invalidScope===true)).catch(()=>window.go.main.SmokeBridge.Complete(false));`)
 	}, OnShutdown: app.shutdown})
 	if e != nil {
 		t.Fatal(e)

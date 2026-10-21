@@ -4,7 +4,7 @@ async function connect(page:Page){await page.addInitScript(()=>{
   const handlers:Record<string,((v:unknown)=>void)[]>={};let settings={language:"en",retention_days:30};let count=100;let cancelDiscovery:(()=>void)|undefined;
   const job={id:"fixture-job",kind:"tcp",state:"completed",created:"2026-10-19T12:00:00Z",summary:"Diagnostic completed"};
   const api={
-    Version:async()=>"0.1.0-alpha.1-dev",
+    Version:async()=>"0.1.0-alpha.2-dev",
     Capabilities:async()=>[{id:"diagnostics",state:"available",detail:"Go diagnostics",provider:"go/net"},{id:"wifi",state:"available",detail:"Windows WLAN",provider:"windows"},{id:"capture_live",state:"permission_required",detail:"Raw IPv4",provider:"windows"}],
     Interfaces:async()=>[{index:1,name:"Fixture Ethernet",mac:"02:00:00:00:00:01",mtu:1500,up:true,loopback:false,addresses:["192.0.2.10/24"]}],
     Inventory:async()=>({adapters:[{index:1,name:"Fixture Ethernet",gateways:["192.0.2.1"],dns:["192.0.2.53"]}],counters:[{id:"1",received:count+=100,sent:count}]}),

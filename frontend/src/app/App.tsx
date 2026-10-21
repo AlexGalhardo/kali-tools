@@ -312,7 +312,7 @@ export function App() {
         </nav>
         <div className="sidebar-bottom">
           <span className="status-dot" /> {t.development}
-          <small>0.1.0-alpha.1-dev</small>
+          <small>0.1.0-alpha.2-dev</small>
         </div>
       </aside>
       <div className="workspace">
