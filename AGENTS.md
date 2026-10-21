@@ -19,7 +19,7 @@ Do this for every task, including small ones. If a skill conflicts with docs/arc
   - write the tests first;
   - build;
   - verify every quality gate (QG) and delivery assertion (DA);
-  - write the evidence record in docs/verification/specs/<ID>.md;
+  - write the evidence record in `docs/verification/specs/<ID>.md`;
   - update docs/architecture.md and the PLAN.md checkbox.
 - Do not invent requirements outside the spec. Report follow-ups instead of fixing them.
 - Go formatting and linting are enforced by the Lefthook pre-commit hook:
