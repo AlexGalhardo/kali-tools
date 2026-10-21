@@ -2,6 +2,8 @@
 
 Planning baseline: 2026-10-19. Architecture revision: 2026-10-21.
 
+Owner release instruction (2026-10-21): publish v0.3.0 and rename the earlier release records to v0.1.0/v0.2.0. This explicitly authorizes publication with disclosed unsigned development status; it does not complete any native or release-qualification checkbox below.
+
 Related documents:
 
 - Product owner decisions: [brainstorming](docs/brainstorming.md).

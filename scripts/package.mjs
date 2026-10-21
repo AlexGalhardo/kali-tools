@@ -2,11 +2,11 @@ import {spawnSync} from "node:child_process";
 import {readFileSync,writeFileSync,readdirSync,mkdirSync,cpSync,mkdtempSync} from "node:fs";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
+import {checkRelease} from "./release-policy.mjs";
 const root=fileURLToPath(new URL("../",import.meta.url));
 const platform={win32:"windows",linux:"linux",darwin:"macos"}[process.platform];
 if(!platform)throw Error("Unsupported packaging platform");
-const version=JSON.parse(readFileSync(path.join(root,"frontend/package.json"),"utf8")).version;
-if(!/^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$/.test(version))throw Error("Invalid version");
+const version=checkRelease(root);
 const output=path.join(root,"build/release");mkdirSync(output,{recursive:true});
 const stage=mkdtempSync(path.join(root,"build/staging-"));
 function run(bin,args){const r=spawnSync(bin,args,{cwd:root,stdio:"inherit",timeout:120000});if(r.error)throw r.error;if(r.status!==0)throw Error(`${bin} failed (${r.status})`);}

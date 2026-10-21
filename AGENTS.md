@@ -1,5 +1,7 @@
 # Contributor instructions
 
+Release policy: always follow SemVer 2.0.0 and Keep a Changelog 1.1.0, as specified in CONTRIBUTING.md. Run `node scripts/release-policy.mjs`; keep app/package/Wails versions, Git tags, dated changelog entries and release notes consistent. Never rewrite published release contents or tags.
+
 Use English for source, documentation and commits. Keep business logic in Go services shared by the Wails GUI, the web server and the CLI. Read docs/architecture.md before adding, moving or wiring packages, and keep it current; the reasoning is in docs/architecture-research.md. Never concatenate shell commands. Bound network operations, parser input, event queues and subprocess output. Never persist Wi-Fi secrets or packet payloads in diagnostic history. GitHub Actions activation was explicitly authorized on 2026-10-19; maintain pinned workflows under .github/workflows with minimum permissions. Mark PLAN.md tasks complete only with actual verification evidence. Run `go test ./...`, `go vet ./...` and the frontend check/build after relevant changes. Do not claim native platform acceptance from cross compilation. Use the MIT project license. No release tag before qualification and owner decisions on signing. Development artifacts must disclose unsigned status and open acceptance gates.
 
 ## Mandatory start of every task

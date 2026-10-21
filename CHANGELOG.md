@@ -4,9 +4,13 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-21
+
+Published at the owner's explicit request with unsigned development binaries and open native qualification gates. Earlier development release entries are now presented as 0.1.0 and 0.2.0; their source commits and artifact contents are preserved.
+
 ### Changed
 
-- Resumed H07 with real ICMP contract coverage and host validation before DNS/native delegation. Reconciled PLAN implementation, native acceptance and next-spec checklists; corrected the H06/H07 spec statuses. ([H07 continuation evidence](docs/verification/specs/H07.md#continuation-2026-10-21))
+- Resumed H07 with real ICMP contract coverage and host validation before DNS/native delegation. Reconciled PLAN implementation, native acceptance and next-spec checklists; corrected the H06/H07 spec statuses. ([bac0210](https://github.com/AlexGalhardo/kali-tools/commit/bac0210), [H07 continuation evidence](docs/verification/specs/H07.md#continuation-2026-10-21))
 
 - Added shared port suites, contract-tested in-memory fakes and direct/CLI/headless Wails acceptance drivers. The H07 checkpoint keeps the discovered ICMP validation gap and native data-branch qualification open. ([5b15aac](https://github.com/AlexGalhardo/kali-tools/commit/5b15aac), [H07 evidence](docs/verification/specs/H07.md))
 
@@ -18,7 +22,7 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 - Extracted bounded job lifecycles and ordered subscriptions into `internal/job`; application services now own metrics and capture streams, with unchanged Wails payloads plus job sequence numbers. Native desktop acceptance remains open. ([772e3d1](https://github.com/AlexGalhardo/kali-tools/commit/772e3d1), [H02 evidence](docs/verification/specs/H02.md))
 - Shared desktop and CLI composition through `internal/bootstrap`, preserving CLI in-memory storage and existing bindings; added retention, cleanup and root-boundary tests. Native bridge and Docker lab acceptance remain open. ([13c0a01](https://github.com/AlexGalhardo/kali-tools/commit/13c0a0130e76585f866bf900c503a029601190ba), [H01 evidence](docs/verification/specs/H01.md))
 
-## [0.1.0-alpha.2-dev] - 2026-10-21
+## [0.2.0] - 2026-10-21
 
 Development checkpoint focused on architecture, hardening and contributor guidance. Release assets are unsigned development previews; qualification gates from 0.1.0-alpha.1-dev remain open.
 
@@ -47,13 +51,13 @@ Development checkpoint focused on architecture, hardening and contributor guidan
 - Terminal job events are no longer dropped when the event buffer is full, so the UI cannot remain in "running"; service shutdown is idempotent. ([4dd28a3](https://github.com/AlexGalhardo/kali-tools/commit/4dd28a3))
 - 64-bit Windows ICMP option structure layout; Linux inventory no longer returns `null` gateway lists; DNS names with underscores are accepted. ([4dd28a3](https://github.com/AlexGalhardo/kali-tools/commit/4dd28a3))
 
-### Known limitations
+Known limitations remain open:
 
 - Web server and complete CLI are specified but not implemented.
 - `go test -race` was not run locally (no cgo compiler on the host); GitHub Actions is the authoritative check for this checkpoint.
 - Native Windows Wi-Fi/key and capture qualification, hot-plug acceptance and performance budgets remain open.
 
-## [0.1.0-alpha.1-dev] - 2026-10-19
+## [0.1.0] - 2026-10-19
 
 Development checkpoint; qualification remains open. Release assets are unsigned development previews.
 
@@ -83,7 +87,7 @@ Development checkpoint; qualification remains open. Release assets are unsigned 
 - Corrupt/oversized stored preferences and discovery history privacy. ([5a89c71](https://github.com/AlexGalhardo/kali-tools/commit/5a89c71))
 - Capture save failure preserves the destination; packet timestamps retain nanosecond precision. ([c005e7e](https://github.com/AlexGalhardo/kali-tools/commit/c005e7e))
 
-### Known limitations
+Known limitations remain open:
 
 - Native Windows Wi-Fi/key and administrator-authorized capture qualification, hot-plug acceptance and performance budgets remain open.
 - Raw Windows capture is IPv4-only; kernel drop counts are unavailable. Display filters do not restrict captured/saved data.

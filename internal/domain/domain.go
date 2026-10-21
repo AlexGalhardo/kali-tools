@@ -6,7 +6,7 @@ import (
 )
 
 const SchemaVersion = 1
-const Version = "0.1.0-alpha.2-dev"
+const Version = "0.3.0"
 
 // Capability states (Capability.State).
 const (
