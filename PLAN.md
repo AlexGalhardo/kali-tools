@@ -212,7 +212,7 @@ These tasks remove the deviations listed in [architecture §8](docs/architecture
   - Spec: [H01-bootstrap](docs/specs/H01-bootstrap.md)
   - [x] `bootstrap.New(ctx, Config) (*app.Application, cleanup, error)` opens storage, applies retention and injects the existing ICMP adapter, as scoped by H01. Tool discovery and remaining platform wiring stay with H03/H04. [Evidence](docs/verification/specs/H01.md).
   - [x] Wails `main.go`/`app.go` and `cmd/kali-tools` both use it; composition roots expose `run(ctx, args, getenv, stdout, stderr)`. [Evidence](docs/verification/specs/H01.md).
-  - Acceptance pending: native Wails bridge (AC-10) and non-root Docker lab (AC-11); H01 remains open.
+  - Acceptance pending: native Wails bridge (AC-10); non-root Docker lab (AC-11) passed. H01 remains open for native acceptance; owner authorized sequential headless implementation with native gates pending.
   - Assert: the desktop and the CLI build the same application graph; no package below `cmd`/root reads flags or environment variables.
 - [ ] H02 Job manager and event fan-out: `internal/job`.
   - Spec: [H02-job-manager](docs/specs/H02-job-manager.md)

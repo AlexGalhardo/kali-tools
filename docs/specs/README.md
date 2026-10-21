@@ -53,6 +53,7 @@ Rules inside the loop:
 - **No behavior change in refactor specs.** Existing tests must pass unchanged unless the spec says that a test moves or changes.
 - **Never weaken a test** to make it pass. Never delete a security assertion.
 - **Never claim native acceptance** (Wi-Fi, capture, WebView, Linux/macOS hardware) from unit tests or cross-compilation. Specs mark these criteria `[native]`. Leave them unchecked unless a human runs them.
+- **Owner-authorized headless continuation (2026-10-21):** implement specs sequentially and proceed when the predecessor's implementation and non-native acceptance pass, while retaining its explicit `native acceptance pending` status. The owner requested uninterrupted headless implementation, commits and pushes to `main`, without releases or waiting for remote CI. This overrides the execution-order requirement for a predecessor to be fully Done; it does not approve native checks, release qualification, or shipping `serve` before W04 security is implemented and verified.
 - **Formatting is automatic.** The Lefthook pre-commit runs `golangci-lint fmt` (gofmt -s + goimports), `golangci-lint run` and `go vet`. Run `lefthook install` once per clone.
 
 ## 4. Spec template
