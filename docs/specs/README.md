@@ -191,7 +191,7 @@ Rules: paste real output (trimmed), never paraphrase a failure as a pass; "not r
 ### 6.3 Frontend
 
 - React and TypeScript with strict typing. Biome formats and lints.
-- `frontend/src/shared/api/bridge.ts` is the only module that talks to Go.
+- `frontend/src/shared/api/` is the only directory that talks to Go; feature code imports only `bridge.ts`.
 - Every user-visible string goes in both catalogs (`en`, `pt`) in `shared/i18n/i18n.ts`.
 - Playwright workflows use contract-faithful fakes.
 

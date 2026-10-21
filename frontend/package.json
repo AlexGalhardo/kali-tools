@@ -8,7 +8,7 @@
     "dev": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build && node scripts/preserve-dist.mjs",
     "typecheck": "tsc --noEmit",
-    "lint": "biome check src",
+    "lint": "biome check src && node scripts/check-wailsjs-imports.mjs",
     "format": "biome check --write src",
     "test": "playwright test"
   },

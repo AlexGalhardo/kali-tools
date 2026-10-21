@@ -220,7 +220,7 @@ H02 moves all three streams through `job.Manager`. `Subscribe(ctx)` uses a defau
 - **Why it stays at the repository root:**
   - Wails v2 builds the project-root package next to `wails.json`.
   - Wails keeps its project root; the shared `frontend` Go package owns the embedded build used by both delivery modes.
-- The generated namespace is `frontend/wailsjs/go/wailsui/Bindings`, following the bound receiver's package. `bridge.ts`, Playwright fakes and native smoke calls use that namespace. The binding drift task regenerates it and rejects differences from Git.
+- The generated namespace is `frontend/wailsjs/go/wailsui/Bindings`, following the bound receiver's package. `transport.ts`, Playwright fakes and native smoke calls use that namespace. The binding drift task regenerates it and rejects differences from Git.
 - All bound request/result structs belong to `adapter/contract`; explicit mappers preserve JSON field order and nil slices while cloning mutable data. `fail` delegates error mapping to `contract.FromError`, preserving rejected-promise strings. Events use `contract.EventPayload`.
 - Metrics and capture lifecycle live in `internal/app` after H02. Wails retains native dialogs and a payload translator; it forwards a manager subscription without owning producer state.
 
