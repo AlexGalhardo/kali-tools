@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | H02 |
-| Status | Ready |
+| Status | Implementation complete 2026-10-21; native AC-16 pending ([evidence](../verification/specs/H02.md)) |
 | Depends on | H01 |
 | Risk | High: concurrency rewrite of the job lifecycle, plus moving the metrics and capture loops out of the Wails adapter |
 

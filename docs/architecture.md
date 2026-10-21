@@ -19,7 +19,7 @@ kali-tools is one Go core with three driving interfaces. It uses the hexagonal (
                  ▼                            │                         ▲ implements ports
  ┌──────────────────────────────────────────────────────────────────────┴───┐
  │ internal/app        use cases, job lifecycle, history (declares ports)   │
- │ internal/job        job manager + bounded event fan-out (plan)           │
+ │ internal/job        job manager + bounded event fan-out                  │
  │ internal/network    interfaces, diagnostics, discovery, rates            │
  │ internal/capture    capture sessions, PCAP/PCAPNG, decoding              │
  │ internal/wifi       Wi-Fi metadata and explicit secret retrieval         │
@@ -45,7 +45,7 @@ kali-tools/
 ├── internal/                       all Go logic; not importable by other modules
 │   ├── domain/                     shared kernel: Error{Code,Message}, Capability, Version, SchemaVersion
 │   ├── app/                        application layer: Service (jobs, history, discovery, Nmap inspection), capability registry
-│   ├── job/                        (empty) target home of the job manager and event fan-out
+│   ├── job/                        manager-owned job lifecycle, bounded subscriptions and ordered event fan-out
 │   ├── network/                    capability: interfaces, DNS/TCP/HTTP/TLS/ping/trace diagnostics, TCP discovery, counter deltas
 │   ├── capture/                    capability: live capture (Windows raw IPv4), PCAP/PCAPNG import/export, gopacket decoding
 │   ├── wifi/                       capability: current Wi-Fi metadata and explicit key reveal (Windows)
@@ -132,7 +132,9 @@ A port is a small Go interface declared **in the package that consumes it**. Ada
 | Consumer | Port (current form) | Implementation |
 | --- | --- | --- |
 | `app.Service` | `*storage.Store` concrete (no interface yet) | `adapter/storage` |
-| `app.Service` | `Clock` interface | `app.SystemClock` |
+| `app.Service` | `job.Manager` with injected clock function | `internal/job`; `bootstrap.Config.Now` or UTC system clock |
+| `app.Service` | `Counters` function (until H03) | `platform.Inventory` injected by bootstrap |
+| `app.Service` | `Live` function (until H03) | `capture.LiveSession`, replaced in tests |
 | `app.Service` | Nmap inspection via `tools` functions | `adapter/tools` |
 | `capture` | `LiveProvider` interface | `live_windows.go` / `live_other.go` |
 | `network.Diagnostics` | `network.Prober` interface (injected by `bootstrap.New` for both roots) | `probe.ICMP` in `adapter/probe` |
@@ -159,10 +161,11 @@ Every port gets a contract suite in `internal/porttest`, run against both the re
 React (bridge.ts) ──StartDiagnostic(req)──► app.go (Wails binding)
    app.go ──► app.Service.Start(ctx, req)
                 ├─ network.Validate(req)              domain validation, typed errors
-                ├─ storage.PutJob(queued)             adapter (SQLite), no secrets/payloads
-                └─ goroutine: Service.Diagnostics.Diagnose(ctx)   injected Prober, bounded deadline, cancellable
-                      └─ emit(Job) ──► app.go forwarder ──► runtime.EventsEmit("job") ──► React
-CancelJob(id) ──► app.Service.Cancel(id) ──► context cancel ──► job state cancelled
+                └─ job.Manager.Start                  manager-owned context, maximum 8 active jobs
+                     ├─ OnChange ──► storage.PutJob    bounded writes, no secrets/payloads
+                     └─ Service.Diagnostics.Diagnose  injected Prober, bounded deadline, cancellable
+                          └─ Subscribe ──► app.go forwarder ──► runtime.EventsEmit("job") ──► React
+CancelJob(id) ──► app.Service.Cancel(id) ──► job.Manager.Cancel ──► job state cancelled
 ```
 
 ### 5.2 Same flow in the target architecture (all interfaces)
@@ -181,11 +184,11 @@ The job context derives from the manager (application lifetime), never from a re
 
 | Event | Producer today | Payload | Rule |
 | --- | --- | --- | --- |
-| `job` | `app.Service` via `app.go` | job state | Stable job ID and state machine `queued → running → completed/failed/cancelled` |
-| `metrics` | ticker in `app.go` | interface rates | Batched; timestamp and units visible; reset never produces a negative spike |
-| `capture` | `app.go` capture goroutine | capture result or error | Bounded packet count, retained bytes and duration |
+| `job` | `job.Manager` via `app.go` | `{schema_version, seq, job, result?}` | Stable ID and state machine `queued → running → completed/failed/cancelled` |
+| `metrics` | `app.Service` metrics loop | interface rates | Samples every 2 s; reset never produces a negative spike |
+| `capture` | `app.Service` capture session | `{result, error}` | Bounded packet count, retained bytes and duration; no capture payloads in history |
 
-The target moves the `metrics` and `capture` loops out of `app.go` into `app`/`job`, so the web server and the CLI can stream them too.
+H02 moves all three streams through `job.Manager`. `Subscribe(ctx)` uses a default buffer of 256 (maximum 4096) and reports dropped events. Each manager assigns monotonically increasing `seq` values; non-terminal delivery drops without blocking, while terminal job and capture events share a maximum 2 s delivery wait per publication. `Snapshot` and `Wait` retain at most 256 finished statuses. `Service.Close` stops capture and metrics, closes the manager, then closes storage.
 
 ## 6. Interfaces (driving adapters)
 
@@ -198,7 +201,7 @@ The target moves the `metrics` and `capture` loops out of `app.go` into `app`/`j
   - `//go:embed` cannot reference parent directories.
   - The generated binding namespace (`frontend/wailsjs/go/main/App`) follows the Go package name.
 - The target keeps `main.go` thin and moves binding methods into `internal/adapter/wailsui`. Moving them changes the generated namespace, so regenerate the bindings and update `bridge.ts` in the same change.
-- Bindings translate and delegate only. Business logic in `app.go` (metrics loop, capture session state) is debt tracked in PLAN.md.
+- Metrics and capture lifecycle live in `internal/app` after H02. Wails retains native dialogs and a payload translator; it forwards a manager subscription without owning producer state.
 
 ### 6.2 Web server (planned): same UI in a browser
 
@@ -259,7 +262,7 @@ Use `git mv`, then rewrite import paths and run `gofmt`. Run `go vet ./...` for 
 | --- | --- | --- | --- |
 | D1 | ~~`internal/network` imports `internal/adapter/probe`~~ — resolved 2026-10-21 by the `network.Prober` port | — | H03 (done) |
 | D2 | `app.go` and the CLI call `platform`, `wifi`, `capture` and `tools` directly instead of going through `app` | Logic and wiring are duplicated per interface; the web server would duplicate them again | H04, H05 |
-| D3 | `app.go` owns the metrics ticker and capture session state | Business behavior in a driving adapter; unavailable to web and CLI | H02, H04 |
+| D3 | Resolved 2026-10-21: `app.Service` owns metrics and capture; all producers publish through `job.Manager` | Native desktop acceptance remains pending under the owner's headless workflow | H02 |
 | D4 | Binding and CLI results expose `storage.Job` and `storage.Settings` | Adapter types used as DTOs; storage changes leak to the UI contract | H06 |
 | D5 | `app.Service` depends on `*storage.Store` concretely | Use cases cannot run with a fake store; there is no contract test | H03, H07 |
 | D6 | `capture`, `network`, `wifi` mix domain rules with OS or network I/O in one package | Harder to test without hardware | H03 (split only where a port is needed) |

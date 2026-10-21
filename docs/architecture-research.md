@@ -317,6 +317,8 @@ The rules this design follows:
 
 The current `internal/app.Service` already implements stable job IDs, bounded concurrency and an event callback. Extracting it into `internal/job` is a PLAN task, not a rewrite.
 
+Implemented in H02 (2026-10-21): `Subscribe(ctx)` uses `Limits.SubscriberBuffer` and returns a drop counter, `Cancel` returns `bool`, `Snapshot` returns `(Status, bool)`, and `Wait(ctx, id)` returns terminal status plus operation/persistence errors. Metrics and capture producers now live in `internal/app`, with Wails translating and forwarding events only. The earlier API sketch above is illustrative; the implementation contract is in the H02 spec.
+
 ### 6.4 Repository and transactions
 
 - **Single-aggregate writes:** use the update-function pattern, `Update(ctx, key, func(*T) (*T, error))`. The transaction stays in the adapter and the rule stays in the closure ([repository pattern](https://threedots.tech/post/repository-pattern-in-go/), [database transactions](https://threedots.tech/post/database-transactions-in-go/)).

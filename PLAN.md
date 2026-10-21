@@ -216,8 +216,9 @@ These tasks remove the deviations listed in [architecture §8](docs/architecture
   - Assert: the desktop and the CLI build the same application graph; no package below `cmd`/root reads flags or environment variables.
 - [ ] H02 Job manager and event fan-out: `internal/job`.
   - Spec: [H02-job-manager](docs/specs/H02-job-manager.md)
-  - [ ] Extract the job lifecycle from `app.Service`. Jobs run under a manager context. Events carry a monotonic `seq`. Provide `Subscribe(ctx, buf)` with drop counting, plus `Cancel` and `Snapshot`.
-  - [ ] Move the metrics ticker and the capture session state from `app.go` into application use cases that publish through the manager (D3).
+  - [x] Extract the job lifecycle from `app.Service`. Jobs run under a manager context. Events carry a monotonic `seq`. Provide `Subscribe(ctx)` with `Limits.SubscriberBuffer` and drop counting, plus `Cancel`, `Snapshot` and `Wait`. [Evidence](docs/verification/specs/H02.md).
+  - [x] Move the metrics ticker and the capture session state from `app.go` into application use cases that publish through the manager (D3). [Evidence](docs/verification/specs/H02.md).
+  - Acceptance pending: native desktop rates, job states and capture (AC-16); sequential headless implementation is owner-authorized.
   - Assert: tests cover state transitions, cancellation, a slow subscriber that drops without blocking, shutdown without goroutine leaks (race detector), and stable job IDs.
 - [ ] H03 Consumer-side driven ports.
   - Spec: [H03-driven-ports](docs/specs/H03-driven-ports.md)

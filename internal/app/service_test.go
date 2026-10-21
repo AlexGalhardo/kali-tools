@@ -1,4 +1,4 @@
-package app
+package app_test
 
 import (
 	"context"
@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/storage"
+	"github.com/AlexGalhardo/kali-tools/internal/app"
+	"github.com/AlexGalhardo/kali-tools/internal/job"
 	"github.com/AlexGalhardo/kali-tools/internal/network"
 )
 
@@ -21,7 +23,8 @@ func TestCancellationAndRedaction(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	s := New(store, network.Diagnostics{})
+	s := app.New(store, network.Diagnostics{}, nil)
+	events, _ := s.Jobs.Subscribe(t.Context())
 	defer func() {
 		if e := s.Close(); e != nil {
 			t.Error(e)
@@ -38,8 +41,8 @@ func TestCancellationAndRedaction(t *testing.T) {
 	defer deadline.Stop()
 	for {
 		select {
-		case event := <-s.Events:
-			if event.Job.State == "cancelled" {
+		case event := <-events:
+			if event.Job != nil && event.Job.State == job.Cancelled {
 				history, e := store.History(context.Background())
 				if e != nil || len(history) != 1 {
 					t.Fatal(history, e)
@@ -61,7 +64,7 @@ func TestDiscoverySummarySurvivesRestartWithoutTargets(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	service := New(store, network.Diagnostics{})
+	service := app.New(store, network.Diagnostics{}, nil)
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
@@ -101,7 +104,7 @@ func TestConcurrentDiagnosticsBoundAndShutdown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	service := New(store, network.Diagnostics{})
+	service := app.New(store, network.Diagnostics{}, nil)
 	defer func() {
 		if err := service.Close(); err != nil {
 			t.Error(err)
@@ -142,7 +145,7 @@ func TestCloseIsIdempotent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := New(store, network.Diagnostics{})
+	s := app.New(store, network.Diagnostics{}, nil)
 	if err = s.Close(); err != nil {
 		t.Fatal(err)
 	}
@@ -162,10 +165,11 @@ func TestTerminalEventSurvivesFullEventBuffer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := New(store, network.Diagnostics{})
+	s := app.New(store, network.Diagnostics{}, nil)
 	defer func() { _ = s.Close() }()
-	for len(s.Events) < cap(s.Events) {
-		s.Events <- Event{}
+	events, _ := s.Jobs.Subscribe(t.Context())
+	for range job.DefaultSubscriberBuffer {
+		s.Jobs.Publish(job.TopicMetrics, nil)
 	}
 	j, err := s.Start(t.Context(), network.Request{Kind: "tcp", Target: "127.0.0.1", Port: port, TimeoutMS: 500})
 	if err != nil {
@@ -174,8 +178,8 @@ func TestTerminalEventSurvivesFullEventBuffer(t *testing.T) {
 	deadline := time.After(3 * time.Second)
 	for {
 		select {
-		case e := <-s.Events:
-			if e.Job.ID == j.ID && e.Job.Finished != nil {
+		case e := <-events:
+			if e.Job != nil && string(e.Job.ID) == j.ID && e.Job.Finished != nil {
 				if e.Job.State != "failed" {
 					t.Fatal("unexpected terminal state", e.Job.State)
 				}
@@ -184,5 +188,30 @@ func TestTerminalEventSurvivesFullEventBuffer(t *testing.T) {
 		case <-deadline:
 			t.Fatal("terminal event was dropped")
 		}
+	}
+}
+
+func TestDiagnosticOutlivesStartingRequest(t *testing.T) {
+	started := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		close(started)
+		<-r.Context().Done()
+	}))
+	defer server.Close()
+	service := newService(t)
+	defer func() { _ = service.Close() }()
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	st, err := service.Start(ctx, network.Request{Kind: "http", Target: server.URL, TimeoutMS: 30000})
+	if err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-started:
+	case <-time.After(3 * time.Second):
+		t.Fatal("request cancellation leaked into job context")
+	}
+	if !service.Cancel(st.ID) {
+		t.Fatal("job ended with its starting request")
 	}
 }

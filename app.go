@@ -16,23 +16,20 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/bootstrap"
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
+	"github.com/AlexGalhardo/kali-tools/internal/job"
 	"github.com/AlexGalhardo/kali-tools/internal/network"
 	"github.com/AlexGalhardo/kali-tools/internal/wifi"
 )
 
 type App struct {
-	initMu          sync.RWMutex
-	closed          bool
-	ctx             context.Context
-	cancel          context.CancelFunc
-	service         *app.Service
-	config          bootstrap.Config
-	cleanup         func() error
-	initErr         error
-	captureMu       sync.Mutex
-	captureCancel   context.CancelFunc
-	captureWG       sync.WaitGroup
-	captureArtifact *capture.Artifact
+	initMu  sync.RWMutex
+	closed  bool
+	ctx     context.Context
+	cancel  context.CancelFunc
+	service *app.Service
+	config  bootstrap.Config
+	cleanup func() error
+	initErr error
 }
 
 func NewApp() *App { return &App{} }
@@ -50,32 +47,28 @@ func (a *App) startup(ctx context.Context) {
 	}
 	a.service = application.Service
 	a.cleanup = cleanup
+	events, _ := a.service.Jobs.Subscribe(a.ctx)
 	go func() {
-		for {
-			select {
-			case <-a.ctx.Done():
-				return
-			case event := <-a.service.Events:
-				wruntime.EventsEmit(a.ctx, "job", event)
-			}
+		for event := range events {
+			name, payload := wailsEvent(event)
+			wruntime.EventsEmit(a.ctx, name, payload)
 		}
 	}()
-	go func() {
-		ticker := time.NewTicker(2 * time.Second)
-		defer ticker.Stop()
-		var tracker network.Tracker
-		for {
-			select {
-			case <-a.ctx.Done():
-				return
-			case now := <-ticker.C:
-				sample, e := platform.Inventory()
-				if e == nil {
-					wruntime.EventsEmit(a.ctx, "metrics", tracker.Update(sample.Counters, now))
-				}
-			}
-		}
-	}()
+	a.service.StartMetrics()
+}
+
+type jobEventPayload struct {
+	SchemaVersion int         `json:"schema_version"`
+	Seq           uint64      `json:"seq"`
+	Job           *job.Status `json:"job"`
+	Result        any         `json:"result,omitempty"`
+}
+
+func wailsEvent(event job.Event) (string, any) {
+	if event.Topic == job.TopicJob {
+		return job.TopicJob, jobEventPayload{SchemaVersion: event.SchemaVersion, Seq: event.Seq, Job: event.Job, Result: event.Data}
+	}
+	return event.Topic, event.Data
 }
 func (a *App) shutdown(context.Context) {
 	a.initMu.Lock()
@@ -87,11 +80,6 @@ func (a *App) shutdown(context.Context) {
 	if a.cancel != nil {
 		a.cancel()
 	}
-	a.StopCapture()
-	a.captureWG.Wait()
-	a.captureMu.Lock()
-	a.captureArtifact = nil
-	a.captureMu.Unlock()
 	if a.cleanup != nil {
 		_ = a.cleanup()
 	}
@@ -174,101 +162,51 @@ func (a *App) Discover(cidr string, ports []int) ([]network.PortResult, error) {
 	return a.service.Discover(a.ctx, cidr, ports, 500*time.Millisecond)
 }
 func (a *App) ImportCapture() (capture.ImportResult, error) {
-	if e := a.ready(); e != nil {
-		return capture.ImportResult{}, e
+	if err := a.ready(); err != nil {
+		return capture.ImportResult{}, err
 	}
-	a.captureMu.Lock()
-	running := a.captureCancel != nil
-	a.captureMu.Unlock()
-	if running {
-		return capture.ImportResult{}, domain.Invalid("stop capture before importing a file")
+	if err := a.service.CanImportCapture(); err != nil {
+		return capture.ImportResult{}, err
 	}
-	path, e := wruntime.OpenFileDialog(a.ctx, wruntime.OpenDialogOptions{Title: "Import capture", Filters: []wruntime.FileFilter{{DisplayName: "Packet capture", Pattern: "*.pcap;*.pcapng"}}})
-	if e != nil {
-		return capture.ImportResult{}, e
+	path, err := wruntime.OpenFileDialog(a.ctx, wruntime.OpenDialogOptions{Title: "Import capture", Filters: []wruntime.FileFilter{{DisplayName: "Packet capture", Pattern: "*.pcap;*.pcapng"}}})
+	if err != nil {
+		return capture.ImportResult{}, err
 	}
 	if path == "" {
 		return capture.ImportResult{Packets: []capture.Packet{}}, nil
 	}
-	result, artifact, e := capture.ReadArtifactFile(path)
-	if e == nil {
-		a.captureMu.Lock()
-		defer a.captureMu.Unlock()
-		if a.captureCancel != nil {
-			return capture.ImportResult{}, domain.Invalid("capture started while importing")
-		}
-		a.captureArtifact = artifact
-	}
-	return result, e
+	return a.service.ImportCapture(path)
 }
-func (a *App) StartCapture(r capture.LiveRequest) error {
-	if e := capture.ValidateLiveRequest(r); e != nil {
-		return e
+
+func (a *App) StartCapture(request capture.LiveRequest) error {
+	if err := a.ready(); err != nil {
+		return err
 	}
-	a.initMu.RLock()
-	defer a.initMu.RUnlock()
-	if e := a.readyLocked(); e != nil {
-		return e
-	}
-	a.captureMu.Lock()
-	defer a.captureMu.Unlock()
-	if a.captureCancel != nil {
-		return domain.Invalid("capture already running")
-	}
-	ctx, cancel := context.WithCancel(a.ctx)
-	a.captureCancel = cancel
-	a.captureArtifact = nil
-	a.captureWG.Add(1)
-	go func() {
-		defer a.captureWG.Done()
-		defer cancel()
-		result, artifact, e := capture.LiveSession(ctx, r)
-		a.captureMu.Lock()
-		a.captureArtifact = artifact
-		a.captureCancel = nil
-		a.captureMu.Unlock()
-		message := ""
-		if e != nil {
-			message = e.Error()
-		}
-		wruntime.EventsEmit(a.ctx, "capture", map[string]any{"result": result, "error": message})
-	}()
-	return nil
+	return a.service.StartCapture(request)
 }
+
 func (a *App) StopCapture() {
-	a.captureMu.Lock()
-	defer a.captureMu.Unlock()
-	if a.captureCancel != nil {
-		a.captureCancel()
+	if a.ready() == nil {
+		a.service.StopCapture()
 	}
 }
 
 func (a *App) SaveCapture(format string) (bool, error) {
-	if e := a.ready(); e != nil {
-		return false, e
+	if err := a.ready(); err != nil {
+		return false, err
 	}
-	if format != "pcap" && format != "pcapng" {
-		return false, domain.Invalid("capture format must be pcap or pcapng")
+	if err := a.service.CanExportCapture(format); err != nil {
+		return false, err
 	}
-	a.captureMu.Lock()
-	artifact := a.captureArtifact
-	running := a.captureCancel != nil
-	a.captureMu.Unlock()
-	if running || artifact == nil {
-		return false, domain.Invalid("import or finish a capture before saving")
+	path, err := wruntime.SaveFileDialog(a.ctx, wruntime.SaveDialogOptions{Title: "Save capture", DefaultFilename: "capture." + format, Filters: []wruntime.FileFilter{{DisplayName: "Packet capture", Pattern: "*." + format}}})
+	if err != nil || path == "" {
+		return false, err
 	}
-	path, e := wruntime.SaveFileDialog(a.ctx, wruntime.SaveDialogOptions{Title: "Save capture", DefaultFilename: "capture." + format, Filters: []wruntime.FileFilter{{DisplayName: "Packet capture", Pattern: "*." + format}}})
-	if e != nil || path == "" {
-		return false, e
-	}
-	ctx, cancel := context.WithTimeout(a.ctx, 30*time.Second)
-	defer cancel()
-	if e = artifact.Save(ctx, path, format); e != nil {
-		return false, e
+	if err := a.service.ExportCapture(a.ctx, path, format); err != nil {
+		return false, err
 	}
 	return true, nil
 }
-
 func (a *App) InspectServices(cidr string, ports []int) (tools.Nmap, error) {
 	if e := a.ready(); e != nil {
 		return tools.Nmap{}, e

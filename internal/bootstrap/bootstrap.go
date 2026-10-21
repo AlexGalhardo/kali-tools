@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/platform"
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/probe"
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/storage"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
@@ -37,7 +38,11 @@ func New(ctx context.Context, cfg Config) (*app.Application, func() error, error
 	if err != nil {
 		return nil, nil, fmt.Errorf("bootstrap: open storage: %w", err)
 	}
-	service := app.New(store, network.Diagnostics{Prober: probe.ICMP{}})
+	service := app.New(store, network.Diagnostics{Prober: probe.ICMP{}}, now)
+	service.Counters = func(context.Context) ([]network.Counter, error) {
+		snapshot, err := platform.Inventory()
+		return snapshot.Counters, err
+	}
 	application := &app.Application{Service: service}
 	settings, err := store.Settings(ctx)
 	if err == nil {
