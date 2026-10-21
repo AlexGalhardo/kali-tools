@@ -1,4 +1,4 @@
-import * as generated from "../../../wailsjs/go/main/App";
+import * as generated from "../../../wailsjs/go/wailsui/Bindings";
 export type Interface = {
   index: number;
   name: string;
@@ -122,15 +122,15 @@ type Backend = {
 };
 declare global {
   interface Window {
-    go?: { main: { App: Backend } };
+    go?: { wailsui?: { Bindings?: Backend } };
     runtime?: {
       EventsOn(name: string, callback: (data: unknown) => void): () => void;
     };
   }
 }
-export const connected = () => Boolean(window.go?.main?.App);
+export const connected = () => Boolean(window.go?.wailsui?.Bindings);
 export function backend(): Backend {
-  const value = window.go?.main?.App;
+  const value = window.go?.wailsui?.Bindings;
   if (!value)
     throw new Error("Native bridge unavailable. Open the desktop application.");
   return generated;

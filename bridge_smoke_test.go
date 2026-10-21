@@ -16,6 +16,9 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 	syswindows "golang.org/x/sys/windows"
+
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/wailsui"
+	"github.com/AlexGalhardo/kali-tools/internal/bootstrap"
 )
 
 type SmokeBridge struct {
@@ -56,17 +59,24 @@ func TestNativeBridge(t *testing.T) {
 			time.Sleep(50 * time.Millisecond)
 		}
 	})
-	app := NewApp()
+	application, cleanup, err := bootstrap.New(t.Context(), bootstrap.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := cleanup(); err != nil {
+			t.Error(err)
+		}
+	}()
+	b := wailsui.New(application)
 	smoke := &SmokeBridge{result: make(chan bool, 1), ready: make(chan struct{})}
 	var timer *time.Timer
-	e := wails.Run(&options.App{Title: "kali-tools bridge verification", Width: 960, Height: 680, StartHidden: true, Windows: &windows.Options{WebviewUserDataPath: filepath.Join(data, "webview")}, AssetServer: &assetserver.Options{Assets: assets}, Bind: []interface{}{app, smoke}, OnStartup: func(ctx context.Context) {
+	e := wails.Run(&options.App{Title: "kali-tools bridge verification", Width: 960, Height: 680, StartHidden: true, Windows: &windows.Options{WebviewUserDataPath: filepath.Join(data, "webview")}, AssetServer: &assetserver.Options{Assets: assets}, Bind: []interface{}{b, smoke}, OnStartup: b.Startup, OnDomReady: func(ctx context.Context) {
 		smoke.ctx = ctx
-		app.startup(ctx)
 		timer = time.AfterFunc(20*time.Second, func() { smoke.Complete(false) })
 		close(smoke.ready)
-	}, OnDomReady: func(ctx context.Context) {
-		wruntime.WindowExecJS(ctx, `Promise.all([window.go.main.App.Interfaces(),window.go.main.App.Settings(),window.go.main.App.Version(),window.go.main.App.CancelJob("missing"),window.go.main.App.SaveCapture("invalid").then(()=>false,()=>true),window.go.main.App.InspectServices("0.0.0.0/0",[80]).then(()=>false,()=>true)]).then(([interfaces,settings,version,cancelled,invalidSave,invalidScope])=>window.go.main.SmokeBridge.Complete(interfaces.length>0&&settings.language==='en'&&version==='0.1.0-alpha.2-dev'&&cancelled===false&&invalidSave===true&&invalidScope===true)).catch(()=>window.go.main.SmokeBridge.Complete(false));`)
-	}, OnShutdown: app.shutdown})
+		wruntime.WindowExecJS(ctx, `Promise.all([window.go.wailsui.Bindings.Interfaces(),window.go.wailsui.Bindings.Settings(),window.go.wailsui.Bindings.Version(),window.go.wailsui.Bindings.CancelJob("missing"),window.go.wailsui.Bindings.SaveCapture("invalid").then(()=>false,()=>true),window.go.wailsui.Bindings.InspectServices("0.0.0.0/0",[80]).then(()=>false,()=>true)]).then(([interfaces,settings,version,cancelled,invalidSave,invalidScope])=>window.go.main.SmokeBridge.Complete(interfaces.length>0&&settings.language==='en'&&version==='0.1.0-alpha.2-dev'&&cancelled===false&&invalidSave===true&&invalidScope===true)).catch(()=>window.go.main.SmokeBridge.Complete(false));`)
+	}, OnShutdown: b.Shutdown})
 	if e != nil {
 		t.Fatal(e)
 	}

@@ -30,7 +30,7 @@ node scripts/task.mjs dev
 
 Bun 1.4.3 now has a workspace `frontend/bun.lock`, ready for commit. Run `bun install --frozen-lockfile` and `bun run build` from `frontend/`; both passed on the Windows development host. The npm lockfile remains the setup/Wails fallback. Keep both lockfiles synchronized when changing dependencies.
 
-`wails build -tags desktop` builds the Windows desktop. A direct Go desktop build must run the frontend production build first. `wails generate module -tags desktop` regenerates committed bridge files; compare `git diff -- frontend/wailsjs` after generation. The frontend build restores the dist marker used by a clean checkout.
+`wails build -tags desktop` builds the Windows desktop. A direct Go desktop build must run the frontend production build first. `node scripts/task.mjs bindings` regenerates `frontend/wailsjs/go/wailsui/Bindings.{d.ts,js}` and checks drift against Git. The frontend bridge, Playwright fakes and native smoke test use `window.go.wailsui.Bindings`. The frontend build restores the dist marker used by a clean checkout.
 
 ## CLI
 

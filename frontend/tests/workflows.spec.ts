@@ -21,7 +21,7 @@ async function connect(page:Page){await page.addInitScript(()=>{
     },
     SaveCapture:async(format:string)=>{document.documentElement.dataset.savedCapture=format;return true;},ImportCapture:async()=>({packets:[{number:1,timestamp:"2026-10-19T12:00:00Z",length:64,source:"192.0.2.1",destination:"192.0.2.2",protocol:"DNS",info:"example.test"}],limited:false,format:"pcap"}),StartCapture:async()=>{},StopCapture:async()=>{}
   };
-  Object.assign(window,{go:{main:{App:api}},runtime:{EventsOn:(name:string,fn:(v:unknown)=>void)=>{handlers[name]??=[];handlers[name].push(fn);return()=>{handlers[name]=handlers[name].filter(f=>f!==fn);};}}});
+  Object.assign(window,{go:{wailsui:{Bindings:api}},runtime:{EventsOn:(name:string,fn:(v:unknown)=>void)=>{handlers[name]??=[];handlers[name].push(fn);return()=>{handlers[name]=handlers[name].filter(f=>f!==fn);};}}});
 });await page.goto("/");await expect(page.getByText("Fixture Ethernet")).toBeVisible();}
 test("diagnostic job returns real contract result and history",async({page})=>{await connect(page);await page.getByRole("button",{name:"Diagnostics",exact:true}).click();await page.getByRole("button",{name:/Run diagnostic/}).click();await expect(page.locator("pre")).toHaveText("connected");await page.getByRole("button",{name:"History",exact:true}).click();await expect(page.getByRole("cell",{name:"Diagnostic completed",exact:true})).toBeVisible();});
 test("Wi-Fi key clears on navigation and blur",async({page})=>{await connect(page);await page.getByRole("button",{name:"Wi-Fi",exact:true}).click();await page.getByRole("button",{name:"Reveal current network key"}).click();await expect(page.getByText("synthetic-test-key")).toBeVisible();await page.evaluate(()=>window.dispatchEvent(new Event("blur")));await expect(page.getByText("synthetic-test-key")).toHaveCount(0);await page.getByRole("button",{name:"Reveal current network key"}).click();await page.getByRole("button",{name:"Overview",exact:true}).click();await expect(page.getByText("synthetic-test-key")).toHaveCount(0);});
@@ -34,13 +34,13 @@ test("desktop and compact visual evidence",async({page})=>{await page.setViewpor
 test("overview uses provider capability states", async ({page}) => {
  await connect(page);
  await page.evaluate(() => {
-  if (window.go) window.go.main.App.Capabilities = async () => [{id:"wifi",state:"unsupported",detail:"Provider unavailable",provider:"fixture"}];
+  if (window.go) window.go.wailsui!.Bindings!.Capabilities = async () => [{id:"wifi",state:"unsupported",detail:"Provider unavailable",provider:"fixture"}];
  });
  await page.getByRole("button", {name:/Refresh/}).click();
  await expect(page.locator(".capability-row").filter({hasText:"Wi-Fi"})).toContainText("Not available");
  await page.getByLabel("Language", {exact:true}).selectOption("pt-BR");
  await page.evaluate(() => {
-  if (window.go) window.go.main.App.Capabilities = async () => [{id:"wifi",state:"dependency_missing",detail:"Dependency missing",provider:"fixture"}];
+  if (window.go) window.go.wailsui!.Bindings!.Capabilities = async () => [{id:"wifi",state:"dependency_missing",detail:"Dependency missing",provider:"fixture"}];
  });
  await page.getByRole("button", {name:/Atualizar/}).click();
  await expect(page.locator(".capability-row").filter({hasText:"Wi-Fi"})).toContainText("Depend\u00eancia ausente");
@@ -49,7 +49,7 @@ test("overview uses provider capability states", async ({page}) => {
 test("limited imports disclose omitted packets", async ({page}) => {
  await connect(page);
  await page.evaluate(() => {
-  if (window.go) window.go.main.App.ImportCapture = async () => ({packets:[],limited:true,format:"pcap"});
+  if (window.go) window.go.wailsui!.Bindings!.ImportCapture = async () => ({packets:[],limited:true,format:"pcap"});
  });
  await page.getByRole("button", {name:"Packet inspector",exact:true}).click();
  await page.getByRole("button", {name:"Import PCAP / PCAPNG"}).click();
@@ -59,7 +59,7 @@ test("limited imports disclose omitted packets", async ({page}) => {
 test("discovery results stay bounded and paginate", async ({page}) => {
  await connect(page);
  await page.evaluate(() => {
-  if (window.go) window.go.main.App.Discover = async () => Array.from({length:205}, (_,i) => ({host:`192.0.2.${Math.floor(i/32)+1}`,port:i+1,state:"open"}));
+  if (window.go) window.go.wailsui!.Bindings!.Discover = async () => Array.from({length:205}, (_,i) => ({host:`192.0.2.${Math.floor(i/32)+1}`,port:i+1,state:"open"}));
  });
  await page.getByRole("button",{name:"Discovery & tools",exact:true}).click();
  await page.getByRole("button",{name:"Discover",exact:true}).click();
@@ -96,10 +96,10 @@ test("capture exports use the selected native format and report cancellation or 
  await page.getByLabel("Capture export format").selectOption("pcap");
  await save.click();
  expect(await page.evaluate(()=>document.documentElement.dataset.savedCapture)).toBe("pcap");
- await page.evaluate(()=>{if(window.go)window.go.main.App.SaveCapture=async()=>false;});
+ await page.evaluate(()=>{if(window.go)window.go.wailsui!.Bindings!.SaveCapture=async()=>false;});
  await save.click();
  await expect(page.getByText("Capture file saved",{exact:true})).toHaveCount(0);
- await page.evaluate(()=>{if(window.go)window.go.main.App.SaveCapture=async()=>{throw new Error("Fixture disk full");};});
+ await page.evaluate(()=>{if(window.go)window.go.wailsui!.Bindings!.SaveCapture=async()=>{throw new Error("Fixture disk full");};});
  await save.click();
  await expect(page.getByRole("alert")).toContainText("Fixture disk full");
  await expect(save).toBeEnabled();
@@ -122,8 +122,8 @@ test("Nmap is optional and service inspection preserves observed provider data",
  await page.getByRole("button",{name:"Overview",exact:true}).click();
  await page.evaluate(()=>{
   if(!window.go)return;
-  window.go.main.App.Tools=async()=>[{name:"nmap",state:"available",version:"Nmap version 7.98",path:"fixture"}];
-  window.go.main.App.InspectServices=async()=>({scanner:"nmap",version:"7.98",hosts:[{addresses:[{address:"192.0.2.1",type:"ipv4"}],ports:[{port:80,state:{state:"open"},service:{name:"http",product:"Synthetic HTTP",version:"1",method:"probed"}}]}]});
+  window.go.wailsui!.Bindings!.Tools=async()=>[{name:"nmap",state:"available",version:"Nmap version 7.98",path:"fixture"}];
+  window.go.wailsui!.Bindings!.InspectServices=async()=>({scanner:"nmap",version:"7.98",hosts:[{addresses:[{address:"192.0.2.1",type:"ipv4"}],ports:[{port:80,state:{state:"open"},service:{name:"http",product:"Synthetic HTTP",version:"1",method:"probed"}}]}]});
  });
  await page.getByRole("button",{name:"Discovery & tools",exact:true}).click();
  await page.getByRole("button",{name:"Inspect services with Nmap",exact:true}).click();
@@ -138,7 +138,7 @@ test("capture selection handles immediate start failure without getting stuck", 
  const start=page.getByRole("button",{name:"Start capture",exact:true});
  await expect(start).toBeDisabled();
  await page.getByRole("combobox",{name:"Local non-loopback IPv4",exact:true}).selectOption("192.0.2.10");
- await page.evaluate(()=>{if(window.go)window.go.main.App.StartCapture=async()=>{throw new Error("permission_required: Fixture denied");};});
+ await page.evaluate(()=>{if(window.go)window.go.wailsui!.Bindings!.StartCapture=async()=>{throw new Error("permission_required: Fixture denied");};});
  await start.click();
  await expect(page.getByRole("alert")).toContainText("Access denied");
  await expect(start).toBeEnabled();
@@ -148,7 +148,7 @@ test("capture selection handles immediate start failure without getting stuck", 
 test("diagnostic failures have translated reasons", async ({page}) => {
  await connect(page);
  await page.evaluate(()=>{
-  if(window.go)window.go.main.App.StartDiagnostic=async()=>{throw new Error("permission_required: Fixture denied");};
+  if(window.go)window.go.wailsui!.Bindings!.StartDiagnostic=async()=>{throw new Error("permission_required: Fixture denied");};
  });
  await page.getByLabel("Language",{exact:true}).selectOption("pt-BR");
  await page.getByRole("button",{name:"Diagn\u00f3sticos",exact:true}).click();

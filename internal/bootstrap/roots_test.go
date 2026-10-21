@@ -18,7 +18,7 @@ func TestCompositionRootsUseBootstrap(t *testing.T) {
 		name  string
 		files []string
 	}{
-		{name: "desktop", files: []string{"main.go", "app.go"}},
+		{name: "desktop", files: []string{"main.go"}},
 		{name: "cli", files: []string{"cmd/kali-tools/main.go"}},
 	} {
 		t.Run(root.name, func(t *testing.T) {
@@ -102,7 +102,7 @@ func TestNoEnvOrFlagReadsBelowCompositionRoots(t *testing.T) {
 		}
 		imports := importNames(t, file)
 		for _, name := range imports {
-			if name == "flag" {
+			if name == "flag" && !strings.Contains(filepath.ToSlash(path), "/adapter/cli/") {
 				t.Errorf("%s imports flag", path)
 			}
 		}
@@ -180,8 +180,12 @@ func TestDrivingRootsImportOnlyApplication(t *testing.T) {
 		path    string
 		allowed []string
 	}{
-		{"../../app.go", []string{"app", "domain", "job", "network", "capture", "wifi"}},
-		{"../../cmd/kali-tools/main.go", []string{"bootstrap", "app", "domain", "job", "network", "capture"}},
+		{"../../main.go", []string{"bootstrap", "adapter/wailsui"}},
+		{"../../cmd/kali-tools/main.go", []string{"bootstrap", "app", "adapter/cli"}},
+		{"../adapter/cli/cli.go", []string{"app", "domain", "network", "capture"}},
+		{"../adapter/cli/capture.go", []string{"app", "domain", "job", "capture"}},
+		{"../adapter/wailsui/bindings.go", []string{"app", "domain", "job", "network", "capture", "wifi"}},
+		{"../adapter/wailsui/events.go", []string{"app", "job", "network", "capture"}},
 	} {
 		file, err := parser.ParseFile(token.NewFileSet(), root.path, nil, parser.ImportsOnly)
 		if err != nil {

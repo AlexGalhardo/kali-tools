@@ -33,6 +33,6 @@ if(task==="bridge"){
 if(task==="bindings"){
   run("wails",["generate","module","-tags","desktop"]);
   // Wails writes generated JavaScript as executable on Unix; keep source modes portable.
-  for(const file of ["go/main/App.d.ts","go/main/App.js","go/models.ts","runtime/package.json","runtime/runtime.d.ts","runtime/runtime.js"])chmodSync(path.join(root,"frontend/wailsjs",file),0o644);
+  for(const file of ["go/wailsui/Bindings.d.ts","go/wailsui/Bindings.js","go/models.ts","runtime/package.json","runtime/runtime.d.ts","runtime/runtime.js"])chmodSync(path.join(root,"frontend/wailsjs",file),0o644);
   run("git",["diff","--exit-code","--","frontend/wailsjs"]);
 }

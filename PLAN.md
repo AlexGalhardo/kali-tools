@@ -235,8 +235,9 @@ These tasks remove the deviations listed in [architecture §8](docs/architecture
   - Assert: `app.go` and the CLI import only `app`, `domain` and DTO packages.
 - [ ] H05 Driving adapters extracted.
   - Spec: [H05-driving-adapters](docs/specs/H05-driving-adapters.md)
-  - [ ] Move the CLI command tree to `internal/adapter/cli` (`Run(ctx, app, args, stdout, stderr) int`); `cmd/kali-tools/main.go` only wires.
-  - [ ] Move the Wails bindings and event forwarder to `internal/adapter/wailsui`. Regenerate `frontend/wailsjs`, update `shared/api/bridge.ts` and verify there is no binding drift. Keep `main.go` at the root.
+  - [x] Move the CLI command tree to `internal/adapter/cli` (`Run(ctx, app, args, stdout, stderr) int`); `cmd/kali-tools/main.go` only wires. [Evidence](docs/verification/specs/H05.md).
+  - [x] Move the Wails bindings and event forwarder to `internal/adapter/wailsui`. Regenerate `frontend/wailsjs`, update `shared/api/bridge.ts` and verify there is no binding drift. Keep `main.go` at the root. [Evidence](docs/verification/specs/H05.md).
+  - Acceptance pending: native bridge and desktop workflows (AC-17/18); sequential headless implementation is owner-authorized.
   - Assert: the native bridge smoke test and all Playwright workflows pass; the CLI JSON output is byte-compatible except for documented changes.
 - [ ] H06 Transport DTOs and error mapping.
   - Spec: [H06-dtos-and-errors](docs/specs/H06-dtos-and-errors.md)

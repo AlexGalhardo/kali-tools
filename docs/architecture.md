@@ -11,7 +11,7 @@ kali-tools is one Go core with three driving interfaces. It uses the hexagonal (
 ```text
           DRIVING SIDE (primary actors)                      DRIVEN SIDE (secondary actors)
  ┌────────────────────────────────────────┐            ┌──────────────────────────────────────┐
- │ Wails desktop  main.go + app.go        │            │ adapter/storage   SQLite (modernc)   │
+ │ Wails desktop  main.go + wailsui        │            │ adapter/storage   SQLite (modernc)   │
  │ Web server     adapter/httpapi (plan)  │──calls──►  │ adapter/tools     Nmap/TShark exec   │
  │ CLI            cmd/kali-tools          │   ▲        │ adapter/probe     Windows ICMP       │
  └────────────────────────────────────────┘   │        │ adapter/platform  routes, counters   │
@@ -35,7 +35,7 @@ H04 implements that shared value as `app.Application`, one concrete struct with 
 
 ```text
 kali-tools/
-├── main.go, app.go, doc.go         Wails composition root and desktop facade (must stay at root; see §6.1)
+├── main.go, doc.go                 Wails composition root (must stay at root; see §6.1)
 ├── bridge_smoke_test.go            native Wails bridge smoke test (desktop tag)
 ├── wails.json                      Wails v2 project file
 ├── go.mod, go.sum                  single Go module github.com/AlexGalhardo/kali-tools
@@ -56,9 +56,9 @@ kali-tools/
 │   │   ├── tools/                  driven: optional executables (Nmap/TShark), bounded process runner, Nmap XML parser
 │   │   ├── probe/                  driven: native Windows ICMP echo/traceroute
 │   │   ├── platform/               driven: OS routes, DNS servers and interface counters (windows/linux/other)
-│   │   ├── wailsui/                (empty) target home of the Wails bindings and event forwarder
+│   │   ├── wailsui/                Wails bindings, native dialogs and event forwarder
 │   │   ├── httpapi/                (empty) target home of the web server: REST, SSE, security middleware
-│   │   └── cli/                    (empty) target home of the CLI command tree
+│   │   └── cli/                    CLI parsing, commands, output and bounded capture wait
 │   ├── bootstrap/                  shared wiring used by every composition root
 │   └── porttest/                   (empty) target home of the contract test suites for driven ports
 │
@@ -112,7 +112,7 @@ Folders marked *(empty)* contain only `.gitkeep`. They mark target locations fro
 | Capabilities (inner hexagon) | `internal/network`, `internal/capture`, `internal/wifi` | `domain`, stdlib, pure libraries (gopacket) | `adapter/*`, `app`, Wails, `database/sql` |
 | Application | `internal/app`, `internal/job` | `domain`, capability packages, `job` | `adapter/*`, Wails, `net/http`, `os/exec` |
 | Driven adapters | `internal/adapter/{storage,tools,probe,platform}` | `domain`, capability packages, OS/driver libraries | driving adapters, `cmd`, `app` (except for types) |
-| Driving adapters | `internal/adapter/{wailsui,httpapi,cli}`, today `app.go` and `cmd/kali-tools` | `app`, `domain`, DTO types | driven adapters directly (they go through `app`) |
+| Driving adapters | `internal/adapter/{wailsui,cli}`; `httpapi` planned | `app`, `domain`, DTO types | driven adapters directly (they go through `app`) |
 | Composition roots | `main.go`, `cmd/*`, `internal/bootstrap` | everything | nothing imports them |
 
 Rules that hold in every layer, from AGENTS.md and PLAN.md:
@@ -159,13 +159,13 @@ H03 compile-time assertions live only in `internal/bootstrap/assert.go`. No inne
 ### 5.1 Starting a diagnostic job (current desktop path)
 
 ```text
-React (bridge.ts) ──StartDiagnostic(req)──► app.go (Wails binding)
-   app.go ──► app.Application.StartDiagnostic(ctx, req)
+React (bridge.ts) ──StartDiagnostic(req)──► wailsui.Bindings (Wails binding)
+   wailsui.Bindings ──► app.Application.StartDiagnostic(ctx, req)
                 ├─ network.Validate(req)              domain validation, typed errors
                 └─ job.Manager.Start                  manager-owned context, maximum 8 active jobs
                      ├─ OnChange ──► storage.PutJob    bounded writes, no secrets/payloads
                      └─ Application.Diagnose  injected Prober, bounded deadline, cancellable
-                          └─ Subscribe ──► app.go forwarder ──► runtime.EventsEmit("job") ──► React
+                          └─ Subscribe ──► wailsui forwarder ──► runtime.EventsEmit("job") ──► React
 CancelJob(id) ──► app.Application.CancelJob(ctx, id) ──► job.Manager.Cancel ──► job state cancelled
 ```
 
@@ -173,7 +173,7 @@ CancelJob(id) ──► app.Application.CancelJob(ctx, id) ──► job.Manager
 
 ```text
 Wails binding ─┐
-HTTP handler  ─┼─► app.Application.Diagnostics.Handle(ctx, req) ─► job.Manager.Start(...)
+HTTP handler  ─┼─► app.Application.StartDiagnostic(ctx, req) ─► job.Manager.Start(...)
 CLI command   ─┘                                                     │
                                                                      ▼ bounded fan-out
 Wails forwarder (EventsEmit "job") ◄── job.Manager.Subscribe ──► SSE /api/events ──► CLI stdout
@@ -185,7 +185,7 @@ The job context derives from the manager (application lifetime), never from a re
 
 | Event | Producer today | Payload | Rule |
 | --- | --- | --- | --- |
-| `job` | `job.Manager` via `app.go` | `{schema_version, seq, job, result?}` | Stable ID and state machine `queued → running → completed/failed/cancelled` |
+| `job` | `job.Manager` via `adapter/wailsui` | `{schema_version, seq, job, result?}` | Stable ID and state machine `queued → running → completed/failed/cancelled` |
 | `metrics` | `app.Application` metrics loop | interface rates | Samples every 2 s; reset never produces a negative spike |
 | `capture` | `app.Application` capture session | `{result, error}` | Bounded packet count, retained bytes and duration; no capture payloads in history |
 
@@ -195,14 +195,13 @@ H02 moves all three streams through `job.Manager`. `Subscribe(ctx)` uses a defau
 
 ### 6.1 Desktop (Wails v2), the primary interface
 
-- `main.go` (build tags `desktop || bindings`) embeds `frontend/dist` and calls `wails.Run` with the `App` facade bound.
-- `main` delegates to `run(ctx, args, getenv, stdout, stderr) int`. The startup hook calls `bootstrap.New` to open storage, apply retention and inject the ICMP prober; shutdown calls the returned idempotent cleanup. H01 keeps the existing bindings and event loops.
-- `NewApp` in `main.go` injects a bootstrap function into the binding adapter in `app.go`. Every binding delegates to `app.Application`; native dialogs and event translation stay in the adapter. H04 preserves the binding method set and generated files.
+- `main.go` (build tags `desktop || bindings`) embeds `frontend/dist`, obtains `app.Application` from bootstrap and binds `wailsui.Bindings` to `wails.Run`.
+- `run(ctx, args, getenv, stdout, stderr) int` owns composition and deferred cleanup. `OnStartup` and `OnShutdown` receive `b.Startup` and `b.Shutdown` directly, so Wails exempts those lifecycle methods from its generated API. The binding adapter owns no storage or application cleanup.
+- `internal/adapter/wailsui` owns the 20 frontend methods, native dialogs and cancellable forwarder. `Runtime` functions are injected for headless tests. Startup subscribes before opting into metrics; shutdown waits at most 3 s for its forwarder. The old root `app.go` is deleted.
 - **Why it stays at the repository root:**
   - Wails v2 builds the project-root package next to `wails.json`.
   - `//go:embed` cannot reference parent directories.
-  - The generated binding namespace (`frontend/wailsjs/go/main/App`) follows the Go package name.
-- The target keeps `main.go` thin and moves binding methods into `internal/adapter/wailsui`. Moving them changes the generated namespace, so regenerate the bindings and update `bridge.ts` in the same change.
+- The generated namespace is `frontend/wailsjs/go/wailsui/Bindings`, following the bound receiver's package. `bridge.ts`, Playwright fakes and native smoke calls use that namespace. The binding drift task regenerates it and rejects differences from Git.
 - Metrics and capture lifecycle live in `internal/app` after H02. Wails retains native dialogs and a payload translator; it forwards a manager subscription without owning producer state.
 
 ### 6.2 Web server (planned): same UI in a browser
@@ -227,11 +226,11 @@ H02 moves all three streams through `job.Manager`. `Subscribe(ctx)` uses a defau
 
 ### 6.3 CLI
 
-- `cmd/kali-tools/main.go` uses stdlib `flag`. Commands: `version`, `doctor`, `interfaces`, `inventory`, `diagnose`, `discover`/`inspect`, `wifi`, `capture`/`import`.
+- `cmd/kali-tools/main.go` only composes and cleans up. `internal/adapter/cli.Run(ctx, application, args, stdout, stderr) int` owns stdlib flag parsing and the commands: `version`, `doctor`, `interfaces`, `inventory`, `diagnose`, `discover`/`inspect`, `wifi`, `capture`/`import`.
 - All capability commands route through `app.Application`. CLI capture subscribes before starting and waits at most the requested duration plus 10 s; cancellation stops capture and waits for its typed completion. Import/export use application-managed artifacts and the shared 30 s export bound. Discovery and inspection keep count-only history in the CLI's in-memory store.
-- The root exposes `run(ctx, args, getenv, stdout, stderr) int` and obtains its application from `bootstrap.New` after usage and flag validation. It uses an in-memory store until C01, so invocations write no history or preferences to disk. Diagnostic calls use the shared application's injected prober. H01 reads no environment variables through `getenv`.
+- The root exposes `run(ctx, args, getenv, stdout, stderr) int` and obtains its application from bootstrap before calling the adapter. It uses in-memory storage until C01. Environment reads remain in roots; local FlagSet parsing is permitted only in the CLI driving adapter. Byte-exact output fixtures were committed before extraction and moved unchanged.
 - `--json` output includes `schema_version`. Invalid input exits with a stable non-zero code.
-- The target moves the command tree into `internal/adapter/cli` (with signature `Run(ctx, app, args, stdout, stderr) int`), routes every command through `app.Application`, and adds `serve`, `history`, `settings`, `export` and `jobs` commands, so the CLI is complete for SSH use.
+- C01 adds the remaining CLI commands and SSH ergonomics; W01 adds `serve` with its mandatory W04 security. The H05 extraction adds no command or flag.
 
 ## 7. How to extend
 
@@ -264,7 +263,7 @@ Use `git mv`, then rewrite import paths and run `gofmt`. Run `go vet ./...` for 
 | # | Deviation | Why it matters | PLAN task |
 | --- | --- | --- | --- |
 | D1 | ~~`internal/network` imports `internal/adapter/probe`~~ — resolved 2026-10-21 by the `network.Prober` port | — | H03 (done) |
-| D2 | Resolved 2026-10-21: all desktop and CLI operations route through `app.Application`; neither driving file imports adapters | Extraction to `adapter/cli` and `adapter/wailsui` remains H05; native acceptance pending | H04, H05 |
+| D2 | Resolved 2026-10-21: all desktop and CLI operations route through `app.Application`; driving adapters are extracted into `adapter/cli` and `adapter/wailsui` | Native acceptance remains pending | H04, H05 |
 | D3 | Resolved 2026-10-21: `app.Application` owns metrics and capture; all producers publish through `job.Manager` | Native desktop acceptance remains pending under the owner's headless workflow | H02 |
 | D4 | Bindings now expose `job.Status` and `app.Settings`, but transport DTO separation and error mapping remain pending | H03 removes storage namespaces; H06 defines transport contracts | H06 |
 | D5 | Resolved for dependency inversion 2026-10-21: `app.Application` consumes `JobStore` and `SettingsStore`; real/fake contract suites remain H07 | Diagnostic, inspection, settings and history tests run with fakes | H03, H07 |

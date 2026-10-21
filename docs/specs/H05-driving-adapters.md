@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | H05 |
-| Status | Ready |
+| Status | Implementation complete 2026-10-21; native AC-17/18 pending ([evidence](../verification/specs/H05.md)) |
 | Depends on | H01, H02, H03, H04 |
 | Risk | Medium: the Wails binding namespace changes from `main.App` to `wailsui.Bindings`, which touches generated code, the frontend bridge, Playwright fakes and the native smoke test in one change |
 
@@ -187,7 +187,7 @@ Lifecycle:
 
 | Topic | Event name | Payload (JSON identical to today) |
 | --- | --- | --- |
-| `job` | `job` | `jobPayload{SchemaVersion int "schema_version"; Job job.Status "job"; Result *network.Result "result,omitempty"}` built from `ev.SchemaVersion`, `*ev.Job` and `ev.Data.(*network.Result)` |
+| `job` | `job` | `jobPayload{SchemaVersion int "schema_version"; Seq uint64 "seq"; Job job.Status "job"; Result *network.Result "result,omitempty"}` built from `ev.SchemaVersion`, `ev.Seq`, `*ev.Job` and `ev.Data.(*network.Result)`; preserves the H02 sequence field |
 | `metrics` | `metrics` | `ev.Data` unchanged (`network.Metrics`) |
 | `capture` | `capture` | an object with exactly the keys `result` (live result) and `error` (string, empty on success), built from the H04 capture outcome |
 | other / unexpected `Data` type | none | dropped |
@@ -326,7 +326,7 @@ Commit as one Conventional Commit, `refactor(adapters): extract cli and wailsui 
 - AC-6: Given a capture request on a host without a live provider (or without permission), when `capture` runs, then it returns within `duration + captureGrace` with exit 1 and `error.code` `unsupported` or `permission_required`.
 - AC-7: Given `import --file x.pcapng --output y.pcap --format pcap`, when `cli.Run` runs, then `y.pcap` is readable, holds the same packet, and stdout does not contain the payload marker `synthetic-private`.
 - AC-8: Given `Bindings` before `Startup`, when a bound method other than `Version` is called, then it returns `invalid_input` "application is starting"; after `Shutdown`, `invalid_input` "application is shutting down".
-- AC-9: Given a started `Bindings` with a recording emitter, when a diagnostic job runs to completion, then the emitter receives `job` events whose JSON has exactly the keys `schema_version`, `job` and, on the terminal event, `result`, and the last state is `completed`.
+- AC-9: Given a started `Bindings` with a recording emitter, when a diagnostic job runs to completion, then the emitter receives `job` events whose JSON has exactly the keys `schema_version`, `seq`, `job` and, on the terminal event, `result`, and the last state is `completed`. The `seq` key already exists after H02 and must not be removed by extraction.
 - AC-10: Given a started `Bindings`, when `Shutdown` returns, then the forwarder goroutine has exited (within 3 s) and no further `emit` call happens.
 - AC-11: Given `SaveCapture("invalid")`, when called, then it returns `invalid_input` and the save dialog function is never called.
 - AC-12: Given the open dialog returns an empty path, when `ImportCapture` is called, then the result JSON is `{"packets":[],"limited":false,"format":""}` and no error.
