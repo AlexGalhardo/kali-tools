@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/tools"
 	"github.com/AlexGalhardo/kali-tools/internal/bootstrap"
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/network"
 	"github.com/AlexGalhardo/kali-tools/internal/wifi"
 )
@@ -60,8 +62,16 @@ func TestNativeProviderAdapters(t *testing.T) {
 	if _, err := (platform.Host{}).Inventory(ctx); !errors.Is(err, context.Canceled) {
 		t.Fatal(err)
 	}
-	if _, err := (platform.Host{}).Inventory(t.Context()); err != nil {
-		t.Fatal(err)
+	_, err := (platform.Host{}).Inventory(t.Context())
+	if runtime.GOOS == "windows" || runtime.GOOS == "linux" {
+		if err != nil {
+			t.Fatal(err)
+		}
+	} else {
+		var typed *domain.Error
+		if !errors.As(err, &typed) || typed.Code != domain.CodeUnsupported {
+			t.Fatalf("error=%v, want unsupported native provider", err)
+		}
 	}
 	if _, err := (wifi.Native{}).Current(ctx); !errors.Is(err, context.Canceled) {
 		t.Fatal(err)
@@ -152,7 +162,11 @@ func TestNewDefaultPath(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = cleanup() })
-	if _, err := os.Stat(filepath.Join(dir, "kali-tools", "history.db")); err != nil {
+	base, err := os.UserConfigDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(base, "kali-tools", "history.db")); err != nil {
 		t.Fatal(err)
 	}
 }

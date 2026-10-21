@@ -3,8 +3,11 @@
 package wifi
 
 import (
+	"errors"
 	"testing"
 	"unsafe"
+
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
 )
 
 func TestWindowsWLANLayoutAndMetadata(t *testing.T) {
@@ -34,5 +37,24 @@ func TestWindowsWLANLayoutAndMetadata(t *testing.T) {
 	c.Association.Signal = 101
 	if _, err = networkFromConnection(c, nil); err == nil {
 		t.Fatal("invalid signal accepted")
+	}
+}
+
+func TestWLANErrorStates(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		code uintptr
+		want string
+	}{
+		{name: "denied", code: 5, want: "permission_required"},
+		{name: "service_inactive", code: 1062, want: "unsupported"},
+		{name: "unknown", code: 12345, want: "failed"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			var typed *domain.Error
+			if err := wlanError(test.code); !errors.As(err, &typed) || typed.Code != test.want {
+				t.Fatalf("error=%v, want %s", err, test.want)
+			}
+		})
 	}
 }

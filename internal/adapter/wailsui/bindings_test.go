@@ -288,8 +288,10 @@ func TestBindingsDelegateToApplication(t *testing.T) {
 	if _, err := b.Interfaces(); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := b.Inventory(); err != nil {
-		t.Fatal(err)
+	_, wantInventoryErr := a.Inventory(t.Context())
+	_, gotInventoryErr := b.Inventory()
+	if !reflect.DeepEqual(contract.FromError(gotInventoryErr), contract.FromError(wantInventoryErr)) {
+		t.Fatalf("inventory delegation differs: got error %v, want %v", gotInventoryErr, wantInventoryErr)
 	}
 	if _, err := b.Tools(); err != nil {
 		t.Fatal(err)

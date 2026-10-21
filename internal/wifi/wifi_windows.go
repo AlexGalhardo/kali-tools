@@ -49,6 +49,9 @@ type connection struct {
 }
 
 func wlanError(code uintptr) error {
+	if code == uintptr(windows.ERROR_SERVICE_NOT_ACTIVE) {
+		return domain.Unsupported("Windows WLAN service is not running")
+	}
 	if code == 5 {
 		return &domain.Error{Code: "permission_required", Message: "Windows denied WLAN access"}
 	}

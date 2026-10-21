@@ -166,6 +166,7 @@ docs/, docs/adr/                architecture, research, decisions, evidence
   - [x] Document that host Wi-Fi, elevation, capture drivers and WebViews require native tests.
   - Assert: one documented command fails on wrong results and returns zero only after assertions pass.
 - [ ] S09 CI/CD implementation (activation authorized 2026-10-19).
+  - Hosted repair in progress: Windows inactive-WLAN state and macOS inventory/config-path assertions corrected; hosted rerun pending. [S09 evidence](docs/verification/specs/S09.md).
   - [x] Prepare CI source for formatting/lint/typecheck/build, race tests, vulnerabilities and CLI lab. Active source passes actionlint and immutable-pin checks; execution acceptance is recorded separately.
   - [ ] Prepare native Wails build matrix with per-OS dependencies and capability tests.
   - [ ] Prepare release source for draft artifacts, checksums and source/dependency notices.
