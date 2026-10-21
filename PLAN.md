@@ -96,7 +96,7 @@ docs/, docs/adr/                architecture, research, decisions, evidence
 
 **States:**
 
-- Capability states: available, dependency missing, permission required, unsupported, failed. Location consent required is added in H06/A05.
+- Capability states: available, dependency missing, permission required, location consent required, unsupported, failed. H06 defines the consent state; A05 adds native detection.
 - Job states: queued, running, completed, failed, cancelled.
 - History includes timestamps, operation parameters, tool/provider version and a summary. Secrets and payloads are excluded from ordinary logs and history.
 
@@ -241,9 +241,10 @@ These tasks remove the deviations listed in [architecture §8](docs/architecture
   - Assert: the native bridge smoke test and all Playwright workflows pass; the CLI JSON output is byte-compatible except for documented changes.
 - [ ] H06 Transport DTOs and error mapping.
   - Spec: [H06-dtos-and-errors](docs/specs/H06-dtos-and-errors.md)
-  - [ ] Define one frontend contract (DTOs shared by `wailsui` and `httpapi`), separate from storage rows (D4).
-  - [ ] Map errors once per adapter.
-  - [ ] Add the `location_consent_required` capability state.
+  - [x] Define one frontend contract (DTOs shared by `wailsui` and `httpapi`), separate from storage rows (D4).
+  - [x] Map errors once per adapter.
+  - [x] Add the `location_consent_required` capability state.
+  - Implementation evidence: [H06](docs/verification/specs/H06.md). Native bridge AC-17/DA-8 remains pending under the authorized headless workflow.
   - Assert: no `storage.*` type appears in a binding, HTTP or CLI signature; secret-redaction tests cover every DTO.
 - [ ] H07 Contract and acceptance test harness.
   - Spec: [H07-test-harness](docs/specs/H07-test-harness.md)

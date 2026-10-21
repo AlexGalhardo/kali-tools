@@ -17,6 +17,7 @@ import (
 	"github.com/gopacket/gopacket/layers"
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/contract"
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/wailsui"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
 	"github.com/AlexGalhardo/kali-tools/internal/bootstrap"
@@ -48,7 +49,7 @@ func quietRuntime() wailsui.Runtime {
 }
 func expectInvalid(t *testing.T, err error, message string) {
 	t.Helper()
-	var typed *domain.Error
+	var typed contract.Error
 	if !errors.As(err, &typed) || typed.Code != "invalid_input" || typed.Message != message {
 		t.Fatalf("error=%v, want invalid_input %q", err, message)
 	}
@@ -69,17 +70,17 @@ func TestBindingsRejectBeforeStartupAndAfterShutdown(t *testing.T) {
 		for _, call := range []func() error{
 			func() error { _, err := b.Inventory(); return err },
 			func() error { _, err := b.Tools(); return err },
-			func() error { _, err := b.Diagnose(network.Request{}); return err },
-			func() error { _, err := b.StartDiagnostic(network.Request{}); return err },
+			func() error { _, err := b.Diagnose(contract.DiagnosticRequest{}); return err },
+			func() error { _, err := b.StartDiagnostic(contract.DiagnosticRequest{}); return err },
 			func() error { return b.ClearHistory() },
 			func() error { _, err := b.Settings(); return err },
-			func() error { return b.SaveSettings(app.Settings{}) },
+			func() error { return b.SaveSettings(contract.Settings{}) },
 			func() error { _, err := b.CurrentWiFi(); return err },
 			func() error { _, err := b.RevealWiFi(); return err },
 			func() error { _, err := b.Discover("", nil); return err },
 			func() error { _, err := b.InspectServices("", nil); return err },
 			func() error { _, err := b.ImportCapture(); return err },
-			func() error { return b.StartCapture(capture.LiveRequest{}) },
+			func() error { return b.StartCapture(contract.LiveCaptureRequest{}) },
 		} {
 			expectInvalid(t, call(), message)
 		}
@@ -118,7 +119,7 @@ func TestForwarderEmitsLegacyJobPayload(t *testing.T) {
 	b.Startup(t.Context())
 	defer b.Shutdown(t.Context())
 	b.Startup(t.Context())
-	st, err := b.StartDiagnostic(network.Request{Kind: "http", Target: server.URL, TimeoutMS: 1000})
+	st, err := b.StartDiagnostic(contract.DiagnosticRequest{Kind: "http", Target: server.URL, TimeoutMS: 1000})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -157,7 +158,7 @@ func TestForwarderEmitsLegacyJobPayload(t *testing.T) {
 				t.Fatalf("payload=%s", raw)
 			}
 			if status.State.Terminal() {
-				if status.ID != st.ID || status.State != job.Completed || fields["result"] == nil {
+				if string(status.ID) != st.ID || status.State != job.Completed || fields["result"] == nil {
 					t.Fatalf("terminal=%s", raw)
 				}
 				return
@@ -293,7 +294,7 @@ func TestBindingsDelegateToApplication(t *testing.T) {
 	if _, err := b.Tools(); err != nil {
 		t.Fatal(err)
 	}
-	settings := app.Settings{Language: "pt-BR", RetentionDays: 7}
+	settings := contract.Settings{Language: "pt-BR", RetentionDays: 7}
 	if err := b.SaveSettings(settings); err != nil {
 		t.Fatal(err)
 	}
@@ -306,7 +307,7 @@ func TestBindingsDelegateToApplication(t *testing.T) {
 	if err := b.ClearHistory(); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := b.Diagnose(network.Request{}); err == nil {
+	if _, err := b.Diagnose(contract.DiagnosticRequest{}); err == nil {
 		t.Fatal("invalid diagnostic accepted")
 	}
 	if _, err := b.Discover("0.0.0.0/0", []int{80}); err == nil {
@@ -315,7 +316,7 @@ func TestBindingsDelegateToApplication(t *testing.T) {
 	if _, err := b.InspectServices("0.0.0.0/0", []int{80}); err == nil {
 		t.Fatal("invalid inspection accepted")
 	}
-	if err := b.StartCapture(capture.LiveRequest{}); err == nil {
+	if err := b.StartCapture(contract.LiveCaptureRequest{}); err == nil {
 		t.Fatal("invalid capture accepted")
 	}
 	b.StopCapture()
@@ -327,10 +328,10 @@ func TestBindingsDelegateToApplication(t *testing.T) {
 	cancelled := wailsui.NewWithRuntime(a, quietRuntime())
 	cancelled.Startup(ctx)
 	defer cancelled.Shutdown(t.Context())
-	if _, err := cancelled.CurrentWiFi(); !errors.Is(err, context.Canceled) {
+	if _, err := cancelled.CurrentWiFi(); err == nil || err.Error() != "cancelled: Operation cancelled" {
 		t.Fatal(err)
 	}
-	if _, err := cancelled.RevealWiFi(); !errors.Is(err, context.Canceled) {
+	if _, err := cancelled.RevealWiFi(); err == nil || err.Error() != "cancelled: Operation cancelled" {
 		t.Fatal(err)
 	}
 }
@@ -343,10 +344,10 @@ func TestDialogErrorsAreReturned(t *testing.T) {
 	b := wailsui.NewWithRuntime(newApplication(t), rt)
 	b.Startup(t.Context())
 	defer b.Shutdown(t.Context())
-	if _, err := b.ImportCapture(); !errors.Is(err, failure) {
+	if _, err := b.ImportCapture(); err == nil || err.Error() != "failed: Operation failed" {
 		t.Fatal(err)
 	}
-	if _, err := b.SaveCapture("pcap"); !errors.Is(err, failure) {
+	if _, err := b.SaveCapture("pcap"); err == nil || err.Error() != "failed: Operation failed" {
 		t.Fatal(err)
 	}
 }
@@ -361,7 +362,7 @@ func TestEventPayloadTypesAndKeys(t *testing.T) {
 		}
 	}
 	metrics := network.Metrics{Timestamp: time.Unix(100, 0), Interfaces: []network.Rate{}}
-	if name, data, ok := wailsui.EventPayloadForTest(job.Event{Topic: job.TopicMetrics, Data: metrics}); !ok || name != "metrics" || !reflect.DeepEqual(data, metrics) {
+	if name, data, ok := wailsui.EventPayloadForTest(job.Event{Topic: job.TopicMetrics, Data: metrics}); !ok || name != "metrics" || !reflect.DeepEqual(data, contract.FromMetrics(metrics)) {
 		t.Fatal("metrics changed")
 	}
 	name, data, ok := wailsui.EventPayloadForTest(job.Event{Topic: job.TopicCapture, Data: app.CaptureEvent{Result: capture.LiveResult{Packets: []capture.Packet{}}, Error: "synthetic failure", Err: errors.New("private error")}})

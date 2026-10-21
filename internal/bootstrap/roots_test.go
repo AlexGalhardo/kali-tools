@@ -182,10 +182,10 @@ func TestDrivingRootsImportOnlyApplication(t *testing.T) {
 	}{
 		{"../../main.go", []string{"bootstrap", "adapter/wailsui"}},
 		{"../../cmd/kali-tools/main.go", []string{"bootstrap", "app", "adapter/cli"}},
-		{"../adapter/cli/cli.go", []string{"app", "domain", "network", "capture"}},
-		{"../adapter/cli/capture.go", []string{"app", "domain", "job", "capture"}},
-		{"../adapter/wailsui/bindings.go", []string{"app", "domain", "job", "network", "capture", "wifi"}},
-		{"../adapter/wailsui/events.go", []string{"app", "job", "network", "capture"}},
+		{"../adapter/cli/cli.go", []string{"app", "domain", "network", "capture", "adapter/contract"}},
+		{"../adapter/cli/capture.go", []string{"app", "domain", "job", "capture", "adapter/contract"}},
+		{"../adapter/wailsui/bindings.go", []string{"app", "domain", "job", "adapter/contract"}},
+		{"../adapter/wailsui/events.go", []string{"job", "adapter/contract"}},
 	} {
 		file, err := parser.ParseFile(token.NewFileSet(), root.path, nil, parser.ImportsOnly)
 		if err != nil {

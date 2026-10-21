@@ -331,6 +331,7 @@ Implemented in H02 (2026-10-21): `Subscribe(ctx)` uses `Limits.SubscriberBuffer`
 
 - The domain and app return sentinel or typed errors. The project uses `domain.Error{Code, Message}` with stable codes such as `invalid_input` and `unsupported`.
 - Wrap errors with `%w`.
+- H06 implements the shared error mapping as `internal/adapter/contract.FromError`; adapters delegate once, with transport-specific exit/status handling. Wails retains `"<code>: <message>"` rejected-promise strings. Unknown internal text is never copied; authored messages are bounded to 512 UTF-8 bytes.
 - Each driving adapter has **one** mapping function:
 
 | Adapter | Maps an error to |

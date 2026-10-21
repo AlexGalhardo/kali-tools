@@ -52,6 +52,7 @@ kali-tools/
 │   ├── capture/                    capability: live capture (Windows raw IPv4), PCAP/PCAPNG import/export, gopacket decoding
 │   ├── wifi/                       capability: current Wi-Fi metadata and explicit key reveal (Windows)
 │   ├── adapter/                    all adapters, named by technology
+│   │   ├── contract/               shared frontend DTOs, explicit mappers and safe error mapping
 │   │   ├── storage/                driven: SQLite store, migrations, settings, retention
 │   │   ├── tools/                  driven: optional executables (Nmap/TShark), bounded process runner, Nmap XML parser
 │   │   ├── probe/                  driven: native Windows ICMP echo/traceroute
@@ -112,7 +113,8 @@ Folders marked *(empty)* contain only `.gitkeep`. They mark target locations fro
 | Capabilities (inner hexagon) | `internal/network`, `internal/capture`, `internal/wifi` | `domain`, stdlib, pure libraries (gopacket) | `adapter/*`, `app`, Wails, `database/sql` |
 | Application | `internal/app`, `internal/job` | `domain`, capability packages, `job` | `adapter/*`, Wails, `net/http`, `os/exec` |
 | Driven adapters | `internal/adapter/{storage,tools,probe,platform}` | `domain`, capability packages, OS/driver libraries | driving adapters, `cmd`, `app` (except for types) |
-| Driving adapters | `internal/adapter/{wailsui,cli}`; `httpapi` planned | `app`, `domain`, DTO types | driven adapters directly (they go through `app`) |
+| Driving adapters | `internal/adapter/{wailsui,cli}`; `httpapi` planned | `app`, `domain`, `adapter/contract` DTO types | driven adapters directly (they go through `app`) |
+| Frontend contract | `internal/adapter/contract` | `domain`, `app`, `job`, capability packages | other adapters, Wails, `net/http`, `os/exec`, `database/sql` |
 | Composition roots | `main.go`, `cmd/*`, `internal/bootstrap` | everything | nothing imports them |
 
 Rules that hold in every layer, from AGENTS.md and PLAN.md:
@@ -120,7 +122,7 @@ Rules that hold in every layer, from AGENTS.md and PLAN.md:
 - No shell command concatenation. Executables run with an argument array, a deadline, output caps and descendant cancellation.
 - Network operations, parser input, event queues and subprocess output are bounded.
 - Wi-Fi secrets and packet payloads never enter history, logs or the database.
-- Capability limitations are explicit states (`available`, `dependency_missing`, `permission_required`, `unsupported`, `failed`, and `location_consent_required` when added). Never fake a success.
+- Capability limitations are explicit states (`available`, `dependency_missing`, `permission_required`, `unsupported`, `failed`, and `location_consent_required`). Never fake a success.
 - Platform code uses build constraints and an explicit unsupported fallback.
 
 ## 4. Ports and adapters
@@ -152,7 +154,7 @@ A port is a small Go interface declared **in the package that consumes it**. Ada
 | `WiFiProvider` — done 2026-10-21 | `app` | `wifi.Native` |
 | `CaptureProvider` — done 2026-10-21 | `capture.LiveProvider`, alias in `app` | `capture.Native` returns a live result and retained artifact |
 
-H03 compile-time assertions live only in `internal/bootstrap/assert.go`. No inner package imports an adapter, checked across all GOOS source files by `TestCoreDoesNotImportAdapters`. `app.New(Deps)` requires job and settings stores; bootstrap owns SQLite and returns a `sync.Once` cleanup that closes the service before the store. Application-owned settings, host and tool types retain their existing JSON tags; tool XML tags remain until H06. Every port gets a real/fake contract suite in H07.
+H03 compile-time assertions live only in `internal/bootstrap/assert.go`. No inner package imports an adapter, checked across all GOOS source files by `TestCoreDoesNotImportAdapters`. `app.New(Deps)` requires job and settings stores; bootstrap owns SQLite and returns a `sync.Once` cleanup that closes the service before the store. Application-owned settings, host and tool types retain their existing JSON tags; tool XML tags remain in the application model; contract inspection DTOs carry JSON fields only. Every port gets a real/fake contract suite in H07.
 
 ## 5. Runtime flows
 
@@ -202,12 +204,13 @@ H02 moves all three streams through `job.Manager`. `Subscribe(ctx)` uses a defau
   - Wails v2 builds the project-root package next to `wails.json`.
   - `//go:embed` cannot reference parent directories.
 - The generated namespace is `frontend/wailsjs/go/wailsui/Bindings`, following the bound receiver's package. `bridge.ts`, Playwright fakes and native smoke calls use that namespace. The binding drift task regenerates it and rejects differences from Git.
+- All bound request/result structs belong to `adapter/contract`; explicit mappers preserve JSON field order and nil slices while cloning mutable data. `fail` delegates error mapping to `contract.FromError`, preserving rejected-promise strings. Events use `contract.EventPayload`.
 - Metrics and capture lifecycle live in `internal/app` after H02. Wails retains native dialogs and a payload translator; it forwards a manager subscription without owning producer state.
 
 ### 6.2 Web server (planned): same UI in a browser
 
 - **Delivery:** `kali-tools serve` subcommand of the CLI binary. One binary serves headless SSH hosts and local browsers.
-- **Package:** `internal/adapter/httpapi`.
+- **Package:** `internal/adapter/httpapi`. Routes will use the shared `adapter/contract` DTOs, `EventPayload` and `FromError`.
   - REST endpoints mirror the binding methods one-to-one.
   - Server-Sent Events at `/api/events` carry `job`, `metrics` and `capture` events.
   - The frontend `embed.FS` is shared with the desktop build.
@@ -265,7 +268,7 @@ Use `git mv`, then rewrite import paths and run `gofmt`. Run `go vet ./...` for 
 | D1 | ~~`internal/network` imports `internal/adapter/probe`~~ — resolved 2026-10-21 by the `network.Prober` port | — | H03 (done) |
 | D2 | Resolved 2026-10-21: all desktop and CLI operations route through `app.Application`; driving adapters are extracted into `adapter/cli` and `adapter/wailsui` | Native acceptance remains pending | H04, H05 |
 | D3 | Resolved 2026-10-21: `app.Application` owns metrics and capture; all producers publish through `job.Manager` | Native desktop acceptance remains pending under the owner's headless workflow | H02 |
-| D4 | Bindings now expose `job.Status` and `app.Settings`, but transport DTO separation and error mapping remain pending | H03 removes storage namespaces; H06 defines transport contracts | H06 |
+| D4 | Resolved 2026-10-21: CLI and Wails map application values to separate `adapter/contract` DTOs; one safe `FromError` preserves stable codes | JSON, redaction, signature and headless workflow tests pass; native IPC acceptance pending | H06 |
 | D5 | Resolved for dependency inversion 2026-10-21: `app.Application` consumes `JobStore` and `SettingsStore`; real/fake contract suites remain H07 | Diagnostic, inspection, settings and history tests run with fakes | H03, H07 |
 | D6 | `capture`, `network`, `wifi` mix domain rules with OS or network I/O in one package | Harder to test without hardware | H03 (split only where a port is needed) |
 | D7 | `frontend/src/app/App.tsx` (about 1,250 lines) holds every page | Hard to evolve per feature | W02 |
@@ -290,3 +293,5 @@ The structural reorganization of 2026-10-21 was verified with:
 - frontend typecheck, lint and build;
 - 17/17 Playwright workflows;
 - `bash -n` on the moved setup scripts.
+
+H06 CLI output uses the same contract DTOs and `contract.FromError`; exit status 2 remains reserved for `invalid_input`. Unknown internal errors become `failed: Operation failed`; authored messages are bounded to 512 UTF-8 bytes with control characters removed. `WiFiSecret` exposes its value only through explicit JSON reveal and redacts Go formatting.

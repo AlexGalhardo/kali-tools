@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/contract"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
@@ -58,7 +59,7 @@ func awaitCapture(ctx context.Context, events <-chan job.Event, stop func(), lim
 			if wasCancelled {
 				return capture.LiveResult{}, ctx.Err()
 			}
-			return capture.LiveResult{}, &domain.Error{Code: "timeout", Message: "capture did not finish in time"}
+			return capture.LiveResult{}, contract.Error{Code: "timeout", Message: "capture did not finish in time"}
 		}
 	}
 }
@@ -69,10 +70,9 @@ func parseCodedError(message string) error {
 	}
 	code, detail, ok := strings.Cut(message, ": ")
 	if ok {
-		switch code {
-		case "invalid_input", "unsupported", "permission_required", "dependency_missing", "not_found", "timeout", "cancelled", "failed", "no_connection":
-			return &domain.Error{Code: code, Message: detail}
+		if domain.IsErrorCode(code) {
+			return contract.Error{Code: code, Message: detail}
 		}
 	}
-	return &domain.Error{Code: "failed", Message: message}
+	return contract.Error{Code: "failed", Message: message}
 }

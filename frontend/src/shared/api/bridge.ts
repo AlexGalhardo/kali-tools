@@ -8,6 +8,7 @@ export type Interface = {
   loopback: boolean;
   addresses: string[];
 };
+// States: available, dependency_missing, permission_required, location_consent_required, unsupported, failed.
 export type Capability = {
   id: string;
   state: string;

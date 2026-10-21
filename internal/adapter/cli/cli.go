@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/csv"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -13,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/contract"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
@@ -20,10 +20,10 @@ import (
 )
 
 type envelope struct {
-	SchemaVersion int           `json:"schema_version"`
-	Version       string        `json:"version"`
-	Data          any           `json:"data,omitempty"`
-	Error         *domain.Error `json:"error,omitempty"`
+	SchemaVersion int             `json:"schema_version"`
+	Version       string          `json:"version"`
+	Data          any             `json:"data,omitempty"`
+	Error         *contract.Error `json:"error,omitempty"`
 }
 
 func Run(ctx context.Context, application *app.Application, args []string, out, errout io.Writer) int {
@@ -57,13 +57,16 @@ func Run(ctx context.Context, application *app.Application, args []string, out, 
 			data = map[string]string{"version": domain.Version, "go": runtime.Version(), "os": runtime.GOOS, "arch": runtime.GOARCH}
 		case "doctor":
 			inventory, _ := application.Tools(ctx)
-			data = map[string]any{"os": runtime.GOOS, "arch": runtime.GOARCH, "capabilities": application.Capabilities(ctx), "tools": inventory, "capture": "Windows raw IPv4 requires administrator authorization; no external driver. Other platforms unavailable.", "wifi": "Windows WLAN API; explicit reveal only in desktop"}
+			data = map[string]any{"os": runtime.GOOS, "arch": runtime.GOARCH, "capabilities": contract.FromCapabilities(application.Capabilities(ctx)), "tools": contract.FromTools(inventory), "capture": "Windows raw IPv4 requires administrator authorization; no external driver. Other platforms unavailable.", "wifi": "Windows WLAN API; explicit reveal only in desktop"}
 		case "interfaces":
-			data, err = application.Interfaces(ctx)
+			value, e := application.Interfaces(ctx)
+			data, err = contract.FromInterfaces(value), e
 		case "inventory":
-			data, err = application.Inventory(ctx)
+			value, e := application.Inventory(ctx)
+			data, err = contract.FromInventory(value), e
 		case "diagnose":
-			data, err = application.Diagnose(ctx, network.Request{Kind: *kind, Target: *target, Port: *port, TimeoutMS: *timeout, RecordType: *recordType})
+			value, e := application.Diagnose(ctx, network.Request{Kind: *kind, Target: *target, Port: *port, TimeoutMS: *timeout, RecordType: *recordType})
+			data, err = contract.FromDiagnosticResult(value), e
 		case "discover", "inspect":
 			if *format != "json" && *format != "csv" {
 				err = domain.Invalid("format must be json or csv")
@@ -87,13 +90,14 @@ func Run(ctx context.Context, application *app.Application, args []string, out, 
 					err = domain.Invalid("service inspection supports JSON only")
 					break
 				}
-				data, err = application.InspectServices(ctx, *target, numbers)
+				value, e := application.InspectServices(ctx, *target, numbers)
+				data, err = contract.FromServiceInspection(value), e
 				break
 			}
 			if err == nil {
 				var results []network.PortResult
 				results, err = application.Discover(ctx, *target, numbers, time.Duration(*timeout)*time.Millisecond)
-				data = results
+				data = contract.FromPortResults(results)
 				if err == nil && *format == "csv" {
 					writer := csv.NewWriter(out)
 					if e := writer.Write([]string{"schema_version", "host", "port", "state"}); e != nil {
@@ -112,7 +116,8 @@ func Run(ctx context.Context, application *app.Application, args []string, out, 
 				}
 			}
 		case "wifi":
-			data, err = application.CurrentWiFi(ctx)
+			value, e := application.CurrentWiFi(ctx)
+			data, err = contract.FromWiFi(value), e
 		case "capture", "import":
 			if *output != "" && *format != "pcap" && *format != "pcapng" {
 				err = domain.Invalid("packet export requires --format pcap or pcapng")
@@ -120,9 +125,11 @@ func Run(ctx context.Context, application *app.Application, args []string, out, 
 			}
 			if args[0] == "capture" {
 				request := capture.LiveRequest{Address: *target, DurationSeconds: *duration, PacketLimit: *limit}
-				data, err = runCapture(ctx, application, request)
+				value, e := runCapture(ctx, application, request)
+				data, err = contract.FromLiveResult(value), e
 			} else {
-				data, err = application.ImportCapture(ctx, *file)
+				value, e := application.ImportCapture(ctx, *file)
+				data, err = contract.FromImportResult(value), e
 			}
 			if err == nil && *output != "" {
 				err = application.ExportCapture(ctx, *output, *format)
@@ -134,7 +141,9 @@ func Run(ctx context.Context, application *app.Application, args []string, out, 
 	response := envelope{SchemaVersion: domain.SchemaVersion, Version: domain.Version, Data: data}
 	code := exitOK
 	if err != nil {
-		response.Error, code = toError(err)
+		mapped := contract.FromError(err)
+		response.Error = &mapped
+		code = exitCode(mapped)
 	}
 	enc := json.NewEncoder(out)
 	enc.SetIndent("", "  ")
@@ -150,16 +159,9 @@ const (
 	exitInvalid = 2
 )
 
-func toError(err error) (*domain.Error, int) {
-	var typed *domain.Error
-	if errors.As(err, &typed) {
-		if typed.Code == "invalid_input" {
-			return typed, exitInvalid
-		}
-		return typed, exitFailure
+func exitCode(e contract.Error) int {
+	if e.Code == domain.CodeInvalidInput {
+		return exitInvalid
 	}
-	if errors.Is(err, context.Canceled) {
-		return &domain.Error{Code: "cancelled", Message: "Operation cancelled"}, exitFailure
-	}
-	return &domain.Error{Code: "failed", Message: err.Error()}, exitFailure
+	return exitFailure
 }

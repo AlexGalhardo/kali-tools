@@ -166,3 +166,18 @@ test("asynchronous TLS failure explains certificate verification in both languag
  await expect(page.getByRole("alert")).toContainText("certificado");
  await expect(page.getByRole("alert")).not.toContainText("Certificate verification failed");
 });
+
+
+test("overview renders location consent state", async ({page}) => {
+ await connect(page);
+ await page.evaluate(() => {
+  if (window.go) window.go.wailsui!.Bindings!.Capabilities = async () => [{id:"wifi",state:"location_consent_required",detail:"Windows location consent",provider:"fixture"}];
+ });
+ await page.getByRole("button", {name:/Refresh/}).click();
+ const row=page.locator(".capability-row").filter({hasText:"Wi-Fi"});
+ await expect(row).toContainText("Location consent required");
+ await expect(row.locator(".pill")).toHaveClass(/amber/);
+ await page.getByLabel("Language", {exact:true}).selectOption("pt-BR");
+ await expect(row).toContainText("Consentimento de localiza\u00e7\u00e3o necess\u00e1rio");
+ await page.screenshot({path:"../build/bin/h06-location-consent.png",fullPage:true});
+});

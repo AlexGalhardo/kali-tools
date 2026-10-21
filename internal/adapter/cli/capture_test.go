@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/cli"
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/contract"
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/storage"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
@@ -51,7 +52,7 @@ func TestAwaitCaptureTimesOut(t *testing.T) {
 	events := make(chan job.Event)
 	var calls atomic.Int32
 	_, err := cli.AwaitCaptureForTest(t.Context(), events, func() { calls.Add(1) }, 10*time.Millisecond)
-	var typed *domain.Error
+	var typed contract.Error
 	if calls.Load() != 1 || !errors.As(err, &typed) || typed.Code != "timeout" {
 		t.Fatalf("stop calls=%d, err=%v", calls.Load(), err)
 	}
@@ -76,9 +77,9 @@ func TestParseCodedError(t *testing.T) {
 	if err := cli.ParseCodedErrorForTest(""); err != nil {
 		t.Fatal(err)
 	}
-	for _, code := range []string{"invalid_input", "unsupported", "permission_required", "dependency_missing", "not_found", "timeout", "cancelled", "failed", "no_connection"} {
+	for _, code := range domain.ErrorCodes() {
 		t.Run(code, func(t *testing.T) {
-			var typed *domain.Error
+			var typed contract.Error
 			err := cli.ParseCodedErrorForTest(code + ": synthetic")
 			if !errors.As(err, &typed) || typed.Code != code || typed.Message != "synthetic" {
 				t.Fatal(err)
@@ -86,7 +87,7 @@ func TestParseCodedError(t *testing.T) {
 		})
 	}
 	for _, message := range []string{"unknown: synthetic", "synthetic failure"} {
-		var typed *domain.Error
+		var typed contract.Error
 		err := cli.ParseCodedErrorForTest(message)
 		if !errors.As(err, &typed) || typed.Code != "failed" || typed.Message != message {
 			t.Fatal(err)
@@ -99,7 +100,7 @@ func TestAwaitCaptureLegacyErrorAndUnexpectedData(t *testing.T) {
 	events <- job.Event{Topic: job.TopicCapture, Data: "unexpected"}
 	events <- job.Event{Topic: job.TopicCapture, Data: app.CaptureEvent{Error: "permission_required: synthetic denial"}}
 	_, err := cli.AwaitCaptureForTest(t.Context(), events, func() { t.Error("unexpected stop") }, 200*time.Millisecond)
-	var typed *domain.Error
+	var typed contract.Error
 	if !errors.As(err, &typed) || typed.Code != "permission_required" || typed.Message != "synthetic denial" {
 		t.Fatal(err)
 	}

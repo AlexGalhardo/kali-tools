@@ -7,12 +7,10 @@ import (
 
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/contract"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
-	"github.com/AlexGalhardo/kali-tools/internal/capture"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/job"
-	"github.com/AlexGalhardo/kali-tools/internal/network"
-	"github.com/AlexGalhardo/kali-tools/internal/wifi"
 )
 
 const (
@@ -90,158 +88,174 @@ func (b *Bindings) ready() (context.Context, error) {
 	}
 	return b.ctx, nil
 }
-func (b *Bindings) Version() string { return domain.Version }
-func (b *Bindings) Capabilities() []domain.Capability {
-	ctx, err := b.ready()
-	if err != nil {
+func fail(err error) error {
+	if err == nil {
 		return nil
 	}
-	return b.app.Capabilities(ctx)
+	return contract.FromError(err)
 }
-func (b *Bindings) Interfaces() ([]network.InterfaceInfo, error) {
-	ctx, err := b.ready()
-	if err != nil {
-		return nil, err
-	}
-	return b.app.Interfaces(ctx)
-}
-func (b *Bindings) Inventory() (app.HostSnapshot, error) {
-	ctx, err := b.ready()
-	if err != nil {
-		return app.HostSnapshot{}, err
-	}
-	return b.app.Inventory(ctx)
-}
-func (b *Bindings) Tools() ([]app.Tool, error) {
+func (b *Bindings) Version() string { return domain.Version }
+func (b *Bindings) Capabilities() []contract.Capability {
 	ctx, e := b.ready()
 	if e != nil {
-		return nil, e
+		return nil
 	}
-	return b.app.Tools(ctx)
+	return contract.FromCapabilities(b.app.Capabilities(ctx))
 }
-func (b *Bindings) Diagnose(r network.Request) (network.Result, error) {
+func (b *Bindings) Interfaces() ([]contract.Interface, error) {
 	ctx, e := b.ready()
 	if e != nil {
-		return network.Result{}, e
+		return nil, fail(e)
 	}
-	return b.app.Diagnose(ctx, r)
+	v, e := b.app.Interfaces(ctx)
+	return contract.FromInterfaces(v), fail(e)
 }
-func (b *Bindings) StartDiagnostic(r network.Request) (job.Status, error) {
+func (b *Bindings) Inventory() (contract.Inventory, error) {
 	ctx, e := b.ready()
 	if e != nil {
-		return job.Status{}, e
+		return contract.Inventory{}, fail(e)
 	}
-	return b.app.StartDiagnostic(ctx, r)
+	v, e := b.app.Inventory(ctx)
+	return contract.FromInventory(v), fail(e)
 }
-func (b *Bindings) CancelJob(id string) bool {
-	ctx, err := b.ready()
-	if err != nil {
-		return false
-	}
-	return b.app.CancelJob(ctx, job.ID(id))
-}
-func (b *Bindings) History() ([]job.Status, error) {
+func (b *Bindings) Tools() ([]contract.Tool, error) {
 	ctx, e := b.ready()
 	if e != nil {
-		return nil, e
+		return nil, fail(e)
 	}
-	return b.app.History(ctx)
+	v, e := b.app.Tools(ctx)
+	return contract.FromTools(v), fail(e)
+}
+func (b *Bindings) Diagnose(r contract.DiagnosticRequest) (contract.DiagnosticResult, error) {
+	ctx, e := b.ready()
+	if e != nil {
+		return contract.DiagnosticResult{}, fail(e)
+	}
+	v, e := b.app.Diagnose(ctx, r.Request())
+	return contract.FromDiagnosticResult(v), fail(e)
+}
+func (b *Bindings) StartDiagnostic(r contract.DiagnosticRequest) (contract.Job, error) {
+	ctx, e := b.ready()
+	if e != nil {
+		return contract.Job{}, fail(e)
+	}
+	v, e := b.app.StartDiagnostic(ctx, r.Request())
+	return contract.FromStatus(v), fail(e)
+}
+func (b *Bindings) History() ([]contract.Job, error) {
+	ctx, e := b.ready()
+	if e != nil {
+		return nil, fail(e)
+	}
+	v, e := b.app.History(ctx)
+	return contract.FromStatuses(v), fail(e)
+}
+func (b *Bindings) Settings() (contract.Settings, error) {
+	ctx, e := b.ready()
+	if e != nil {
+		return contract.Settings{}, fail(e)
+	}
+	v, e := b.app.Settings(ctx)
+	return contract.FromSettings(v), fail(e)
+}
+func (b *Bindings) CurrentWiFi() (contract.WiFi, error) {
+	ctx, e := b.ready()
+	if e != nil {
+		return contract.WiFi{}, fail(e)
+	}
+	v, e := b.app.CurrentWiFi(ctx)
+	return contract.FromWiFi(v), fail(e)
+}
+func (b *Bindings) RevealWiFi() (contract.WiFiSecret, error) {
+	ctx, e := b.ready()
+	if e != nil {
+		return contract.WiFiSecret{}, fail(e)
+	}
+	v, e := b.app.RevealWiFi(ctx)
+	return contract.FromWiFiSecret(v), fail(e)
+}
+func (b *Bindings) Discover(cidr string, ports []int) ([]contract.PortResult, error) {
+	ctx, e := b.ready()
+	if e != nil {
+		return nil, fail(e)
+	}
+	v, e := b.app.Discover(ctx, cidr, ports, desktopDiscoveryTimeout)
+	return contract.FromPortResults(v), fail(e)
+}
+func (b *Bindings) InspectServices(cidr string, ports []int) (contract.ServiceInspection, error) {
+	ctx, e := b.ready()
+	if e != nil {
+		return contract.ServiceInspection{}, fail(e)
+	}
+	v, e := b.app.InspectServices(ctx, cidr, ports)
+	return contract.FromServiceInspection(v), fail(e)
 }
 func (b *Bindings) ClearHistory() error {
 	ctx, e := b.ready()
 	if e != nil {
-		return e
+		return fail(e)
 	}
-	return b.app.ClearHistory(ctx)
+	return fail(b.app.ClearHistory(ctx))
 }
-func (b *Bindings) Settings() (app.Settings, error) {
+func (b *Bindings) SaveSettings(v contract.Settings) error {
 	ctx, e := b.ready()
 	if e != nil {
-		return app.Settings{}, e
+		return fail(e)
 	}
-	return b.app.Settings(ctx)
+	return fail(b.app.SaveSettings(ctx, v.AppSettings()))
 }
-func (b *Bindings) SaveSettings(v app.Settings) error {
+func (b *Bindings) StartCapture(request contract.LiveCaptureRequest) error {
 	ctx, e := b.ready()
 	if e != nil {
-		return e
+		return fail(e)
 	}
-	return b.app.SaveSettings(ctx, v)
+	return fail(b.app.StartCapture(ctx, request.LiveRequest()))
 }
-func (b *Bindings) CurrentWiFi() (wifi.Network, error) {
-	ctx, err := b.ready()
-	if err != nil {
-		return wifi.Network{}, err
-	}
-	return b.app.CurrentWiFi(ctx)
-}
-func (b *Bindings) RevealWiFi() (wifi.Secret, error) {
-	ctx, err := b.ready()
-	if err != nil {
-		return wifi.Secret{}, err
-	}
-	return b.app.RevealWiFi(ctx)
-}
-func (b *Bindings) Discover(cidr string, ports []int) ([]network.PortResult, error) {
+func (b *Bindings) CancelJob(id string) bool {
 	ctx, e := b.ready()
 	if e != nil {
-		return nil, e
+		return false
 	}
-	return b.app.Discover(ctx, cidr, ports, desktopDiscoveryTimeout)
+	return b.app.CancelJob(ctx, job.ID(id))
 }
-func (b *Bindings) ImportCapture() (capture.ImportResult, error) {
+func (b *Bindings) StopCapture() {
+	if ctx, e := b.ready(); e == nil {
+		b.app.StopCapture(ctx)
+	}
+}
+func (b *Bindings) ImportCapture() (contract.Capture, error) {
 	ctx, err := b.ready()
 	if err != nil {
-		return capture.ImportResult{}, err
+		return contract.Capture{}, fail(err)
 	}
 	if err := b.app.CanImportCapture(ctx); err != nil {
-		return capture.ImportResult{}, err
+		return contract.Capture{}, fail(err)
 	}
 	path, err := b.open(ctx, wruntime.OpenDialogOptions{Title: "Import capture", Filters: []wruntime.FileFilter{{DisplayName: "Packet capture", Pattern: "*.pcap;*.pcapng"}}})
 	if err != nil {
-		return capture.ImportResult{}, err
+		return contract.Capture{}, fail(err)
 	}
 	if path == "" {
-		return capture.ImportResult{Packets: []capture.Packet{}}, nil
+		return contract.Capture{Packets: []contract.Packet{}}, nil
 	}
-	return b.app.ImportCapture(ctx, path)
-}
-
-func (b *Bindings) StartCapture(request capture.LiveRequest) error {
-	ctx, err := b.ready()
-	if err != nil {
-		return err
-	}
-	return b.app.StartCapture(ctx, request)
-}
-
-func (b *Bindings) StopCapture() {
-	if ctx, err := b.ready(); err == nil {
-		b.app.StopCapture(ctx)
-	}
+	v, err := b.app.ImportCapture(ctx, path)
+	return contract.FromImportResult(v), fail(err)
 }
 
 func (b *Bindings) SaveCapture(format string) (bool, error) {
 	ctx, err := b.ready()
 	if err != nil {
-		return false, err
+		return false, fail(err)
 	}
 	if format != "pcap" && format != "pcapng" {
-		return false, domain.Invalid("capture format must be pcap or pcapng")
+		return false, fail(domain.Invalid("capture format must be pcap or pcapng"))
 	}
 	path, err := b.save(ctx, wruntime.SaveDialogOptions{Title: "Save capture", DefaultFilename: "capture." + format, Filters: []wruntime.FileFilter{{DisplayName: "Packet capture", Pattern: "*." + format}}})
 	if err != nil || path == "" {
-		return false, err
+		return false, fail(err)
 	}
 	if err := b.app.ExportCapture(ctx, path, format); err != nil {
-		return false, err
+		return false, fail(err)
 	}
 	return true, nil
-}
-func (b *Bindings) InspectServices(cidr string, ports []int) (app.Nmap, error) {
-	ctx, e := b.ready()
-	if e != nil {
-		return app.Nmap{}, e
-	}
-	return b.app.InspectServices(ctx, cidr, ports)
 }

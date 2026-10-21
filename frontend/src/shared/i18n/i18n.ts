@@ -1,4 +1,11 @@
 export const en = {
+  locationConsent: "Location consent required",
+  locationConsentError:
+    "Windows location consent is required to read Wi-Fi details.",
+  conflictError: "The operation conflicts with one already running.",
+  unauthorizedError: "Authentication is required.",
+  forbiddenError: "This operation is not allowed.",
+
   navigation: "Main navigation",
   networkWorkspace: "NETWORK WORKSPACE",
   workspace: "Workspace",
@@ -129,6 +136,14 @@ export const en = {
     "TCP connect discovery stays inside the selected CIDR. A failed connection is reported as unreachable; it does not prove a closed port.",
 };
 export const pt: typeof en = {
+  locationConsent: "Consentimento de localiza\u00e7\u00e3o necess\u00e1rio",
+  locationConsentError:
+    "\u00c9 necess\u00e1rio o consentimento de localiza\u00e7\u00e3o do Windows para ler os detalhes do Wi-Fi.",
+  conflictError:
+    "A opera\u00e7\u00e3o conflita com outra em execu\u00e7\u00e3o.",
+  unauthorizedError: "Autentica\u00e7\u00e3o necess\u00e1ria.",
+  forbiddenError: "Esta opera\u00e7\u00e3o n\u00e3o \u00e9 permitida.",
+
   navigation: "Navega\u00e7\u00e3o principal",
   networkWorkspace: "ESPA\u00c7O DE REDE",
   workspace: "Espa\u00e7o de trabalho",

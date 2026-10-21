@@ -14,6 +14,7 @@ import (
 	_ "modernc.org/sqlite"
 
 	"github.com/AlexGalhardo/kali-tools/internal/app"
+	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/job"
 )
 
@@ -177,7 +178,7 @@ func (s *Store) Settings(ctx context.Context) (Settings, error) {
 }
 func validateSettings(v Settings) error {
 	if (v.Language != "en" && v.Language != "pt-BR") || v.RetentionDays < 1 || v.RetentionDays > 365 {
-		return fmt.Errorf("invalid settings")
+		return domain.Invalid("invalid settings")
 	}
 	return nil
 }

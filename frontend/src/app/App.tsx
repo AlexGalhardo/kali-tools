@@ -72,6 +72,7 @@ export function App() {
     running: t.running,
     available: t.available,
     permission_required: t.restricted,
+    location_consent_required: t.locationConsent,
     unsupported: t.unsupported,
     dependency_missing: t.dependencyMissing,
     open_network: t.openNetwork,
@@ -85,6 +86,10 @@ export function App() {
   const stateText = (state: string) => labels[state] ?? state;
   const errorLabels: Record<string, string> = {
     permission_required: t.permissionDenied,
+    location_consent_required: t.locationConsentError,
+    conflict: t.conflictError,
+    unauthorized: t.unauthorizedError,
+    forbidden: t.forbiddenError,
     unsupported: t.unsupported,
     dependency_missing: t.dependencyMissing,
     no_connection: t.noConnection,
@@ -496,6 +501,7 @@ export function App() {
                     const labels: Record<string, string> = {
                       available: t.available,
                       permission_required: t.restricted,
+                      location_consent_required: t.locationConsent,
                       unsupported: t.unsupported,
                       dependency_missing: t.dependencyMissing,
                       failed: t.error,
@@ -508,7 +514,7 @@ export function App() {
                       >
                         <span>{name}</span>
                         <span
-                          className={`pill ${capability?.state === "available" ? "green" : capability?.state === "permission_required" ? "amber" : ""}`}
+                          className={`pill ${capability?.state === "available" ? "green" : ["permission_required", "location_consent_required"].includes(capability?.state ?? "") ? "amber" : ""}`}
                         >
                           {capability
                             ? (labels[capability.state] ?? t.unsupported)
