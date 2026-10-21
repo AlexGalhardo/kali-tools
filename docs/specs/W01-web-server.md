@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | W01, W02, W03, W05, W06 |
-| Status | Ready |
+| Status | In progress: shared assets step 1 implemented 2026-10-21 |
 | Depends on | H01–H08, C01 (exit codes and `serve` dispatch); W04 is implemented together with step 6 |
 | Risk | High: opens a TCP listener that can start network operations; any gap in W04 is remotely exploitable from a web page |
 
@@ -25,6 +25,8 @@
 ## 3. Current state
 
 Re-verify every fact. Facts marked (H) are expected outputs of H01–H08 and C01; if one is false, STOP and report.
+
+Checkout corrections (2026-10-21): H05 moved dialogs to adapter/wailsui and bindings to wailsui/Bindings; the frontend baseline has 19 workflows. C01 reserves serve without a listener; the actual runServe dispatch is added by this spec step 6, as its Files/Steps require. The shared asset function uses fs.Sub with the constant valid path dist (its error is impossible), preserving 100% reachable statement coverage without a panic-only test seam.
 
 ### 3.1 Assets and desktop root
 

@@ -214,12 +214,12 @@ H02 moves all three streams through `job.Manager`. `Subscribe(ctx)` uses a defau
 
 ### 6.1 Desktop (Wails v2), the primary interface
 
-- `main.go` (build tags `desktop || bindings`) embeds `frontend/dist`, obtains `app.Application` from bootstrap and binds `wailsui.Bindings` to `wails.Run`.
+- `frontend.Dist()` owns the sole embed of `frontend/dist`; `main.go` (build tags `desktop || bindings`) obtains `app.Application` from bootstrap and binds `wailsui.Bindings` to `wails.Run`.
 - `run(ctx, args, getenv, stdout, stderr) int` owns composition and deferred cleanup. `OnStartup` and `OnShutdown` receive `b.Startup` and `b.Shutdown` directly, so Wails exempts those lifecycle methods from its generated API. The binding adapter owns no storage or application cleanup.
 - `internal/adapter/wailsui` owns the 20 frontend methods, native dialogs and cancellable forwarder. `Runtime` functions are injected for headless tests. Startup subscribes before opting into metrics; shutdown waits at most 3 s for its forwarder. The old root `app.go` is deleted.
 - **Why it stays at the repository root:**
   - Wails v2 builds the project-root package next to `wails.json`.
-  - `//go:embed` cannot reference parent directories.
+  - Wails keeps its project root; the shared `frontend` Go package owns the embedded build used by both delivery modes.
 - The generated namespace is `frontend/wailsjs/go/wailsui/Bindings`, following the bound receiver's package. `bridge.ts`, Playwright fakes and native smoke calls use that namespace. The binding drift task regenerates it and rejects differences from Git.
 - All bound request/result structs belong to `adapter/contract`; explicit mappers preserve JSON field order and nil slices while cloning mutable data. `fail` delegates error mapping to `contract.FromError`, preserving rejected-promise strings. Events use `contract.EventPayload`.
 - Metrics and capture lifecycle live in `internal/app` after H02. Wails retains native dialogs and a payload translator; it forwards a manager subscription without owning producer state.

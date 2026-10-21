@@ -17,6 +17,7 @@ import (
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 	syswindows "golang.org/x/sys/windows"
 
+	"github.com/AlexGalhardo/kali-tools/frontend"
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/wailsui"
 	"github.com/AlexGalhardo/kali-tools/internal/bootstrap"
 )
@@ -71,7 +72,7 @@ func TestNativeBridge(t *testing.T) {
 	b := wailsui.New(application)
 	smoke := &SmokeBridge{result: make(chan bool, 1), ready: make(chan struct{})}
 	var timer *time.Timer
-	e := wails.Run(&options.App{Title: "kali-tools bridge verification", Width: 960, Height: 680, StartHidden: true, Windows: &windows.Options{WebviewUserDataPath: filepath.Join(data, "webview")}, AssetServer: &assetserver.Options{Assets: assets}, Bind: []interface{}{b, smoke}, OnStartup: b.Startup, OnDomReady: func(ctx context.Context) {
+	e := wails.Run(&options.App{Title: "kali-tools bridge verification", Width: 960, Height: 680, StartHidden: true, Windows: &windows.Options{WebviewUserDataPath: filepath.Join(data, "webview")}, AssetServer: &assetserver.Options{Assets: frontend.Dist()}, Bind: []interface{}{b, smoke}, OnStartup: b.Startup, OnDomReady: func(ctx context.Context) {
 		smoke.ctx = ctx
 		timer = time.AfterFunc(20*time.Second, func() { smoke.Complete(false) })
 		close(smoke.ready)

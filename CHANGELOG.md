@@ -6,6 +6,8 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ### Changed
 
+- W01 step 1 centralizes the frontend build in one Go embed package shared by desktop and future HTTP delivery. No web listener is added in this step. [W01 evidence](docs/verification/specs/W01.md).
+
 - Completed the CLI human-output migration, localized result labels, bounded job progress, persistent shared settings/history and explicit JSON contract fixtures. See the [CLI contract](docs/cli.md) and [C01 evidence](docs/verification/specs/C01.md).
 - Migration from 0.1.0-alpha.1-dev: scripts must add `--json`; flags are command-specific; error codes have distinct exits; help exits 0; rejected flags never echo values; diagnostics are jobs with redacted history; doctor documents confirmed CLI key reveal. Deprecated invocations retain one warning. Rejected diagnostic targets no longer reflect credentials into partial results.
 
