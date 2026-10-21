@@ -20,6 +20,41 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
 )
 
+func noEnv(string) string { return "" }
+
+func TestRunDoesNotWriteUserConfig(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{"HOME", "APPDATA", "XDG_CONFIG_HOME"} {
+		t.Setenv(name, dir)
+	}
+	var out, stderr bytes.Buffer
+	if code := run(t.Context(), []string{"version"}, noEnv, &out, &stderr); code != 0 {
+		t.Fatalf("exit = %d, output = %s, stderr = %s", code, out.String(), stderr.String())
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil || len(entries) != 0 {
+		t.Fatalf("config entries = %v, error = %v; want empty", entries, err)
+	}
+}
+
+func TestCLIUsageBeforeBootstrap(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		args []string
+	}{
+		{name: "no command"},
+		{name: "malformed flag", args: []string{"version", "--unknown"}},
+		{name: "positional argument", args: []string{"version", "extra"}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			var out, stderr bytes.Buffer
+			if code := run(t.Context(), test.args, noEnv, &out, &stderr); code != 2 {
+				t.Fatalf("exit = %d, output = %s, stderr = %s; want 2", code, out.String(), stderr.String())
+			}
+		})
+	}
+}
+
 func TestCLIContract(t *testing.T) {
 	for _, test := range []struct {
 		args      []string
@@ -27,7 +62,7 @@ func TestCLIContract(t *testing.T) {
 		errorCode string
 	}{{[]string{"version"}, 0, ""}, {[]string{"interfaces"}, 0, ""}, {[]string{"diagnose", "--target", "a;whoami"}, 2, "invalid_input"}, {[]string{"discover", "--target", "0.0.0.0/0"}, 2, "invalid_input"}, {[]string{"unknown"}, 2, "invalid_input"}} {
 		var out, stderr bytes.Buffer
-		code := run(t.Context(), test.args, &out, &stderr)
+		code := run(t.Context(), test.args, noEnv, &out, &stderr)
 		if code != test.code {
 			t.Fatal(test.args, code, out.String(), stderr.String())
 		}
@@ -47,13 +82,13 @@ func TestCLIHTTPAndMalformedFlags(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(204) }))
 	defer server.Close()
 	var out, stderr bytes.Buffer
-	if code := run(t.Context(), []string{"diagnose", "--kind", "http", "--target", server.URL}, &out, &stderr); code != 0 {
+	if code := run(t.Context(), []string{"diagnose", "--kind", "http", "--target", server.URL}, noEnv, &out, &stderr); code != 0 {
 		t.Fatal(code, out.String())
 	}
 	if !bytes.Contains(out.Bytes(), []byte("204 No Content")) {
 		t.Fatal(out.String())
 	}
-	if code := run(t.Context(), []string{"diagnose", "--timeout", "NaN"}, &out, &stderr); code != 2 {
+	if code := run(t.Context(), []string{"diagnose", "--timeout", "NaN"}, noEnv, &out, &stderr); code != 2 {
 		t.Fatal(code)
 	}
 }
@@ -64,7 +99,7 @@ func TestDiscoveryRejectsInvalidOptionsBeforeScanning(t *testing.T) {
 		{"discover", "--target", "127.0.0.1/32", "--ports", strings.Repeat("80,", 32) + "80"},
 	} {
 		var out, stderr bytes.Buffer
-		if code := run(t.Context(), args, &out, &stderr); code != 2 {
+		if code := run(t.Context(), args, noEnv, &out, &stderr); code != 2 {
 			t.Fatalf("%v: exit %d: %s", args, code, out.String())
 		}
 		if !bytes.Contains(out.Bytes(), []byte(`"invalid_input"`)) || bytes.Contains(out.Bytes(), []byte(`"host"`)) {
@@ -82,7 +117,7 @@ func TestDiscoveryExports(t *testing.T) {
 	port := strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)
 	for _, format := range []string{"json", "csv"} {
 		var out, stderr bytes.Buffer
-		if code := run(t.Context(), []string{"discover", "--target", "127.0.0.1/32", "--ports", port, "--format", format}, &out, &stderr); code != 0 {
+		if code := run(t.Context(), []string{"discover", "--target", "127.0.0.1/32", "--ports", port, "--format", format}, noEnv, &out, &stderr); code != 0 {
 			t.Fatal(code, out.String())
 		}
 		if format == "csv" {
@@ -125,7 +160,7 @@ func TestCLICaptureConversion(t *testing.T) {
 	for _, format := range []string{"pcap", "pcapng"} {
 		destination := filepath.Join(dir, "output."+format)
 		var out, stderr bytes.Buffer
-		if code := run(t.Context(), []string{"import", "--file", source, "--output", destination, "--format", format}, &out, &stderr); code != 0 {
+		if code := run(t.Context(), []string{"import", "--file", source, "--output", destination, "--format", format}, noEnv, &out, &stderr); code != 0 {
 			t.Fatalf("%d %s", code, out.String())
 		}
 		if bytes.Contains(out.Bytes(), []byte("synthetic-private")) {
@@ -138,7 +173,7 @@ func TestCLICaptureConversion(t *testing.T) {
 	}
 	destination := filepath.Join(dir, "invalid.pcap")
 	var out, stderr bytes.Buffer
-	if code := run(t.Context(), []string{"capture", "--output", destination}, &out, &stderr); code != 2 {
+	if code := run(t.Context(), []string{"capture", "--output", destination}, noEnv, &out, &stderr); code != 2 {
 		t.Fatalf("invalid format not rejected first: %d %s", code, out.String())
 	}
 	if _, err := os.Stat(destination); !os.IsNotExist(err) {

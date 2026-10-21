@@ -16,9 +16,9 @@ import (
 	"time"
 
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/platform"
-	"github.com/AlexGalhardo/kali-tools/internal/adapter/probe"
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/tools"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
+	"github.com/AlexGalhardo/kali-tools/internal/bootstrap"
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/network"
@@ -32,7 +32,10 @@ type envelope struct {
 	Error         *domain.Error `json:"error,omitempty"`
 }
 
-func run(ctx context.Context, args []string, out, errout io.Writer) int {
+// cliDataPath preserves the CLI's disk-free behavior until C01.
+const cliDataPath = ":memory:"
+
+func run(ctx context.Context, args []string, getenv func(string) string, out, errout io.Writer) int {
 	if len(args) == 0 {
 		_, _ = fmt.Fprintln(errout, "Usage: kali-tools <version|doctor|interfaces|inventory|diagnose|discover|inspect|wifi|capture|import> [flags]\nAll output is versioned JSON; discover also accepts --format csv. Wi-Fi secrets are available only through the explicit desktop reveal action.")
 		return 2
@@ -58,95 +61,101 @@ func run(ctx context.Context, args []string, out, errout io.Writer) int {
 	if flags.NArg() != 0 {
 		err = domain.Invalid("unexpected positional arguments")
 	} else {
-		switch args[0] {
-		case "version":
-			data = map[string]string{"version": domain.Version, "go": runtime.Version(), "os": runtime.GOOS, "arch": runtime.GOARCH}
-		case "doctor":
-			data = map[string]any{"os": runtime.GOOS, "arch": runtime.GOARCH, "capabilities": app.Capabilities(), "tools": tools.Inventory(ctx), "capture": "Windows raw IPv4 requires administrator authorization; no external driver. Other platforms unavailable.", "wifi": "Windows WLAN API; explicit reveal only in desktop"}
-		case "interfaces":
-			data, err = network.Interfaces()
-		case "inventory":
-			data, err = platform.Inventory()
-		case "diagnose":
-			data, err = network.Diagnostics{Prober: probe.ICMP{}}.Diagnose(ctx, network.Request{Kind: *kind, Target: *target, Port: *port, TimeoutMS: *timeout, RecordType: *recordType})
-		case "discover", "inspect":
-			if *format != "json" && *format != "csv" {
-				err = domain.Invalid("format must be json or csv")
-				break
-			}
-			if len(*ports) > 191 || strings.Count(*ports, ",") >= 32 {
-				err = domain.Invalid("1..32 ports required")
-				break
-			}
-			var numbers []int
-			for _, s := range strings.Split(*ports, ",") {
-				n, e := strconv.Atoi(s)
-				if e != nil {
-					err = domain.Invalid("invalid port list")
+		application, cleanup, bootstrapErr := bootstrap.New(ctx, bootstrap.Config{DataPath: cliDataPath})
+		if bootstrapErr != nil {
+			err = bootstrapErr
+		} else {
+			defer func() { _ = cleanup() }()
+			switch args[0] {
+			case "version":
+				data = map[string]string{"version": domain.Version, "go": runtime.Version(), "os": runtime.GOOS, "arch": runtime.GOARCH}
+			case "doctor":
+				data = map[string]any{"os": runtime.GOOS, "arch": runtime.GOARCH, "capabilities": app.Capabilities(), "tools": tools.Inventory(ctx), "capture": "Windows raw IPv4 requires administrator authorization; no external driver. Other platforms unavailable.", "wifi": "Windows WLAN API; explicit reveal only in desktop"}
+			case "interfaces":
+				data, err = network.Interfaces()
+			case "inventory":
+				data, err = platform.Inventory()
+			case "diagnose":
+				data, err = application.Service.Diagnostics.Diagnose(ctx, network.Request{Kind: *kind, Target: *target, Port: *port, TimeoutMS: *timeout, RecordType: *recordType})
+			case "discover", "inspect":
+				if *format != "json" && *format != "csv" {
+					err = domain.Invalid("format must be json or csv")
 					break
 				}
-				numbers = append(numbers, n)
-			}
-			if err == nil && args[0] == "inspect" {
-				if *format != "json" {
-					err = domain.Invalid("service inspection supports JSON only")
+				if len(*ports) > 191 || strings.Count(*ports, ",") >= 32 {
+					err = domain.Invalid("1..32 ports required")
 					break
 				}
-				data, err = tools.RunNmap(ctx, *target, numbers)
-				break
-			}
-			if err == nil {
-				var results []network.PortResult
-				results, err = network.Discover(ctx, *target, numbers, time.Duration(*timeout)*time.Millisecond)
-				data = results
-				if err == nil && *format == "csv" {
-					writer := csv.NewWriter(out)
-					if e := writer.Write([]string{"schema_version", "host", "port", "state"}); e != nil {
-						return 1
+				var numbers []int
+				for _, s := range strings.Split(*ports, ",") {
+					n, e := strconv.Atoi(s)
+					if e != nil {
+						err = domain.Invalid("invalid port list")
+						break
 					}
-					for _, r := range results {
-						if e := writer.Write([]string{"1", r.Host, strconv.Itoa(r.Port), r.State}); e != nil {
+					numbers = append(numbers, n)
+				}
+				if err == nil && args[0] == "inspect" {
+					if *format != "json" {
+						err = domain.Invalid("service inspection supports JSON only")
+						break
+					}
+					data, err = tools.RunNmap(ctx, *target, numbers)
+					break
+				}
+				if err == nil {
+					var results []network.PortResult
+					results, err = network.Discover(ctx, *target, numbers, time.Duration(*timeout)*time.Millisecond)
+					data = results
+					if err == nil && *format == "csv" {
+						writer := csv.NewWriter(out)
+						if e := writer.Write([]string{"schema_version", "host", "port", "state"}); e != nil {
 							return 1
 						}
+						for _, r := range results {
+							if e := writer.Write([]string{"1", r.Host, strconv.Itoa(r.Port), r.State}); e != nil {
+								return 1
+							}
+						}
+						writer.Flush()
+						if writer.Error() != nil {
+							return 1
+						}
+						return 0
 					}
-					writer.Flush()
-					if writer.Error() != nil {
-						return 1
+				}
+			case "wifi":
+				data, err = wifi.Current()
+			case "capture", "import":
+				if *output != "" && *format != "pcap" && *format != "pcapng" {
+					err = domain.Invalid("packet export requires --format pcap or pcapng")
+					break
+				}
+				var artifact *capture.Artifact
+				if args[0] == "capture" {
+					request := capture.LiveRequest{Address: *target, DurationSeconds: *duration, PacketLimit: *limit}
+					if *output == "" {
+						data, err = capture.Live(ctx, request)
+					} else {
+						data, artifact, err = capture.LiveSession(ctx, request)
 					}
-					return 0
-				}
-			}
-		case "wifi":
-			data, err = wifi.Current()
-		case "capture", "import":
-			if *output != "" && *format != "pcap" && *format != "pcapng" {
-				err = domain.Invalid("packet export requires --format pcap or pcapng")
-				break
-			}
-			var artifact *capture.Artifact
-			if args[0] == "capture" {
-				request := capture.LiveRequest{Address: *target, DurationSeconds: *duration, PacketLimit: *limit}
-				if *output == "" {
-					data, err = capture.Live(ctx, request)
 				} else {
-					data, artifact, err = capture.LiveSession(ctx, request)
+					if *output == "" {
+						data, err = capture.ReadFile(*file)
+					} else {
+						data, artifact, err = capture.ReadArtifactFile(*file)
+					}
 				}
-			} else {
-				if *output == "" {
-					data, err = capture.ReadFile(*file)
-				} else {
-					data, artifact, err = capture.ReadArtifactFile(*file)
+				if err == nil && *output != "" {
+					if artifact == nil {
+						err = domain.Invalid("capture has no packets to export")
+					} else {
+						err = artifact.Save(ctx, *output, *format)
+					}
 				}
+			default:
+				err = domain.Invalid("unknown command %q", args[0])
 			}
-			if err == nil && *output != "" {
-				if artifact == nil {
-					err = domain.Invalid("capture has no packets to export")
-				} else {
-					err = artifact.Save(ctx, *output, *format)
-				}
-			}
-		default:
-			err = domain.Invalid("unknown command %q", args[0])
 		}
 	}
 	response := envelope{SchemaVersion: domain.SchemaVersion, Version: domain.Version, Data: data}
@@ -174,6 +183,7 @@ func run(ctx context.Context, args []string, out, errout io.Writer) int {
 }
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer cancel()
-	os.Exit(run(ctx, os.Args[1:], os.Stdout, os.Stderr))
+	code := run(ctx, os.Args[1:], os.Getenv, os.Stdout, os.Stderr)
+	cancel()
+	os.Exit(code)
 }

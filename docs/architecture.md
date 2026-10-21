@@ -57,7 +57,7 @@ kali-tools/
 │   │   ├── wailsui/                (empty) target home of the Wails bindings and event forwarder
 │   │   ├── httpapi/                (empty) target home of the web server: REST, SSE, security middleware
 │   │   └── cli/                    (empty) target home of the CLI command tree
-│   ├── bootstrap/                  (empty) target home of the shared wiring used by every composition root
+│   ├── bootstrap/                  shared wiring used by every composition root
 │   └── porttest/                   (empty) target home of the contract test suites for driven ports
 │
 ├── frontend/                       React + TypeScript + Base UI + Tailwind v4 (Vite, Bun)
@@ -135,7 +135,7 @@ A port is a small Go interface declared **in the package that consumes it**. Ada
 | `app.Service` | `Clock` interface | `app.SystemClock` |
 | `app.Service` | Nmap inspection via `tools` functions | `adapter/tools` |
 | `capture` | `LiveProvider` interface | `live_windows.go` / `live_other.go` |
-| `network.Diagnostics` | `network.Prober` interface (injected by composition roots) | `probe.ICMP` in `adapter/probe` |
+| `network.Diagnostics` | `network.Prober` interface (injected by `bootstrap.New` for both roots) | `probe.ICMP` in `adapter/probe` |
 | `app.go` / CLI | direct calls to `platform.Snapshot`, `wifi`, `capture`, `tools.Inventory` | respective packages |
 
 ### 4.3 Target driven ports (PLAN phase H)
@@ -192,6 +192,7 @@ The target moves the `metrics` and `capture` loops out of `app.go` into `app`/`j
 ### 6.1 Desktop (Wails v2), the primary interface
 
 - `main.go` (build tags `desktop || bindings`) embeds `frontend/dist` and calls `wails.Run` with the `App` facade bound.
+- `main` delegates to `run(ctx, args, getenv, stdout, stderr) int`. The startup hook calls `bootstrap.New` to open storage, apply retention and inject the ICMP prober; shutdown calls the returned idempotent cleanup. H01 keeps the existing bindings and event loops.
 - **Why it stays at the repository root:**
   - Wails v2 builds the project-root package next to `wails.json`.
   - `//go:embed` cannot reference parent directories.
@@ -222,6 +223,7 @@ The target moves the `metrics` and `capture` loops out of `app.go` into `app`/`j
 ### 6.3 CLI
 
 - `cmd/kali-tools/main.go` uses stdlib `flag`. Commands: `version`, `doctor`, `interfaces`, `inventory`, `diagnose`, `discover`/`inspect`, `wifi`, `capture`/`import`.
+- The root exposes `run(ctx, args, getenv, stdout, stderr) int` and obtains its application from `bootstrap.New` after usage and flag validation. It uses an in-memory store until C01, so invocations write no history or preferences to disk. Diagnostic calls use the shared application's injected prober. H01 reads no environment variables through `getenv`.
 - `--json` output includes `schema_version`. Invalid input exits with a stable non-zero code.
 - The target moves the command tree into `internal/adapter/cli` (with signature `Run(ctx, app, args, stdout, stderr) int`), routes every command through `app.Application`, and adds `serve`, `history`, `settings`, `export` and `jobs` commands, so the CLI is complete for SSH use.
 

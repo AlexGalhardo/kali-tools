@@ -10,10 +10,10 @@ import (
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/platform"
-	"github.com/AlexGalhardo/kali-tools/internal/adapter/probe"
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/storage"
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/tools"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
+	"github.com/AlexGalhardo/kali-tools/internal/bootstrap"
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/network"
@@ -26,6 +26,8 @@ type App struct {
 	ctx             context.Context
 	cancel          context.CancelFunc
 	service         *app.Service
+	config          bootstrap.Config
+	cleanup         func() error
 	initErr         error
 	captureMu       sync.Mutex
 	captureCancel   context.CancelFunc
@@ -41,21 +43,13 @@ func (a *App) startup(ctx context.Context) {
 		return
 	}
 	a.ctx, a.cancel = context.WithCancel(ctx)
-	path, e := storage.DefaultPath()
-	if e != nil {
-		a.initErr = e
+	application, cleanup, err := bootstrap.New(a.ctx, a.config)
+	if err != nil {
+		a.initErr = err
 		return
 	}
-	store, e := storage.Open(path)
-	if e != nil {
-		a.initErr = e
-		return
-	}
-	a.service = app.New(store, network.Diagnostics{Prober: probe.ICMP{}})
-	settings, e := store.Settings(a.ctx)
-	if e == nil {
-		a.initErr = store.Retain(a.ctx, time.Now().AddDate(0, 0, -settings.RetentionDays))
-	}
+	a.service = application.Service
+	a.cleanup = cleanup
 	go func() {
 		for {
 			select {
@@ -98,8 +92,8 @@ func (a *App) shutdown(context.Context) {
 	a.captureMu.Lock()
 	a.captureArtifact = nil
 	a.captureMu.Unlock()
-	if a.service != nil {
-		_ = a.service.Close()
+	if a.cleanup != nil {
+		_ = a.cleanup()
 	}
 }
 func (a *App) ready() error {
