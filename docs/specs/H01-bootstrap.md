@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | H01 |
-| Status | Ready |
+| Status | In progress: implementation complete 2026-10-21; native bridge and Docker lab acceptance pending ([evidence](../verification/specs/H01.md)) |
 | Depends on | none |
 | Risk | Medium: both composition roots change at once, and the desktop startup path can only be fully proven by the native bridge smoke test |
 
