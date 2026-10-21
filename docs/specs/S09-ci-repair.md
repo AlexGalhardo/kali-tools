@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | S09 |
-| Status | In progress |
+| Status | Verified 2026-10-21, commit 36956fd; hosted run 39668017937 success |
 | Depends on | H07 implementation |
 | Risk | Low; platform-aware assertions and native WLAN error mapping |
 
