@@ -4,6 +4,18 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-21
+
+Unsigned development checkpoint published at the owner's request. C01 remains partial; JSON is still the default and CLI history/settings are process-local. Full release qualification remains open.
+
+### Added
+
+- Added CLI capabilities/tools, job and history queries, settings updates, confirmed Wi-Fi reveal and canonical capture conversion commands. Per-command help and strict flags reject unrelated options without echoing rejected values. [C01 evidence](docs/verification/specs/C01.md).
+
+### Deprecated
+
+- Legacy `diagnose --kind`, `wifi`, `capture`, `import` and explicit discovery JSON-format forms remain accepted with one warning; prefer the canonical subcommands and `--json`.
+
 ### Changed
 
 - C01 step 1 adds documented exit statuses for unsupported (3), permission (4), missing dependency (5), not found (6), timeout (7), conflict (8), authentication (9), and cancellation (130). Success, generic failure and invalid input remain 0/1/2. The complete CLI migration is still in progress. [C01 evidence](docs/verification/specs/C01.md).

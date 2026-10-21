@@ -279,7 +279,7 @@ These are reusable delivery requirements, not a separate completed milestone. De
   - [x] Verify the real ICMP regression after rejecting invalid targets before DNS/native delegation. `TestProberContract` passes; probe coverage 75.8% → 78.1%. [Evidence](docs/verification/specs/H07.md#continuation-2026-10-21).
   - [x] Rerun H07 race checks after installing GCC 16.2.0: `go test -race -timeout 120s ./internal/porttest/... ./internal/adapter/... ./tests/acceptance/...` passes. [Evidence](docs/verification/specs/H07.md#continuation-2026-10-21).
   - [x] H07 native OS-port data branches AC-10/DA-7: Wi-Fi, ICMP, host inventory and elevated capture pass on Windows build 26300 after the suite selects an active interface. [Native evidence](docs/verification/specs/H07.md#native-capture-correction-2026-10-21).
-  - [ ] C01: implement CLI history and remove the single explicit acceptance skip.
+  - [x] C01 step 4: CLI history list/clear implemented; the acceptance skip is removed and history runs through all three drivers.
   - [ ] W01/W03: add the HTTP driver and run the unchanged shared acceptance specifications.
   - Progress: [H07 evidence](docs/verification/specs/H07.md). Native OS-port data branches now pass; C01 step 4 removes the CLI-history skip. HTTP remains W01. Other specs' native gates are independent.
   - Assert: each fake passes the same suite as its adapter; at least the diagnostics, discovery and history specifications run through two drivers.

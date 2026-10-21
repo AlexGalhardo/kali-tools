@@ -28,7 +28,7 @@ type envelope struct {
 
 func Run(ctx context.Context, application *app.Application, args []string, out, errout io.Writer) int {
 	if len(args) == 0 {
-		_, _ = fmt.Fprintln(errout, "Usage: kali-tools <version|doctor|interfaces|inventory|diagnose|discover|inspect|wifi|capture|import> [flags]\nAll output is versioned JSON; discover also accepts --format csv. Wi-Fi secrets are available only through the explicit desktop reveal action.")
+		_ = writeHelp(errout, invocation{})
 		return exitInvalid
 	}
 	call, err := parseInvocation(args)
@@ -88,7 +88,7 @@ func runLegacy(ctx context.Context, application *app.Application, args []string,
 			data = map[string]string{"version": domain.Version, "go": runtime.Version(), "os": runtime.GOOS, "arch": runtime.GOARCH}
 		case "doctor":
 			inventory, _ := application.Tools(ctx)
-			data = map[string]any{"os": runtime.GOOS, "arch": runtime.GOARCH, "capabilities": contract.FromCapabilities(application.Capabilities(ctx)), "tools": contract.FromTools(inventory), "capture": "Windows raw IPv4 requires administrator authorization; no external driver. Other platforms unavailable.", "wifi": "Windows WLAN API; explicit reveal only in desktop"}
+			data = map[string]any{"os": runtime.GOOS, "arch": runtime.GOARCH, "capabilities": contract.FromCapabilities(application.Capabilities(ctx)), "tools": contract.FromTools(inventory), "capture": "Windows raw IPv4 requires administrator authorization; no external driver. Other platforms unavailable.", "wifi": "Windows WLAN API; key reveal requires wifi reveal --confirm or the desktop reveal action"}
 		case "interfaces":
 			value, e := application.Interfaces(ctx)
 			data, err = contract.FromInterfaces(value), e

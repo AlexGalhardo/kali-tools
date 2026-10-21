@@ -317,7 +317,7 @@ export function App() {
         </nav>
         <div className="sidebar-bottom">
           <span className="status-dot" /> {t.development}
-          <small>0.3.0</small>
+          <small>0.4.0</small>
         </div>
       </aside>
       <div className="workspace">
