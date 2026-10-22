@@ -6,13 +6,13 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ### Added
 
-- Run the unchanged diagnostic, discovery and history acceptance scenarios through the authenticated production HTTP server alongside CLI, Wails and direct application drivers (W01; [evidence](docs/verification/specs/W01.md)).
-- Verify web concurrency caps, HTTP header/body boundaries, deadline reset, SSE timing, forced shutdown and the browser's 64-job recovery bound (W01/W04; [evidence](docs/verification/specs/W04.md)).
-- Wi-Fi consent guidance for Windows 11 24H2+, observed capability states, a fixed-URI desktop settings action and English/PT-BR explicit-retry notices in desktop/browser modes (A05).
+- Run the unchanged diagnostic, discovery and history acceptance scenarios through the authenticated production HTTP server alongside CLI, Wails and direct application drivers (W01; [evidence](docs/verification/specs/W01.md), [commit](https://github.com/AlexGalhardo/kali-tools/commit/e0fce6f)).
+- Verify web concurrency caps, HTTP header/body boundaries, deadline reset, SSE timing, forced shutdown and the browser's 64-job recovery bound (W01/W04; [evidence](docs/verification/specs/W04.md), [commit](https://github.com/AlexGalhardo/kali-tools/commit/19bf576)).
+- Wi-Fi consent guidance for Windows 11 24H2+, observed capability states, a fixed-URI desktop settings action and English/PT-BR explicit-retry notices in desktop/browser modes (A05; [evidence](docs/verification/specs/A05.md), [commit](https://github.com/AlexGalhardo/kali-tools/commit/b7d6aa1)).
 
 ### Fixed
 
-- Discard Wi-Fi metadata and saved keys when a provider returns an error, preventing their inclusion in failed CLI responses (A05; synthetic regression tests).
+- Discard Wi-Fi metadata and saved keys when a provider returns an error, preventing their inclusion in failed CLI responses (A05; synthetic regression tests, [commit](https://github.com/AlexGalhardo/kali-tools/commit/b7d6aa1)).
 
 ## [0.5.1] - 2026-10-21
 
