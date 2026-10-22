@@ -4,6 +4,8 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-21
+
 ### Fixed
 
 - Make serve tests independent of compiled frontend assets and isolate configuration paths on every platform, fixing clean-checkout quality checks and the non-root Docker laboratory.
