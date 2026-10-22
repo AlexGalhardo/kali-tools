@@ -525,8 +525,9 @@ Interfaces exit: a parity matrix (capability × desktop/CLI/web) is recorded in 
   - [ ] Dependency doctor and install instructions; clean-machine smoke checks.
   - [ ] Dependency/source notices, installer uninstall behavior and writable-data locations.
   - Assert: verified matrix names OS/version/architecture/provider; untested combinations are not advertised.
-- [ ] B08 TLS and certificate audit module (`internal/tls` + adapters).
+- [ ] B08 TLS and certificate audit module (`internal/tlsaudit` + adapters).
   - Spec: [B08-tls-audit](docs/specs/B08-tls-audit.md)
+  - Dependency authorization and license review recorded; implementation remains open. [Evidence](docs/verification/specs/B08.md).
   - [ ] Chain report (validity, SAN coverage, key/signature algorithms, AIA/OCSP/CRL, stapling, SCT count), protocol matrix via `MinVersion`/`MaxVersion`, zlint findings.
   - [ ] Optional zcrypto legacy-protocol observation behind a labelled switch, isolated from kali-tools' own connections.
   - Assert: controlled local certificates cover expired, self-signed, mismatch, weak key and legacy-only servers; no exploit checks.

@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | B08 (chain report, protocol matrix, zlint findings; optional zcrypto legacy observation) |
-| Status | Ready |
+| Status | Dependency review complete (2026-10-22); implementation pending |
 | Depends on | H02 (job manager), H04 (`app.Application`), H05/H06 (adapters, DTOs), W01 + W04 (HTTP route) |
 | Risk | Medium: a new dependency tree (zlint, zcrypto, logrus, publicsuffix-go, go-toml) and probes that intentionally accept untrusted chains for observation |
 
@@ -255,10 +255,10 @@ func zlintFindings(der []byte) ([]Finding, string, error)
 1. Run `go get github.com/zmap/zlint/v3@<latest v3 tag>` (v3.7.2 or newer at implementation time) and record the exact version.
 2. Check whether `go.mod` raises `golang.org/x/*` versions. Re-run `govulncheck ./...` and `govulncheck -tags desktop .`.
 3. For each new module in `go list -m -json all` (expected: `zmap/zlint/v3`, `zmap/zcrypto`, `sirupsen/logrus`, `pelletier/go-toml`, `weppos/publicsuffix-go`), open the LICENSE (and NOTICE) in the module cache and record the SPDX id:
-    - zlint: Apache-2.0, with a NOTICE;
-    - zcrypto: Apache-2.0, plus BSD-3-Clause for Go-derived files (verify);
+    - zlint: Apache-2.0; v3.7.2 contains LICENSE but no NOTICE;
+    - zcrypto: Apache-2.0 AND ISC AND MIT (verified pinned module LICENSE);
     - logrus: MIT;
-    - go-toml v1: MIT (verify);
+    - go-toml v1: MIT AND Apache-2.0 (verified pinned module LICENSE);
     - publicsuffix-go: MIT (verify).
 
     Any non-permissive license (GPL/AGPL/SSPL/unknown) stops the spec and needs an owner decision.
