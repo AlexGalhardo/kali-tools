@@ -504,3 +504,9 @@ Within one `schema_version`, JSON changes are additive only (new keys or command
 7. `doctor` describes key reveal as `Windows WLAN API; key reveal requires wifi reveal --confirm or the desktop reveal action`.
 
 Development artifacts remain unsigned. Native SSH, Wi-Fi, capture and desktop acceptance require real-host evidence; unit tests, Docker and cross compilation do not qualify them.
+
+## tls-audit
+
+`kali-tools tls-audit --target <host> [--port 443] [--server-name <sni>] [--timeout 5000] [--lint=true] [--json]`
+
+Reports certificate metadata, explicit verification, protocol support and zlint findings. SNI must be a DNS name. Per-attempt timeout is 500..15000 ms and the overall audit is bounded to 60 seconds. No application data or exploit probes are sent. Certificate distrust and lint findings still exit 0; connection failure exits 1 and invalid input exits 2. History contains state and certificate/error/warning counts only. The Windows/macOS verifier follows the platform trust store; native acceptance is tracked separately.

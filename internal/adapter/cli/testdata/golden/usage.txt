@@ -1,5 +1,6 @@
 Usage: kali-tools [global flags] <command> [flags]
 Commands:
+  tls-audit        Report TLS chain, protocols and certificate findings
   version          Show version and build platform
   doctor           Show capabilities and optional dependencies
   capabilities     List capabilities and availability states

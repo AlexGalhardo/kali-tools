@@ -11,6 +11,24 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/job"
 )
 
+const maxTLSAuditBody = 4 << 10
+
+func handleTLSAudit(a *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		request := contract.TLSAuditRequest{Port: 443, TimeoutMS: 5000, Lint: true}
+		if err := decodeJSON(w, r, &request, maxTLSAuditBody); err != nil {
+			writeError(w, r, err)
+			return
+		}
+		value, err := a.AuditTLS(r.Context(), request.Request())
+		if err != nil {
+			writeError(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, contract.FromTLSAudit(value))
+	}
+}
+
 func handleHealth() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})

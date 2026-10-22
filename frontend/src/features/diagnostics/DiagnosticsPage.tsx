@@ -1,4 +1,5 @@
 import { Button } from "@base-ui/react/button";
+import { Tabs } from "@base-ui/react/tabs";
 import { useEffect, useState } from "react";
 import type { PageProps } from "../../app/shell";
 import {
@@ -11,6 +12,7 @@ import {
 import { Empty } from "../../shared/ui/Empty";
 import { Field } from "../../shared/ui/Field";
 import { NavIcon } from "../../shared/ui/Icon";
+import { TLSAuditPanel } from "../tls/TLSAuditPanel";
 
 type Props = PageProps & { errorLabels: Record<string, string> };
 export function DiagnosticsPage({
@@ -50,101 +52,112 @@ export function DiagnosticsPage({
     [],
   );
   return (
-    <>
-      <section className="card form">
-        <div className="form-grid">
-          <Field label={t.kind}>
-            <select value={kind} onChange={(e) => setKind(e.target.value)}>
-              {["tcp", "dns", "http", "tls", "ping", "traceroute"].map((k) => (
-                <option key={k}>{k}</option>
-              ))}
-            </select>
-          </Field>
-          {kind === "dns" && (
-            <Field label={t.dnsRecordType}>
-              <select
-                value={recordType}
-                onChange={(e) => setRecordType(e.target.value)}
-              >
-                <option value="">{t.dnsAddresses}</option>
-                {["A", "AAAA", "CNAME", "MX", "NS", "TXT", "PTR"].map((r) => (
-                  <option key={r}>{r}</option>
-                ))}
+    <Tabs.Root defaultValue="diagnostics">
+      <Tabs.List className="actions">
+        <Tabs.Tab value="diagnostics">{t.diagnostics}</Tabs.Tab>
+        <Tabs.Tab value="audit">{t.tlsAudit}</Tabs.Tab>
+      </Tabs.List>
+      <Tabs.Panel value="diagnostics">
+        <section className="card form">
+          <div className="form-grid">
+            <Field label={t.kind}>
+              <select value={kind} onChange={(e) => setKind(e.target.value)}>
+                {["tcp", "dns", "http", "tls", "ping", "traceroute"].map(
+                  (k) => (
+                    <option key={k}>{k}</option>
+                  ),
+                )}
               </select>
             </Field>
-          )}
-          <Field label={t.target}>
-            <input
-              value={target}
-              onChange={(e) => setTarget(e.target.value)}
-              placeholder={
-                kind === "http" ? "https://example.com" : "example.com"
-              }
-            />
-          </Field>
-          <Field label={t.port}>
-            <input
-              type="number"
-              min="1"
-              max="65535"
-              value={port}
-              onChange={(e) => setPort(Number(e.target.value))}
-            />
-          </Field>
-          <Field label={t.timeout}>
-            <input
-              type="number"
-              min="100"
-              max="30000"
-              value={timeout}
-              onChange={(e) => setTimeoutMS(Number(e.target.value))}
-            />
-          </Field>
-        </div>
-        <div className="actions">
-          <Button
-            disabled={busy || !connected() || Boolean(activeJob)}
-            onClick={diagnosticRun}
-          >
-            {busy ? t.loading : t.run} <NavIcon page="forward" />
-          </Button>
-          {activeJob && (
+            {kind === "dns" && (
+              <Field label={t.dnsRecordType}>
+                <select
+                  value={recordType}
+                  onChange={(e) => setRecordType(e.target.value)}
+                >
+                  <option value="">{t.dnsAddresses}</option>
+                  {["A", "AAAA", "CNAME", "MX", "NS", "TXT", "PTR"].map((r) => (
+                    <option key={r}>{r}</option>
+                  ))}
+                </select>
+              </Field>
+            )}
+            <Field label={t.target}>
+              <input
+                value={target}
+                onChange={(e) => setTarget(e.target.value)}
+                placeholder={
+                  kind === "http" ? "https://example.com" : "example.com"
+                }
+              />
+            </Field>
+            <Field label={t.port}>
+              <input
+                type="number"
+                min="1"
+                max="65535"
+                value={port}
+                onChange={(e) => setPort(Number(e.target.value))}
+              />
+            </Field>
+            <Field label={t.timeout}>
+              <input
+                type="number"
+                min="100"
+                max="30000"
+                value={timeout}
+                onChange={(e) => setTimeoutMS(Number(e.target.value))}
+              />
+            </Field>
+          </div>
+          <div className="actions">
             <Button
-              className="secondary"
-              onClick={() =>
-                execute(async () => {
-                  await backend().CancelJob(activeJob);
-                })
-              }
+              disabled={busy || !connected() || Boolean(activeJob)}
+              onClick={diagnosticRun}
             >
-              {t.cancel}
+              {busy ? t.loading : t.run} <NavIcon page="forward" />
             </Button>
-          )}
-        </div>
-      </section>
-      <section className="card">
-        <div className="card-title">
-          <h2>{t.results}</h2>
-        </div>
-        {diagnostic ? (
-          <div className="result">
-            <span
-              className={`pill ${diagnostic.status === "completed" ? "green" : ""}`}
-            >
-              {stateText(diagnostic.status)}
-            </span>{" "}
-            <span>{diagnostic.elapsed_ms.toFixed(2)} ms</span>
-            <pre>{diagnostic.values.join("\n")}</pre>
-            {diagnostic.error_code && (
-              <p role="alert">
-                {errorLabels[diagnostic.error_code] ?? t.error}
-              </p>
+            {activeJob && (
+              <Button
+                className="secondary"
+                onClick={() =>
+                  execute(async () => {
+                    await backend().CancelJob(activeJob);
+                  })
+                }
+              >
+                {t.cancel}
+              </Button>
             )}
           </div>
-        ) : (
-          <Empty text={activeJob ? t.loading : t.empty} />
-        )}
-      </section>
-    </>
+        </section>
+        <section className="card">
+          <div className="card-title">
+            <h2>{t.results}</h2>
+          </div>
+          {diagnostic ? (
+            <div className="result">
+              <span
+                className={`pill ${diagnostic.status === "completed" ? "green" : ""}`}
+              >
+                {stateText(diagnostic.status)}
+              </span>{" "}
+              <span>{diagnostic.elapsed_ms.toFixed(2)} ms</span>
+              <pre>{diagnostic.values.join("\n")}</pre>
+              {diagnostic.error_code && (
+                <p role="alert">
+                  {errorLabels[diagnostic.error_code] ?? t.error}
+                </p>
+              )}
+            </div>
+          ) : (
+            <Empty text={activeJob ? t.loading : t.empty} />
+          )}
+        </section>
+      </Tabs.Panel>
+      <Tabs.Panel value="audit">
+        <TLSAuditPanel t={t} busy={busy} execute={execute} />
+      </Tabs.Panel>
+    </Tabs.Root>
   );
 }

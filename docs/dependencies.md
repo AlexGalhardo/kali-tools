@@ -5,6 +5,11 @@ Development baseline: 2026-10-19. Exact Go dependencies are in go.mod/go.sum; fr
 | Dependency | Purpose | Upstream license |
 | --- | --- | --- |
 | Go standard library | Portable diagnostics and networking | BSD-3-Clause |
+| github.com/zmap/zlint/v3 v3.7.2 | Certificate linting in `internal/tlsaudit` | Apache-2.0 |
+| github.com/zmap/zcrypto v0.0.0-20260906180147-3ed30b1e9340 | zlint certificate parser only; no legacy handshake client | Apache-2.0 AND ISC AND MIT |
+| github.com/sirupsen/logrus v1.10.2 | zlint transitive logger; process-global output silenced before linting | MIT |
+| github.com/pelletier/go-toml v1.9.5 | zlint configuration parser, transitive | MIT AND Apache-2.0 |
+| github.com/weppos/publicsuffix-go v0.50.4-0.20260821095816-b0fdb5c2d345 | Certificate lint public-suffix rules, transitive | MIT |
 | Wails 2.17.0 | Desktop WebView and typed bridge | MIT |
 | golang.org/x/sys | Windows native API bindings | BSD-3-Clause |
 | golang.org/x/net | DNS fixture protocol | BSD-3-Clause |

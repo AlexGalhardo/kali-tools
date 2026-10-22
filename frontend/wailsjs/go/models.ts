@@ -543,6 +543,205 @@ export namespace contract {
 	        this.retention_days = source["retention_days"];
 	    }
 	}
+	export class TLSAuditCertificate {
+	    index: number;
+	    subject: string;
+	    issuer: string;
+	    serial_hex: string;
+	    // Go type: time
+	    not_before: any;
+	    // Go type: time
+	    not_after: any;
+	    days_remaining: number;
+	    sans: string[];
+	    sans_limited: boolean;
+	    key_algorithm: string;
+	    key_bits: number;
+	    signature_algorithm: string;
+	    is_ca: boolean;
+	    self_signed: boolean;
+	    aia_issuers: string[];
+	    ocsp_servers: string[];
+	    crl_distribution_points: string[];
+	    embedded_scts: number;
+	    sha256: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new TLSAuditCertificate(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.index = source["index"];
+	        this.subject = source["subject"];
+	        this.issuer = source["issuer"];
+	        this.serial_hex = source["serial_hex"];
+	        this.not_before = this.convertValues(source["not_before"], null);
+	        this.not_after = this.convertValues(source["not_after"], null);
+	        this.days_remaining = source["days_remaining"];
+	        this.sans = source["sans"];
+	        this.sans_limited = source["sans_limited"];
+	        this.key_algorithm = source["key_algorithm"];
+	        this.key_bits = source["key_bits"];
+	        this.signature_algorithm = source["signature_algorithm"];
+	        this.is_ca = source["is_ca"];
+	        this.self_signed = source["self_signed"];
+	        this.aia_issuers = source["aia_issuers"];
+	        this.ocsp_servers = source["ocsp_servers"];
+	        this.crl_distribution_points = source["crl_distribution_points"];
+	        this.embedded_scts = source["embedded_scts"];
+	        this.sha256 = source["sha256"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class TLSAuditFinding {
+	    source: string;
+	    id: string;
+	    severity: string;
+	    cert_index: number;
+	    detail?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new TLSAuditFinding(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.source = source["source"];
+	        this.id = source["id"];
+	        this.severity = source["severity"];
+	        this.cert_index = source["cert_index"];
+	        this.detail = source["detail"];
+	    }
+	}
+	export class TLSAuditProtocolResult {
+	    version: string;
+	    status: string;
+	    cipher?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new TLSAuditProtocolResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.version = source["version"];
+	        this.status = source["status"];
+	        this.cipher = source["cipher"];
+	    }
+	}
+	export class TLSAuditSCTSummary {
+	    tls_extension: number;
+	    embedded: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new TLSAuditSCTSummary(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.tls_extension = source["tls_extension"];
+	        this.embedded = source["embedded"];
+	    }
+	}
+	export class TLSAuditReport {
+	    host: string;
+	    port: number;
+	    server_name: string;
+	    negotiated_version: string;
+	    cipher_suite: string;
+	    alpn: string;
+	    verified: boolean;
+	    verify_error?: string;
+	    verifier: string;
+	    ocsp_stapled: boolean;
+	    scts: TLSAuditSCTSummary;
+	    chain: TLSAuditCertificate[];
+	    protocols: TLSAuditProtocolResult[];
+	    findings: TLSAuditFinding[];
+	    findings_limited: boolean;
+	    lint_engine?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new TLSAuditReport(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.host = source["host"];
+	        this.port = source["port"];
+	        this.server_name = source["server_name"];
+	        this.negotiated_version = source["negotiated_version"];
+	        this.cipher_suite = source["cipher_suite"];
+	        this.alpn = source["alpn"];
+	        this.verified = source["verified"];
+	        this.verify_error = source["verify_error"];
+	        this.verifier = source["verifier"];
+	        this.ocsp_stapled = source["ocsp_stapled"];
+	        this.scts = this.convertValues(source["scts"], TLSAuditSCTSummary);
+	        this.chain = this.convertValues(source["chain"], TLSAuditCertificate);
+	        this.protocols = this.convertValues(source["protocols"], TLSAuditProtocolResult);
+	        this.findings = this.convertValues(source["findings"], TLSAuditFinding);
+	        this.findings_limited = source["findings_limited"];
+	        this.lint_engine = source["lint_engine"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class TLSAuditRequest {
+	    host: string;
+	    port: number;
+	    server_name?: string;
+	    timeout_ms: number;
+	    lint: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new TLSAuditRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.host = source["host"];
+	        this.port = source["port"];
+	        this.server_name = source["server_name"];
+	        this.timeout_ms = source["timeout_ms"];
+	        this.lint = source["lint"];
+	    }
+	}
+	
 	export class Tool {
 	    name: string;
 	    state: string;

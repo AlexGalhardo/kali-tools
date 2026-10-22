@@ -12,6 +12,7 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/job"
 	"github.com/AlexGalhardo/kali-tools/internal/network"
+	"github.com/AlexGalhardo/kali-tools/internal/tlsaudit"
 )
 
 // Reflective fixtures exercise every source field, including nested slices and pointers.
@@ -65,6 +66,8 @@ func mapping[S, D any](f func(S) D) mappingCase {
 }
 func mappings() []mappingCase {
 	return []mappingCase{
+		mapping(contract.FromTLSAudit),
+		mapping(func(v contract.TLSAuditRequest) tlsaudit.Request { return v.Request() }),
 		mapping(contract.FromNeighborTable),
 		mapping(contract.FromCapabilities), mapping(contract.FromInterfaces), mapping(contract.FromInventory),
 		mapping(func(v network.Request) contract.DiagnosticRequest {

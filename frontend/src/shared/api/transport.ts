@@ -35,6 +35,7 @@ export class HttpTransport implements Transport {
     capture: new Set(),
   };
   readonly backend: Backend = {
+    AuditTLS: (request) => this.json("POST", "/api/tls/audit", request),
     Version: async () =>
       (await this.request<{ version: string }>("/api/version")).version,
     Capabilities: () =>

@@ -99,6 +99,15 @@ func fail(err error) error {
 }
 func (b *Bindings) Version() string { return domain.Version }
 
+func (b *Bindings) AuditTLS(r contract.TLSAuditRequest) (contract.TLSAuditReport, error) {
+	ctx, err := b.ready()
+	if err != nil {
+		return contract.TLSAuditReport{}, fail(err)
+	}
+	value, err := b.app.AuditTLS(ctx, r.Request())
+	return contract.FromTLSAudit(value), fail(err)
+}
+
 func (b *Bindings) Neighbors(family string) (contract.NeighborTable, error) {
 	ctx, err := b.ready()
 	if err != nil {

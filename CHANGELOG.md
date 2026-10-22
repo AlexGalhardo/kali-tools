@@ -4,9 +4,18 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [0.6.0-dev.2] - 2026-10-22
+
+Unsigned development preview; hardware qualification remains open. Not a release-qualified build.
+
 ### Added
 
-- TLS audit request validation and bounded certificate report primitives, with SCT parsing and built-in findings (B08 steps 2–3). Network probes, zlint and GUI/web/CLI exposure remain pending ([evidence](docs/verification/specs/B08.md)).
+- TLS certificate-chain audit, explicit trust verification, sequential TLS 1.0–1.3 protocol matrix, SCT summaries and zlint findings in the CLI, authenticated HTTP API and Wails Diagnostics tab ([B08 evidence](docs/verification/specs/B08.md)).
+- Bounded certificate/finding processing, honest client-version self-tests, count-only history, English/PT-BR UI and two additional browser workflows. Native platform-verifier and GUI acceptance remain pending.
+
+### Fixed
+
+- Apply the TLS audit CLI timeout per connection attempt while preserving the 60-second overall deadline; findings return success and connection failures retain stable exit codes.
 
 ## [0.6.0-dev.1] - 2026-10-22
 

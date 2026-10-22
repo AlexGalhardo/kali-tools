@@ -19,6 +19,8 @@ func jobSummary(kind string, state job.State, detail string) string {
 		label = "Capture " + strings.TrimPrefix(kind, "capture ")
 	}
 	switch kind {
+	case "tls_audit":
+		label = "TLS audit"
 	case "discovery":
 		label = "Discovery"
 	case "nmap":

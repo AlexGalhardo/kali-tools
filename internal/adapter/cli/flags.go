@@ -159,6 +159,8 @@ func parseInvocation(args []string) (invocation, error) {
 	registerGlobals(fs, &call.g)
 	for _, name := range call.command.flags {
 		switch name {
+		case "lint":
+			fs.Bool(name, true, "run certificate linting")
 		case "all", "confirm":
 			fs.Bool(name, false, "include completed jobs")
 		case "port":

@@ -4,7 +4,10 @@ go 1.27.3
 
 require (
 	github.com/gopacket/gopacket v1.7.4
+	github.com/sirupsen/logrus v1.10.2
 	github.com/wailsapp/wails/v2 v2.17.0
+	github.com/zmap/zcrypto v0.0.0-20260906180147-3ed30b1e9340
+	github.com/zmap/zlint/v3 v3.7.2
 	golang.org/x/net v0.60.0
 	golang.org/x/sys v0.49.0
 	modernc.org/sqlite v1.60.1
@@ -29,6 +32,7 @@ require (
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
+	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
@@ -38,6 +42,7 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/wailsapp/go-webview2 v1.0.22 // indirect
+	github.com/weppos/publicsuffix-go v0.50.4-0.20260821095816-b0fdb5c2d345 // indirect
 	golang.org/x/crypto v0.57.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
 	modernc.org/libc v1.77.1 // indirect

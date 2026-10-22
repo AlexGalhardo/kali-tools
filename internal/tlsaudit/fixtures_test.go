@@ -7,6 +7,8 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/asn1"
+	"io"
+	"log"
 	"math/big"
 	"net"
 	"testing"
@@ -14,6 +16,13 @@ import (
 )
 
 func fixtureCertificate(t *testing.T, now time.Time) *x509.Certificate {
+	cert, _ := fixtureTLSCertificate(t, now)
+	return cert
+}
+
+func discardLogger() *log.Logger { return log.New(io.Discard, "", 0) }
+
+func fixtureTLSCertificate(t *testing.T, now time.Time) (*x509.Certificate, *ecdsa.PrivateKey) {
 	t.Helper()
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
@@ -33,7 +42,7 @@ func fixtureCertificate(t *testing.T, now time.Time) *x509.Certificate {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return cert
+	return cert, key
 }
 
 func sctExtension(raw []byte) pkix.Extension {

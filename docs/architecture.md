@@ -290,7 +290,7 @@ C01 provides the command tree, strict flags, stable exit codes, human output by 
 
 ### 7.1 Add a new tool or capability
 
-[B08 TLS audit](specs/B08-tls-audit.md) introduces `internal/tlsaudit` below the application layer. Steps 2–3 provide request validation, report types and pure bounded certificate/SCT analysis, importing only stdlib, `domain` and the existing `network.ValidateHost`. The capability depguard rule covers the new package. There is no new network operation, application use case, public endpoint or persistent data in this step; those remain pending under B08.
+[B08 TLS audit](specs/B08-tls-audit.md) introduces `internal/tlsaudit` below the application layer. It observes certificates without sending application data, verifies trust explicitly, probes TLS 1.0–1.3 sequentially under per-attempt and overall deadlines, and runs the pinned zlint parser. Local capability self-tests distinguish client refusal from endpoint rejection. The capability depguard rule covers the package. `Application.AuditTLS` uses the shared operation-job cap and stores counts only; hostnames, SNI, certificate subjects and findings remain ephemeral. Separate DTOs feed Wails, authenticated `POST /api/tls/audit` (4 KiB body), `tls-audit` CLI and the Diagnostics TLS tab. Native platform trust-store and GUI acceptance remain open.
 
 1. Check scope and licenses in [tools research](tools-research.md). Offensive categories are out of scope.
 2. Create `internal/<capability>/` with domain types, validating constructors, limits and pure logic. Import only stdlib, `domain` and pure libraries.

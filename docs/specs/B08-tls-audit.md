@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | B08 (chain report, protocol matrix, zlint findings; optional zcrypto legacy observation) |
-| Status | In progress (2026-10-22): dependency review and steps 2–3 complete; network probes and integration pending |
+| Status | Implemented (2026-10-22); non-native verification recorded; native acceptance pending |
 | Depends on | H02 (job manager), H04 (`app.Application`), H05/H06 (adapters, DTOs), W01 + W04 (HTTP route) |
 | Risk | Medium: a new dependency tree (zlint, zcrypto, logrus, publicsuffix-go, go-toml) and probes that intentionally accept untrusted chains for observation |
 
@@ -321,6 +321,7 @@ Create:
 - `internal/tlsaudit/matrix.go`: protocol matrix and `clientSupports`.
 - `internal/tlsaudit/zlint.go`: zlint adapter and the logrus silencing.
 - `internal/tlsaudit/tlsaudit_test.go`, `chain_test.go`, `matrix_test.go`, `zlint_test.go`.
+- `internal/tlsaudit/audit_test.go`: same-package handshake fixtures and verification tests alongside the existing external-package validation tests.
 - `internal/tlsaudit/fixtures_test.go`: in-test certificate factory (ECDSA P-256, RSA 1024/2048, self-signed, expired, mismatched, SHA1-signed).
 - `internal/app/tlsaudit.go` and `internal/app/tlsaudit_test.go`.
 - `frontend/src/features/tls/TLSAuditPanel.tsx`.
@@ -331,6 +332,7 @@ Modify:
 - `.golangci.yml`: include `internal/tlsaudit` in the existing capability dependency rule when the package is introduced.
 - `internal/app/capabilities.go`: `tls_audit`.
 - Driving adapters and DTOs; `frontend/src/shared/api/bridge.ts`, `frontend/src/app/App.tsx`, `frontend/src/shared/i18n/i18n.ts`, `frontend/tests/workflows.spec.ts`.
+- `internal/adapter/contract/tlsaudit.go`, CLI TLS tests, route/DTO registries and CLI fixtures; `docs/cli.md`; `frontend/src/features/diagnostics/DiagnosticsPage.tsx`, API types/transport and scoped TLS styles.
 - `docs/dependencies.md`, `docs/architecture.md`, `docs/tools-research.md`, `PLAN.md`, `docs/licenses/` (add the Apache-2.0 text if not present).
 
 Delete: none.

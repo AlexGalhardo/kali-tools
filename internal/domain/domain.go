@@ -6,7 +6,7 @@ import (
 )
 
 const SchemaVersion = 1
-const Version = "0.6.0-dev.1"
+const Version = "0.6.0-dev.2"
 
 // LocationSettingsURI is the only URI opened for Wi-Fi consent.
 const LocationSettingsURI = "ms-settings:privacy-location"

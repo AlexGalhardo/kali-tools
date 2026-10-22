@@ -43,5 +43,6 @@ func capabilities() []domain.Capability {
 		c.State, c.Detail = domain.CapabilityAvailable, "netlink neighbor table (procfs IPv4 fallback); no packets sent"
 	}
 	all = append(all, c)
+	all = append(all, domain.Capability{ID: "tls_audit", State: domain.CapabilityAvailable, Provider: "go/crypto+zlint", Detail: "Chain, protocol matrix (TLS 1.0–1.3) and zlint; no exploit checks"})
 	return all
 }

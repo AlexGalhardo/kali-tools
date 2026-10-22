@@ -106,6 +106,7 @@ export type ServiceInspection = {
   }[];
 };
 export type Backend = {
+  AuditTLS(r: TLSAuditRequest): Promise<TLSAuditReport>;
   Version(): Promise<string>;
   Capabilities(): Promise<Capability[]>;
   CaptureBackends(): Promise<Capability[]>;
@@ -138,6 +139,59 @@ export type Backend = {
     packet_limit: number;
   }): Promise<void>;
   StopCapture(): Promise<void>;
+};
+
+export type TLSAuditRequest = {
+  host: string;
+  port: number;
+  server_name: string;
+  timeout_ms: number;
+  lint: boolean;
+};
+export type TLSAuditCertificate = {
+  index: number;
+  subject: string;
+  issuer: string;
+  serial_hex: string;
+  not_before: string;
+  not_after: string;
+  days_remaining: number;
+  sans: string[];
+  sans_limited: boolean;
+  key_algorithm: string;
+  key_bits: number;
+  signature_algorithm: string;
+  is_ca: boolean;
+  self_signed: boolean;
+  aia_issuers: string[];
+  ocsp_servers: string[];
+  crl_distribution_points: string[];
+  embedded_scts: number;
+  sha256: string;
+};
+export type TLSAuditReport = {
+  host: string;
+  port: number;
+  server_name: string;
+  negotiated_version: string;
+  cipher_suite: string;
+  alpn: string;
+  verified: boolean;
+  verify_error?: string;
+  verifier: string;
+  ocsp_stapled: boolean;
+  scts: { embedded: number; tls_extension: number };
+  chain: TLSAuditCertificate[];
+  protocols: { version: string; status: string; cipher?: string }[];
+  findings: {
+    source: string;
+    id: string;
+    severity: string;
+    cert_index: number;
+    detail?: string;
+  }[];
+  findings_limited: boolean;
+  lint_engine?: string;
 };
 declare global {
   interface Window {

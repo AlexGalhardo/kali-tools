@@ -100,6 +100,18 @@ func renderHuman(out io.Writer, call invocation, data any) error {
 		}
 	}
 	switch v := data.(type) {
+	case contract.TLSAuditReport:
+		field("TLS audit", v.Host)
+		line("%s / %s / %s: %t (%s)", v.NegotiatedVersion, v.CipherSuite, l("verified"), v.Verified, v.Verifier)
+		for _, p := range v.Protocols {
+			line("%s\t%s\t%s", p.Version, state(p.Status), p.Cipher)
+		}
+		for _, c := range v.Chain {
+			line("%d\t%s\t%s\t%s", c.Index, c.Subject, c.Issuer, c.NotAfter.Format(time.RFC3339))
+		}
+		for _, f := range v.Findings {
+			line("%s\t%d\t%s\t%s", l(f.Severity), f.CertIndex, f.ID, f.Detail)
+		}
 	case map[string]string:
 		if call.command.path == "version" {
 			line("kali-tools %s (%s %s/%s)", v["version"], v["go"], v["os"], v["arch"])

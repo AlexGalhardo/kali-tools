@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strconv"
+	"time"
 
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/contract"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/job"
+	"github.com/AlexGalhardo/kali-tools/internal/tlsaudit"
 )
 
 type command struct {
@@ -19,6 +22,7 @@ type command struct {
 }
 
 var commands = []command{
+	{path: "tls-audit", synopsis: "Report TLS chain, protocols and certificate findings", needsApp: true, flags: []string{"target", "port", "server-name", "lint"}},
 	{path: "version", synopsis: "Show version and build platform"},
 	{path: "doctor", synopsis: "Show capabilities and optional dependencies", needsApp: true},
 	{path: "capabilities", synopsis: "List capabilities and availability states", needsApp: true},
@@ -49,6 +53,17 @@ var commands = []command{
 
 func runAdditional(ctx context.Context, a *app.Application, call invocation, stderr io.Writer) (any, error, bool) {
 	switch call.command.path {
+	case "tls-audit":
+		port, _ := strconv.Atoi(call.values["port"])
+		timeout := call.g.Timeout
+		if timeout == 0 {
+			timeout = 5 * time.Second
+		}
+		value, err := a.AuditTLS(ctx, tlsaudit.Request{Host: call.values["target"], Port: port, ServerName: call.values["server-name"], TimeoutMS: int(timeout.Milliseconds()), Lint: call.values["lint"] == "true"})
+		if err != nil {
+			return nil, err, true
+		}
+		return contract.FromTLSAudit(value), nil, true
 	case "serve":
 		return nil, domain.Invalid("serve is handled by the kali-tools binary"), true
 	case "capabilities":

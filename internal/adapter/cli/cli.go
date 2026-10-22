@@ -45,7 +45,7 @@ func Run(ctx context.Context, application *app.Application, args []string, out, 
 			return writeResponse(call, out, errout, nil, err)
 		}
 	}
-	if call.g.Timeout != 0 && call.command.path != "diagnose" && call.command.path != "discover" && call.command.path != "version" {
+	if call.g.Timeout != 0 && call.command.path != "diagnose" && call.command.path != "discover" && call.command.path != "version" && call.command.path != "tls-audit" {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, call.g.Timeout)
 		defer cancel()

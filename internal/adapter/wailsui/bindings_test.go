@@ -486,8 +486,20 @@ func TestBindingMethodSetMatchesBackend(t *testing.T) {
 			names = append(names, name)
 		}
 	}
-	want := []string{"CancelJob", "Capabilities", "CaptureBackends", "ClearHistory", "CurrentWiFi", "Diagnose", "Discover", "History", "ImportCapture", "InspectServices", "Interfaces", "Inventory", "Neighbors", "OpenLocationSettings", "OpenNpcapDownload", "RevealWiFi", "SaveCapture", "SaveSettings", "Settings", "StartCapture", "StartDiagnostic", "StopCapture", "Tools", "Version"}
+	want := []string{"AuditTLS", "CancelJob", "Capabilities", "CaptureBackends", "ClearHistory", "CurrentWiFi", "Diagnose", "Discover", "History", "ImportCapture", "InspectServices", "Interfaces", "Inventory", "Neighbors", "OpenLocationSettings", "OpenNpcapDownload", "RevealWiFi", "SaveCapture", "SaveSettings", "Settings", "StartCapture", "StartDiagnostic", "StopCapture", "Tools", "Version"}
 	if !slices.Equal(names, want) {
 		t.Fatalf("methods=%v, want=%v", names, want)
+	}
+}
+
+func TestTLSAuditBindingLifecycleAndValidation(t *testing.T) {
+	b := wailsui.NewWithRuntime(newApplication(t), quietRuntime())
+	if _, err := b.AuditTLS(contract.TLSAuditRequest{}); err == nil {
+		t.Fatal("audit before startup")
+	}
+	b.Startup(t.Context())
+	defer b.Shutdown(t.Context())
+	if _, err := b.AuditTLS(contract.TLSAuditRequest{}); err == nil || contract.FromError(err).Code != "invalid_input" {
+		t.Fatal(err)
 	}
 }

@@ -1,6 +1,28 @@
 import { expect, test, fillDiagnosticTarget, importCapture } from "./support";
 import AxeBuilder from "@axe-core/playwright";
 
+test("TLS audit shows matrix, chain and sorted findings", async ({page,connect}, info) => {
+ const report = {host:"fixture.test",port:443,server_name:"fixture.test",negotiated_version:"TLS 1.3",cipher_suite:"TLS_AES_128_GCM_SHA256",alpn:"h2",verified:false,verify_error:"unknown_authority",verifier:"go-x509",ocsp_stapled:false,scts:{embedded:0,tls_extension:0},findings_limited:false,lint_engine:"zlint v3.7.2",chain:[{index:0,subject:"CN=fixture.test",issuer:"CN=fixture CA",serial_hex:"2a",not_before:"2026-01-01T00:00:00Z",not_after:"2027-01-01T00:00:00Z",days_remaining:70,sans:["fixture.test"],sans_limited:false,key_algorithm:"ECDSA",key_bits:256,signature_algorithm:"ECDSA-SHA256",is_ca:false,self_signed:false,aia_issuers:[],ocsp_servers:[],crl_distribution_points:[],embedded_scts:0,sha256:"0".repeat(64)}],protocols:[{version:"TLS 1.0",status:"rejected"},{version:"TLS 1.1",status:"rejected"},{version:"TLS 1.2",status:"accepted",cipher:"fixture"},{version:"TLS 1.3",status:"accepted",cipher:"fixture"}],findings:[{source:"zlint",id:"fixture_info",severity:"info",cert_index:0,detail:"Fixture info"},{source:"kali-tools",id:"untrusted_chain",severity:"error",cert_index:0,detail:""},{source:"zlint",id:"fixture_warning",severity:"warn",cert_index:0,detail:"Fixture warning"}]};
+ await page.route("**/api/tls/audit",route=>route.fulfill({json:report}));
+ await connect(page);
+ if(info.project.name==="wails-fake") await page.evaluate(value=>Object.assign(window.go!.wailsui!.Bindings!,{AuditTLS:async()=>value}),report);
+ await page.getByRole("button",{name:"Diagnostics",exact:true}).click();
+ await page.getByRole("tab",{name:"TLS audit",exact:true}).click();
+ await page.getByRole("button",{name:"Audit TLS",exact:true}).click();
+ await expect(page.getByRole("heading",{name:"Protocol matrix",exact:true})).toBeVisible();
+ await page.getByText("0: CN=fixture.test",{exact:true}).click();
+ await expect(page.getByText("CN=fixture CA",{exact:true})).toBeVisible();
+ const findings = page.locator("section").filter({has:page.getByRole("heading",{name:"Findings",exact:true})});
+ await expect(findings.locator("tbody tr").first()).toContainText("untrusted_chain");
+ await expect(findings.locator("tbody tr").nth(1)).toContainText("fixture_warning");
+ const audit = await new AxeBuilder({page}).analyze();
+ expect(audit.violations.filter(v=>v.impact==="critical"||v.impact==="serious")).toEqual([]);
+ await page.screenshot({path:info.outputPath("tls-audit-desktop.png"),fullPage:true});
+ await page.setViewportSize({width:390,height:844});
+ await expect(page.getByRole("button",{name:"Audit TLS",exact:true})).toBeVisible();
+ await page.screenshot({path:info.outputPath("tls-audit-mobile.png"),fullPage:true});
+});
+
 test("Wi-Fi location consent shows settings link and never retries automatically @wails-only", async ({page,connect}, testInfo) => {
  await connect(page);
  await page.evaluate(() => {
