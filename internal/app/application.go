@@ -27,6 +27,7 @@ type Application struct {
 	capMu          sync.Mutex
 	capCancel      context.CancelFunc
 	capArtifact    *capture.Artifact
+	wifiObserved   wifiObservation
 }
 
 func New(deps Deps) *Application {
@@ -46,7 +47,10 @@ func New(deps Deps) *Application {
 	return a
 }
 
-func (a *Application) Capabilities(ctx context.Context) []domain.Capability { return capabilities() }
+func (a *Application) Capabilities(ctx context.Context) []domain.Capability {
+	state, detail := a.wifiObserved.snapshot()
+	return WithObserved(capabilities(), "wifi", state, detail)
+}
 func (a *Application) Interfaces(ctx context.Context) ([]network.InterfaceInfo, error) {
 	return network.Interfaces()
 }
@@ -85,13 +89,23 @@ func (a *Application) CurrentWiFi(ctx context.Context) (wifi.Network, error) {
 	if a.deps.WiFi == nil {
 		return wifi.Network{}, domain.Unsupported("Wi-Fi provider is not configured")
 	}
-	return a.deps.WiFi.Current(ctx)
+	value, err := a.deps.WiFi.Current(ctx)
+	a.wifiObserved.record(err)
+	if err != nil {
+		return wifi.Network{}, err
+	}
+	return value, err
 }
 func (a *Application) RevealWiFi(ctx context.Context) (wifi.Secret, error) {
 	if a.deps.WiFi == nil {
 		return wifi.Secret{}, domain.Unsupported("Wi-Fi provider is not configured")
 	}
-	return a.deps.WiFi.Reveal(ctx)
+	value, err := a.deps.WiFi.Reveal(ctx)
+	a.wifiObserved.record(err)
+	if err != nil {
+		return wifi.Secret{}, err
+	}
+	return value, err
 }
 
 // Close stops producers and jobs. The composition root owns adapter cleanup.

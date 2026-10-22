@@ -332,7 +332,8 @@ These are reusable delivery requirements, not a separate completed milestone. De
   - [ ] Windows WLAN metadata: current profile, SSID/BSSID, signal/channel when available.
     - [x] Channel query and bounded native-structure decoding implemented; synthetic Windows metadata/layout tests passed.
     - [ ] Controlled native Wi-Fi network acceptance.
-  - [ ] Windows 11 24H2 location consent: detect it (`AppCapability.CheckAccess("wiFiControl")`), report `location_consent_required` and deep-link to `ms-settings:privacy-location`; never retry silently.
+  - [ ] Windows 11 24H2 location consent: implementation maps opcode-7 `ERROR_ACCESS_DENIED` on build >= 26100, reports `location_consent_required` and offers the fixed settings URI; no automatic retry. `AppCapability.CheckAccess` remains a WinRT follow-up. Native consent acceptance and Linux coverage remain open. [Evidence](docs/verification/specs/A05.md).
+    - [x] Synthetic consent/reveal mapping, observed capability state, fixed-URI desktop opener, HTTP/CLI error hints and translated UI recovery; key/metadata discarded on provider errors.
   - [ ] Explicit reveal action for the current saved network; native authorization as required.
   - [ ] Distinguish open network, enterprise authentication, no saved key, denied and unsupported.
   - [x] Mask by default; automatically clear displayed secret; no logs, database or default clipboard writes.
@@ -678,9 +679,9 @@ The plan does not claim feature parity with every Kali package.
 
 **Next tasks, in order** (each is a spec in [docs/specs](docs/specs/README.md)):
 
-1. W01/W04: shared frontend assets, HTTP/SSE transport and mandatory web security. C01 implementation and non-native acceptance are complete; native SSH acceptance remains open.
+1. A05 implementation is verified on Windows; Linux-host pure-function coverage and manual consent/reveal acceptance remain open. W01/W04 implementation and non-native acceptance are verified; native account/browser/desktop gates remain open.
 2. H09 owner approval: ADR 004 is proposed; H08 mechanical enforcement and hosted positive/negative proofs pass.
-3. W01–W06: shared UI and HTTP/SSE; implement W04 security with W01 before committing `serve` to main.
+3. Retain the W01/W04 native gates; the server's shared acceptance driver, bounds and shutdown verification are recorded.
 4. A05, A06, A01, B08–B11: follow the remaining SDD execution order. Keep H01–H07 native checks and the A07 NPSL owner decision visible; do not treat them as headless passes.
 
 **Constraints.**

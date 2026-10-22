@@ -226,6 +226,8 @@ Start a listening local service for the TCP/HTTP examples; refusal is an expecte
 
 Windows raw capture is limited to IPv4, requires administrator authorization, reports no reliable drop count, and is bounded to 60 seconds/10000 packets. Revealed Wi-Fi keys are never written to ordinary history. See [capture boundaries](docs/adr/002-capture-backend.md).
 
+On Windows 11 24H2+, a Wi-Fi location-consent notice points to Settings > Privacy & security > Location (`ms-settings:privacy-location`); allow location for desktop apps and select **Check again**. Browser mode displays the URI for the server account and cannot open that host's settings.
+
 ## Guides
 
 - [Delivery plan](PLAN.md)

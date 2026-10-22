@@ -24,6 +24,8 @@ export function Interfaces():Promise<Array<contract.Interface>>;
 
 export function Inventory():Promise<contract.Inventory>;
 
+export function OpenLocationSettings():Promise<void>;
+
 export function RevealWiFi():Promise<contract.WiFiSecret>;
 
 export function SaveCapture(arg1:string):Promise<boolean>;

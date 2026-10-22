@@ -46,6 +46,10 @@ export function Inventory() {
   return window['go']['wailsui']['Bindings']['Inventory']();
 }
 
+export function OpenLocationSettings() {
+  return window['go']['wailsui']['Bindings']['OpenLocationSettings']();
+}
+
 export function RevealWiFi() {
   return window['go']['wailsui']['Bindings']['RevealWiFi']();
 }

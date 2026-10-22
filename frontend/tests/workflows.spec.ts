@@ -1,6 +1,49 @@
 import { expect, test, fillDiagnosticTarget, importCapture } from "./support";
 import AxeBuilder from "@axe-core/playwright";
 
+test("Wi-Fi location consent shows settings link and never retries automatically @wails-only", async ({page,connect}, testInfo) => {
+ await connect(page);
+ await page.evaluate(() => {
+  let calls = 0;
+  const api = window.go!.wailsui!.Bindings!;
+  api.CurrentWiFi = async () => {
+   document.documentElement.dataset.wifiCalls = String(++calls);
+   if (calls === 1) throw new Error("location_consent_required: Windows location access is off");
+   return {profile:"Fixture",ssid:"Fixture Network",bssid:"02:00:00:00:00:02",signal:80,authentication:7,state:"connected"};
+  };
+  Object.assign(api, {OpenLocationSettings:async () => {document.documentElement.dataset.settingsOpened = "1";}});
+ });
+ await page.getByRole("button",{name:"Wi-Fi",exact:true}).click();
+ await expect(page.getByRole("alert")).toContainText("Windows location access is off");
+ await expect(page.locator("code")).toHaveText("ms-settings:privacy-location");
+ await page.screenshot({path:testInfo.outputPath("wifi-consent-desktop.png")});
+ await page.setViewportSize({width:390,height:844});
+ await page.getByLabel("Language").selectOption("pt-BR");
+ await expect(page.getByRole("alert")).toContainText("O acesso à localização do Windows está desativado");
+ await page.screenshot({path:testInfo.outputPath("wifi-consent-compact-pt.png"),fullPage:true});
+ expect((await new AxeBuilder({page}).analyze()).violations.filter(v=>v.impact==="serious"||v.impact==="critical")).toEqual([]);
+ await page.getByRole("combobox").selectOption("en");
+ await page.setViewportSize({width:1280,height:720});
+ await page.getByRole("button",{name:"Open location settings",exact:true}).click();
+ await expect(page.locator("html")).toHaveAttribute("data-settings-opened","1");
+ await expect(page.locator("html")).toHaveAttribute("data-wifi-calls","1");
+ await page.getByRole("button",{name:"Check again",exact:true}).click();
+ await expect(page.getByRole("heading",{name:"Fixture Network",exact:true})).toBeVisible();
+ await expect(page.locator("html")).toHaveAttribute("data-wifi-calls","2");
+ await expect(page.getByRole("alert")).toHaveCount(0);
+});
+
+test("consent denial during reveal clears an already visible key @wails-only", async ({page,connect}) => {
+ await connect(page);
+ await page.getByRole("button",{name:"Wi-Fi",exact:true}).click();
+ await page.getByRole("button",{name:"Reveal current network key",exact:true}).click();
+ await expect(page.getByText("synthetic-test-key")).toBeVisible();
+ await page.evaluate(() => { window.go!.wailsui!.Bindings!.RevealWiFi = async () => { throw new Error("location_consent_required: denied"); }; });
+ await page.getByRole("button",{name:"Reveal current network key",exact:true}).click();
+ await expect(page.getByRole("alert")).toContainText("Windows location access is off");
+ await expect(page.getByText("synthetic-test-key")).toHaveCount(0);
+});
+
 test("HTTP transport bounds tracked jobs and closes its event source @wails-only", async ({page}) => {
  await page.goto("/");
  const results = await page.evaluate(async () => {

@@ -173,6 +173,8 @@ Only test files outside `internal/porttest` import the suites or fakes. `tests/a
 
 H07 native OS-port suites passed on Windows build 26300 with active Wi-Fi and administrator capture on 2026-10-21. The capture suite selects an active non-loopback interface; disconnected interfaces may retain addresses that Windows cannot bind. This qualifies H07 OS-port data branches only, not desktop IPC or other platform acceptance.
 
+A05 adds mutex-protected, process-local Wi-Fi observations in `app.Application`: only explicit CurrentWiFi/RevealWiFi calls update consent/permission/available state. Capabilities overlays that observation without querying WLAN. Error results discard metadata and keys before reaching any adapter. Only opcode-7 access denial on Windows build >= 26100 maps to location consent; other native API errors keep their existing mapping. No WinRT pre-check, automatic retry or persisted observation is added.
+
 ## 5. Runtime flows
 
 ### 5.1 Starting a diagnostic job (current desktop path)
@@ -216,12 +218,13 @@ H02 moves all three streams through `job.Manager`. `Subscribe(ctx)` uses a defau
 
 - `frontend.Dist()` owns the sole embed of `frontend/dist`; `main.go` (build tags `desktop || bindings`) obtains `app.Application` from bootstrap and binds `wailsui.Bindings` to `wails.Run`.
 - `run(ctx, args, getenv, stdout, stderr) int` owns composition and deferred cleanup. `OnStartup` and `OnShutdown` receive `b.Startup` and `b.Shutdown` directly, so Wails exempts those lifecycle methods from its generated API. The binding adapter owns no storage or application cleanup.
-- `internal/adapter/wailsui` owns the 20 frontend methods, native dialogs and cancellable forwarder. `Runtime` functions are injected for headless tests. Startup subscribes before opting into metrics; shutdown waits at most 3 s for its forwarder. The old root `app.go` is deleted.
+- `internal/adapter/wailsui` owns the 21 frontend methods, native dialogs and cancellable forwarder. `Runtime` functions are injected for headless tests. Startup subscribes before opting into metrics; shutdown waits at most 3 s for its forwarder. The old root `app.go` is deleted.
 - **Why it stays at the repository root:**
   - Wails v2 builds the project-root package next to `wails.json`.
   - Wails keeps its project root; the shared `frontend` Go package owns the embedded build used by both delivery modes.
 - The generated namespace is `frontend/wailsjs/go/wailsui/Bindings`, following the bound receiver's package. `transport.ts`, Playwright fakes and native smoke calls use that namespace. The binding drift task regenerates it and rejects differences from Git.
 - All bound request/result structs belong to `adapter/contract`; explicit mappers preserve JSON field order and nil slices while cloning mutable data. `fail` delegates error mapping to `contract.FromError`, preserving rejected-promise strings. Events use `contract.EventPayload`.
+- `OpenLocationSettings()` accepts no URL; its injected runtime opener receives only `domain.LocationSettingsURI`. Non-Windows and missing-runtime cases return unsupported. The browser transport has no settings-opening route and displays the URI instead. The Wi-Fi notice supports explicit retry and retains existing secret clearing.
 - Metrics and capture lifecycle live in `internal/app` after H02. Wails retains native dialogs and a payload translator; it forwards a manager subscription without owning producer state.
 
 ### 6.2 Web server: same UI in a browser
@@ -245,6 +248,8 @@ H02 moves all three streams through `job.Manager`. `Subscribe(ctx)` uses a defau
 - **Capability honesty:** a server running as another user or as a service may lack Wi-Fi location consent or capture permission. It must report those states, not fail silently.
 
 The only embedded asset source is `frontend/embed.go`; `Dist()` serves the same bytes to Wails and HTTP. All API routes except `POST /api/session` require cookie or bearer authentication. Health and static assets remain public. Lifecycle/preflight helpers have no separate routes. SSE subscribes before flushing, emits retry/sequence/resync and closes on cancellation; terminal job state is recoverable from `/api/jobs/{id}`. Capture import/export accepts bytes and format, never server paths.
+
+Consent failures return HTTP 403 with the usual error envelope and an optional `error.settings_uri`. The shared error mapper adds the fixed URI only for `location_consent_required`; CLI JSON uses the same field, and human output adds an English/PT-BR settings hint. C01's permission exit status remains 4. Reveal remains explicit: desktop action, authenticated HTTP POST, or CLI `wifi reveal --confirm`.
 
 Middleware order is recovery ? redacted access log ? security headers ? Host allowlist ? CrossOriginProtection ? Fetch Metadata ? in-flight cap ? session ? mux. Limits: JSON 64 KiB, session JSON 1 KiB, upload 64 MiB, one file transfer, eight SSE clients, 16 in-flight API requests, five-second header/shutdown deadlines, 120-second idle/upload bounds, 15-second SSE keepalive and ten-second SSE write deadline. Go's 16 KiB MaxHeaderBytes configuration includes 4096 bytes of parser read-ahead; wire tests cover the effective 20 KiB boundary and its rejection above that limit. Concurrent-client, deadline/reset, active-SSE shutdown and synthetic-clock boundary checks cover the web adapter. CSP allows only same-origin scripts/styles; no inline exemption was needed. Remote listeners require specific binding plus explicit opt-in and TLS 1.2 minimum. See [W04 threat model](specs/W04-web-security.md) and [verification](verification/specs/W04.md). Native account/browser acceptance remains open.
 

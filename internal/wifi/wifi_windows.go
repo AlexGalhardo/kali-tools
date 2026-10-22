@@ -85,7 +85,7 @@ func connected() (windows.Handle, iface, connection, error) {
 		code, _, _ = queryInterface.Call(uintptr(h), uintptr(unsafe.Pointer(&i.GUID)), 7, 0, uintptr(unsafe.Pointer(&size)), uintptr(unsafe.Pointer(&data)), uintptr(unsafe.Pointer(&opcode)))
 		if code != 0 {
 			closeHandle.Call(uintptr(h), 0)
-			return 0, iface{}, connection{}, wlanError(code)
+			return 0, iface{}, connection{}, currentConnectionError(code, windows.RtlGetVersion().BuildNumber)
 		}
 		if size < uint32(unsafe.Sizeof(connection{})) {
 			freeMemory.Call(uintptr(data))
@@ -126,11 +126,8 @@ func Reveal() (Secret, error) {
 		return Secret{}, e
 	}
 	defer closeHandle.Call(uintptr(h), 0)
-	if c.SecurityEnabled == 0 {
-		return Secret{State: "open_network"}, nil
-	}
-	if c.OneX != 0 {
-		return Secret{State: "enterprise"}, nil
+	if state, ok := revealState(c.SecurityEnabled, c.OneX); ok {
+		return Secret{State: state}, nil
 	}
 	var text *uint16
 	flags := uint32(4)

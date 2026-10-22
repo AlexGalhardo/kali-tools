@@ -11,8 +11,10 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"testing/fstest"
 	"time"
 
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/contract"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/porttest/fake"
@@ -110,6 +112,38 @@ func testApp(t *testing.T) *app.Application {
 		}
 	})
 	return a
+}
+
+func TestWiFiConsentHTTPError(t *testing.T) {
+	store := fake.NewStore()
+	a := app.New(app.Deps{Jobs: store, Settings: store, WiFi: fake.WiFi{
+		Network: wifi.Network{SSID: "synthetic-ssid", BSSID: "synthetic-bssid", Profile: "synthetic-profile"},
+		Secret:  wifi.Secret{State: "available", Value: "synthetic-psk"},
+		Err:     &domain.Error{Code: domain.CodeLocationConsentRequired, Message: "Windows location access is off"},
+	}})
+	t.Cleanup(func() { _ = a.Close() })
+	s, err := New(a, Options{Addr: "127.0.0.1:0", Assets: fstest.MapFS{"index.html": &fstest.MapFile{Data: []byte("fixture")}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.listener.Close()
+	for _, route := range []struct{ method, path string }{{"GET", "/api/wifi"}, {"POST", "/api/wifi/reveal"}} {
+		w := serveRequest(s, route.method, route.path, "", true)
+		var body struct {
+			Error contract.Error `json:"error"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+			t.Fatal(err)
+		}
+		if w.Code != 403 || body.Error.Code != "location_consent_required" || body.Error.SettingsURI != domain.LocationSettingsURI {
+			t.Fatal(w.Code, w.Body)
+		}
+		for _, secret := range []string{"synthetic-ssid", "synthetic-bssid", "synthetic-profile", "synthetic-psk"} {
+			if strings.Contains(w.Body.String(), secret) {
+				t.Fatal("Wi-Fi data leaked in consent response")
+			}
+		}
+	}
 }
 
 func TestStatusForEveryCode(t *testing.T) {

@@ -64,6 +64,11 @@ export class HttpTransport implements Transport {
       this.request<Result<"RevealWiFi">>("/api/wifi/reveal", {
         method: "POST",
       }),
+    OpenLocationSettings: async () => {
+      throw new Error(
+        "unsupported: location settings can only be opened by the desktop app",
+      );
+    },
     Discover: (cidr, ports) =>
       this.json("POST", "/api/discovery", { cidr, ports }),
     InspectServices: (cidr, ports) =>

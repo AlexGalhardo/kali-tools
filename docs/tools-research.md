@@ -561,5 +561,6 @@ Repository: https://github.com/AlexGalhardo/vukem-marketplace-reactjs (snapshot 
 - Whether `IcmpSendEcho2` and pro-bing work unelevated on Windows 10/11 targets.
 - Pktmon privilege requirement and ETL→pcapng behavior.
 - Windows 24H2 location-consent behavior: Wails process vs web-server mode.
+- WinRT consent pre-check (`AppCapability.CheckAccess`) for unpackaged Wails apps: only needed if native 24H2 acceptance shows that opcode-7 `ERROR_ACCESS_DENIED` plus build >= 26100 is ambiguous. A05 implements the error/build mapping; native denied/granted/account comparisons remain unverified.
 - macOS CoreWLAN under a signed `.app` bundle.
 - Licenses marked **(verify)**: arp-scan, netdiscover, mtr, sslscan, Suricata, gosnmp, pro-bing.

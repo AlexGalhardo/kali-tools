@@ -2,6 +2,7 @@ package wailsui
 
 import (
 	"context"
+	"runtime"
 	"sync"
 	"time"
 
@@ -22,24 +23,26 @@ type Runtime struct {
 	Emit     func(context.Context, string, ...any)
 	OpenFile func(context.Context, wruntime.OpenDialogOptions) (string, error)
 	SaveFile func(context.Context, wruntime.SaveDialogOptions) (string, error)
+	OpenURL  func(context.Context, string)
 }
 type Bindings struct {
-	app    *app.Application
-	emit   func(context.Context, string, ...any)
-	open   func(context.Context, wruntime.OpenDialogOptions) (string, error)
-	save   func(context.Context, wruntime.SaveDialogOptions) (string, error)
-	mu     sync.RWMutex
-	ctx    context.Context
-	closed bool
-	stop   context.CancelFunc
-	done   chan struct{}
+	app     *app.Application
+	emit    func(context.Context, string, ...any)
+	open    func(context.Context, wruntime.OpenDialogOptions) (string, error)
+	save    func(context.Context, wruntime.SaveDialogOptions) (string, error)
+	openURL func(context.Context, string)
+	mu      sync.RWMutex
+	ctx     context.Context
+	closed  bool
+	stop    context.CancelFunc
+	done    chan struct{}
 }
 
 func New(a *app.Application) *Bindings {
-	return NewWithRuntime(a, Runtime{Emit: wruntime.EventsEmit, OpenFile: wruntime.OpenFileDialog, SaveFile: wruntime.SaveFileDialog})
+	return NewWithRuntime(a, Runtime{Emit: wruntime.EventsEmit, OpenFile: wruntime.OpenFileDialog, SaveFile: wruntime.SaveFileDialog, OpenURL: wruntime.BrowserOpenURL})
 }
 func NewWithRuntime(a *app.Application, rt Runtime) *Bindings {
-	return &Bindings{app: a, emit: rt.Emit, open: rt.OpenFile, save: rt.SaveFile}
+	return &Bindings{app: a, emit: rt.Emit, open: rt.OpenFile, save: rt.SaveFile, openURL: rt.OpenURL}
 }
 func (b *Bindings) Startup(ctx context.Context) {
 	b.mu.Lock()
@@ -173,6 +176,21 @@ func (b *Bindings) RevealWiFi() (contract.WiFiSecret, error) {
 	}
 	v, e := b.app.RevealWiFi(ctx)
 	return contract.FromWiFiSecret(v), fail(e)
+}
+
+func (b *Bindings) OpenLocationSettings() error {
+	ctx, err := b.ready()
+	if err != nil {
+		return fail(err)
+	}
+	if runtime.GOOS != "windows" {
+		return fail(domain.Unsupported("location settings exist only on Windows"))
+	}
+	if b.openURL == nil {
+		return fail(domain.Unsupported("location settings opener is unavailable"))
+	}
+	b.openURL(ctx, domain.LocationSettingsURI)
+	return nil
 }
 func (b *Bindings) Discover(cidr string, ports []int) ([]contract.PortResult, error) {
 	ctx, e := b.ready()

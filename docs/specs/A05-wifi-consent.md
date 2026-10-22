@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | A05 (location consent, reveal states, native acceptance) |
-| Status | Ready |
+| Status | Implementation verified on Windows (2026-10-22); Linux coverage and native consent acceptance pending |
 | Depends on | H03 (`app.WiFiProvider`), H04 (`app.Application`), H05 (driving adapters), H06 (`location_consent_required` state, contract DTOs, error mapping), W01 + W04 (HTTP route) |
 | Risk | Medium: the consent behavior can only be proven on a real Windows 11 24H2 host; a wrong mapping would hide a real permission denial |
 
@@ -23,13 +23,17 @@ The explicit key-reveal action keeps its existing masking and auto-clear behavio
 - No automatic retry, polling or background re-query after a denial. PLAN A05 says "never retry silently".
 - No change to the Wi-Fi metadata fields, the visible-BSS list or scanning (`WlanScan` is not used).
 - No Linux/macOS provider (B01/B02). The non-Windows provider keeps returning `unsupported`.
-- No key reveal over HTTP or the CLI. The current CLI usage text (`cmd/kali-tools/main.go:37`) states that reveal is desktop-only. This spec keeps that rule. Changing it needs an owner decision.
+- No changes to the existing explicit key-reveal authorization. C01 already exposes `wifi reveal --confirm`, and W01 already exposes authenticated `POST /api/wifi/reveal`; both remain intact.
 - No change to the masking timer (15 s), the blur/visibility clearing or the reveal epoch logic in the frontend.
 - No elevation, no registry writes and no change to Windows privacy settings by the app.
 
 ## 3. Current state
 
 Re-verify each fact before starting. The working tree was being reorganized when this spec was written, so line numbers can drift.
+
+Checkout corrections (2026-10-22): H01–H08/C01/W01/W04 have landed. Bindings live in `adapter/wailsui`, CLI formatting in `adapter/cli/human.go`, error DTO in `adapter/contract/contract.go`, and the Wi-Fi page in `features/wifi/WiFiPage.tsx`. Backend types are in `shared/api/types.ts`; both transports live in `transport.ts`. `connected()` now means either transport is available, so only `transportKind() === "wails"` may offer the local settings opener. C01 freezes consent exit status at 4 (permission), superseding the historical exit-1 examples below. Preserve W01's `{error:{code,message,settings_uri}}` envelope, adding only the optional error field. Codes/labels already exist from H06. Use the existing `capabilities()` helper; add no static WLAN queries. `LocationConsentNotice` receives the existing catalog and busy props in addition to its action props. These are checkout corrections, not new product behavior.
+
+QG-11 correction found by the failing synthetic-provider reveal test: a provider may return a value together with an error. Application Wi-Fi methods discard metadata/secrets on error before any adapter can serialize them. This is required for the spec's error-output redaction guarantee and leaves successful results unchanged. The initial page query is guarded against React StrictMode's repeated effect setup, so a denial is never retried automatically.
 
 1. `internal/wifi/wifi_windows.go:15-21` lazily loads `wlanapi.dll` procs: `WlanOpenHandle`, `WlanCloseHandle`, `WlanEnumInterfaces`, `WlanQueryInterface`, `WlanGetProfile` and `WlanFreeMemory`.
 2. `internal/wifi/wifi_windows.go:51-56` has `wlanError(code)`. It maps 5 (`ERROR_ACCESS_DENIED`) to `domain.Error{Code: "permission_required"}` and maps every other non-zero code to `failed`.
@@ -250,6 +254,8 @@ Modify:
 - `internal/adapter/cli/<wifi command>.go`: text-mode hint (or `cmd/kali-tools/main.go` until H05).
 - `internal/adapter/contract/<errors>.go`: `SettingsURI` field.
 - `frontend/src/shared/api/bridge.ts`, `frontend/src/app/App.tsx`, `frontend/src/shared/i18n/i18n.ts`.
+- `frontend/src/shared/api/{types,transport}.ts`, `frontend/src/features/wifi/WiFiPage.tsx`: current transport and page locations after W01.
+- Existing adjacent adapter test files: consent error/opener/CLI regression cases; `bindings_test.go` updates its pinned method set.
 - `frontend/tests/workflows.spec.ts`: new consent workflow.
 - `frontend/wailsjs/**`: regenerated, never hand-edited.
 

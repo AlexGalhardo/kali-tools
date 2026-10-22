@@ -4,8 +4,9 @@ import "time"
 
 // Error is the only error shape that leaves a driving adapter.
 type Error struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
+	Code        string `json:"code"`
+	Message     string `json:"message"`
+	SettingsURI string `json:"settings_uri,omitempty"`
 }
 
 // Error keeps the "<code>: <message>" form that the frontend parses (App.tsx errorText).

@@ -3,6 +3,21 @@ import { en } from "../src/shared/i18n/i18n";
 import { expect, test, importCapture, fillDiagnosticTarget } from "./support";
 
 test.describe.configure({mode:"serial"});
+test("server consent notice shows a URI without opening local settings @http-only", async ({page,connect}) => {
+ let calls = 0;
+ await page.route("**/api/wifi", async route => {
+  calls++;
+  await route.fulfill({status:403,contentType:"application/json",body:JSON.stringify({error:{code:"location_consent_required",message:"Windows location access is off",settings_uri:"ms-settings:privacy-location"}})});
+ });
+ await connect(page);
+ await page.getByRole("button",{name:"Wi-Fi",exact:true}).click();
+ await expect(page.getByRole("alert")).toContainText("Windows location access is off");
+ await expect(page.locator("code")).toHaveText("ms-settings:privacy-location");
+ await expect(page.getByRole("button",{name:"Open location settings",exact:true})).toHaveCount(0);
+ expect(calls).toBe(1);
+ await page.getByRole("button",{name:"Check again",exact:true}).click();
+ await expect.poll(()=>calls).toBe(2);
+});
 test("token is scrubbed and exchanged for an HttpOnly session @http-only",async({page,connect})=>{
  await connect(page);expect(new URL(page.url()).hash).toBe("");
  const cookies=await page.context().cookies();const session=cookies.find(c=>c.name.startsWith("kali_session_"));

@@ -8,6 +8,11 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 - Run the unchanged diagnostic, discovery and history acceptance scenarios through the authenticated production HTTP server alongside CLI, Wails and direct application drivers (W01; [evidence](docs/verification/specs/W01.md)).
 - Verify web concurrency caps, HTTP header/body boundaries, deadline reset, SSE timing, forced shutdown and the browser's 64-job recovery bound (W01/W04; [evidence](docs/verification/specs/W04.md)).
+- Wi-Fi consent guidance for Windows 11 24H2+, observed capability states, a fixed-URI desktop settings action and English/PT-BR explicit-retry notices in desktop/browser modes (A05).
+
+### Fixed
+
+- Discard Wi-Fi metadata and saved keys when a provider returns an error, preventing their inclusion in failed CLI responses (A05; synthetic regression tests).
 
 ## [0.5.1] - 2026-10-21
 

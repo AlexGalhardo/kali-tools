@@ -35,6 +35,11 @@ func writeResponse(call invocation, out, stderr io.Writer, data any, err error) 
 		if _, e := fmt.Fprintf(stderr, "%s: %s: %s\n", label(call.g.Lang, "error"), label(call.g.Lang, mapped.Code), mapped.Message); e != nil {
 			return ExitFailed
 		}
+		if mapped.SettingsURI != "" {
+			if _, e := fmt.Fprintf(stderr, "%s: %s\n", label(call.g.Lang, "Open"), mapped.SettingsURI); e != nil {
+				return ExitFailed
+			}
+		}
 		return ExitCode(mapped.Code)
 	}
 	return ExitOK

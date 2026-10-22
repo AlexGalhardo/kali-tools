@@ -105,6 +105,7 @@ export type Backend = {
   SaveSettings(v: Settings): Promise<void>;
   CurrentWiFi(): Promise<WiFi>;
   RevealWiFi(): Promise<{ state: string; value: string }>;
+  OpenLocationSettings(): Promise<void>;
   Tools(): Promise<Tool[]>;
   Discover(
     cidr: string,

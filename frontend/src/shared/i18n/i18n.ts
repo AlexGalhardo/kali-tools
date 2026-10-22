@@ -2,6 +2,10 @@ export const en = {
   serverMode:
     "Served by kali-tools serve. Capability states are those of the server process.",
   locationConsent: "Location consent required",
+  locationConsentRequired:
+    "Windows location access is off for kali-tools, so Wi-Fi details are hidden. Allow location for desktop apps in Settings, then check again.",
+  openLocationSettings: "Open location settings",
+  checkAgain: "Check again",
   locationConsentError:
     "Windows location consent is required to read Wi-Fi details.",
   conflictError: "The operation conflicts with one already running.",
@@ -143,6 +147,10 @@ export const pt: typeof en = {
     "Interface servida por kali-tools serve. Os estados das capacidades pertencem ao processo servidor.",
   viewInterfaces: "Ver interfaces",
   locationConsent: "Consentimento de localiza\u00e7\u00e3o necess\u00e1rio",
+  locationConsentRequired:
+    "O acesso à localização do Windows está desativado para o kali-tools, por isso os detalhes do Wi-Fi ficam ocultos. Permita a localização para apps da área de trabalho em Configurações e verifique novamente.",
+  openLocationSettings: "Abrir configurações de localização",
+  checkAgain: "Verificar novamente",
   locationConsentError:
     "\u00c9 necess\u00e1rio o consentimento de localiza\u00e7\u00e3o do Windows para ler os detalhes do Wi-Fi.",
   conflictError:
