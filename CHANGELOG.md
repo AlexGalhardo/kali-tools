@@ -10,7 +10,7 @@ Unsigned development preview; hardware qualification remains open. Not a release
 
 ### Added
 
-- TLS certificate-chain audit, explicit trust verification, sequential TLS 1.0–1.3 protocol matrix, SCT summaries and zlint findings in the CLI, authenticated HTTP API and Wails Diagnostics tab ([B08 evidence](docs/verification/specs/B08.md)).
+- TLS certificate-chain audit, explicit trust verification, sequential TLS 1.0–1.3 protocol matrix, SCT summaries and zlint findings in the CLI, authenticated HTTP API and Wails Diagnostics tab ([implementation](https://github.com/AlexGalhardo/kali-tools/commit/73db1d0), [B08 evidence](docs/verification/specs/B08.md)).
 - Bounded certificate/finding processing, honest client-version self-tests, count-only history, English/PT-BR UI and two additional browser workflows. Native platform-verifier and GUI acceptance remain pending.
 
 ### Fixed
