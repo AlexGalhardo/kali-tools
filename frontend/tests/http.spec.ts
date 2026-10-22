@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { en } from "../src/shared/i18n/i18n";
 import { expect, test, importCapture, fillDiagnosticTarget } from "./support";
 
 test.describe.configure({mode:"serial"});
@@ -17,7 +18,7 @@ test("capture export downloads a binary PCAPNG @http-only",async({page,connect})
 test("capability states come from the server @http-only",async({page,connect})=>{
  await connect(page);const response=await page.request.get("/api/capabilities");expect(response.ok()).toBe(true);
  const capabilities=await response.json();expect(capabilities.length).toBeGreaterThan(0);
- for(const capability of capabilities.filter((c:{id:string})=>["diagnostics","wifi","capture_live"].includes(c.id))){const item=page.locator(".capability-row").filter({hasText:capability.id==="wifi"?"Wi-Fi":capability.id==="diagnostics"?"Diagnostics":"Packet inspector"});await expect(item).toHaveAttribute("title",capability.detail);await expect(item.locator(".pill")).toHaveText(({available:"Available",permission_required:"Requires authorization",unsupported:"Unsupported"} as Record<string,string>)[capability.state]??"Unsupported");}
+ for(const capability of capabilities.filter((c:{id:string})=>["diagnostics","wifi","capture_live"].includes(c.id))){const item=page.locator(".capability-row").filter({hasText:capability.id==="wifi"?"Wi-Fi":capability.id==="diagnostics"?"Diagnostics":"Packet inspector"});await expect(item).toHaveAttribute("title",capability.detail);await expect(item.locator(".pill")).toHaveText(({available:en.available,permission_required:en.restricted,location_consent_required:en.locationConsent,unsupported:en.unsupported} as Record<string,string>)[capability.state]??en.unsupported);}
  await expect(page.getByText(/Served by kali-tools serve/)).toBeVisible();
 });
 test("served index is the embedded build byte for byte @http-only",async({request})=>{
