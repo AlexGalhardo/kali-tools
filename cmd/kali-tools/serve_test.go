@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/httpapi"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
@@ -21,9 +22,9 @@ import (
 func TestServeFlagsAndShutdown(t *testing.T) {
 	for _, args := range [][]string{{"--help"}, {"--timeout", "1s"}, {"--detach"}, {"--listen", "0.0.0.0:1"}, {"--listen", "192.0.2.10:8443"}, {"--unknown=synthetic-secret"}, {"unexpected"}} {
 		t.Run(strings.Join(args, " "), func(t *testing.T) {
-			t.Setenv("APPDATA", t.TempDir())
+			isolateServeConfig(t)
 			var out, stderr bytes.Buffer
-			code := runServe(t.Context(), args, &out, &stderr, httpapi.New)
+			code := runServe(t.Context(), args, &out, &stderr, newServeTestServer)
 			want := 2
 			if args[0] == "--help" {
 				want = 0
@@ -34,11 +35,11 @@ func TestServeFlagsAndShutdown(t *testing.T) {
 		})
 	}
 	for _, jsonMode := range []bool{false, true} {
-		t.Setenv("APPDATA", t.TempDir())
+		isolateServeConfig(t)
 		var out, stderr bytes.Buffer
 		ctx, cancel := context.WithCancel(t.Context())
 		listen := func(a *app.Application, opts httpapi.Options) (*httpapi.Server, error) {
-			s, err := httpapi.New(a, opts)
+			s, err := newServeTestServer(a, opts)
 			cancel()
 			return s, err
 		}
@@ -69,12 +70,12 @@ type rejectedOutput struct{}
 func (rejectedOutput) Write([]byte) (int, error) { return 0, errors.New("synthetic output failure") }
 
 func TestServeOutputFailuresAndTLSWarning(t *testing.T) {
-	t.Setenv("APPDATA", t.TempDir())
-	if code := runServe(t.Context(), []string{"--help"}, rejectedOutput{}, io.Discard, httpapi.New); code != 1 {
+	isolateServeConfig(t)
+	if code := runServe(t.Context(), []string{"--help"}, rejectedOutput{}, io.Discard, newServeTestServer); code != 1 {
 		t.Fatal(code)
 	}
 	for _, args := range [][]string{{}, {"--json"}} {
-		if code := runServe(t.Context(), args, rejectedOutput{}, io.Discard, httpapi.New); code != 1 {
+		if code := runServe(t.Context(), args, rejectedOutput{}, io.Discard, newServeTestServer); code != 1 {
 			t.Fatal(code)
 		}
 	}
@@ -106,7 +107,7 @@ func TestServeOutputFailuresAndTLSWarning(t *testing.T) {
 				t.Fatal("missing opt-in")
 			}
 			opts.Addr = "127.0.0.1:0"
-			s, err := httpapi.New(a, opts)
+			s, err := newServeTestServer(a, opts)
 			cancel()
 			return s, err
 		}
@@ -130,7 +131,35 @@ func TestServeBootstrapFailure(t *testing.T) {
 	t.Setenv("APPDATA", path)
 	t.Setenv("XDG_CONFIG_HOME", path)
 	t.Setenv("HOME", path)
-	if code := runServe(t.Context(), nil, io.Discard, io.Discard, httpapi.New); code != 1 {
+	if code := runServe(t.Context(), nil, io.Discard, io.Discard, newServeTestServer); code != 1 {
 		t.Fatal(code)
+	}
+}
+
+// Exercise the production HTTP adapter through the existing listener seam,
+// independently of whether the checkout has a compiled frontend.
+func newServeTestServer(a *app.Application, opts httpapi.Options) (*httpapi.Server, error) {
+	opts.Assets = fstest.MapFS{"index.html": &fstest.MapFile{Data: []byte("synthetic frontend")}}
+	return httpapi.New(a, opts)
+}
+
+func isolateServeConfig(t *testing.T) {
+	t.Helper()
+	dir := t.TempDir()
+	for _, name := range []string{"APPDATA", "XDG_CONFIG_HOME", "HOME"} {
+		t.Setenv(name, dir)
+	}
+}
+
+func TestServeMissingAssets(t *testing.T) {
+	isolateServeConfig(t)
+	var out, stderr bytes.Buffer
+	listen := func(a *app.Application, opts httpapi.Options) (*httpapi.Server, error) {
+		opts.Assets = fstest.MapFS{}
+		return httpapi.New(a, opts)
+	}
+	code := runServe(t.Context(), nil, &out, &stderr, listen)
+	if code != 5 || out.Len() != 0 || !strings.Contains(stderr.String(), "frontend assets are not built") {
+		t.Fatalf("code=%d stdout=%s stderr=%s", code, &out, &stderr)
 	}
 }

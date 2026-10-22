@@ -691,3 +691,5 @@ The plan does not claim feature parity with every Kali package.
 ## 0.5.0 owner checkpoint (2026-10-22)
 
 The owner requested a 20-minute completion/publication checkpoint. C01 is implemented; W01/W04 now provide HTTP/SSE browser mode and automated security verification. This is an unsigned development preview, with open native acceptance and remaining SDD gates explicitly retained. See [release verification](docs/verification/0.5.0.md). No published tag or release content was rewritten.
+
+CI regression follow-up: [serve test isolation](docs/verification/ci-serve-tests.md) fixes clean-checkout and non-root laboratory assumptions. This changes test setup only and does not close native acceptance gates.
