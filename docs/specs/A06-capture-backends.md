@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | A06 (capture backend spike, Npcap evaluation, Pktmon evaluation, dropped-packet counters) |
-| Status | In progress (2026-10-22): steps 1–6 adapters and interface exposure; UI/native acceptance pending |
+| Status | Implementation complete (2026-10-22); native acceptance and ADR measurements pending |
 | Depends on | H02 (capture session in the job manager), H03 (`capture.LiveProvider` port), H04 (`app.Application`), H05/H06 (adapters, DTOs), W01 + W04 (HTTP route) |
 | Risk | High: driver licensing, process-wide DLL side effects of `gopacket/pcap`, and a system-wide Pktmon session that must always be stopped |
 
@@ -612,7 +612,7 @@ Native: AC-9 to AC-13 and the ADR 005 measurements on the owner's Windows 11 hos
 | DA-8 [native] | Npcap detection | Procedure: the owner installs Npcap (default options) from npcap.com, runs `kali-tools doctor`, then reinstalls with "Restrict to Administrators" and reruns non-elevated | `available` with version, then `permission_required` | [native] |
 | DA-9 [native] | Npcap capture | Procedure: `-tags pcap` desktop build; select the Wi-Fi/Ethernet IPv4; capture 10 s while running `ping -n 20 <gateway>`; press Stop; navigate to Overview | ≥ 20 ICMP rows; `dropped` numeric; stop < 1 s; UI responsive | [native] |
 | DA-10 [native] | Pktmon capture and cleanup | Procedure: elevated PowerShell runs `kali-tools capture --backend pktmon --duration 10`, then `pktmon status`, then `Get-ChildItem $env:TEMP -Filter kali-tools-pktmon-*` | packets > 0; no session; no directory | [native] |
-| DA-11 [native] | Pktmon refused when not elevated | Procedure: non-elevated `kali-tools capture --backend pktmon --duration 5` | exit 1, `permission_required` | [native] |
+| DA-11 [native] | Pktmon refused when not elevated | Procedure: non-elevated `kali-tools capture --backend pktmon --duration 5` | exit 4, `permission_required` | [native] |
 
 For every [native] row, record:
 

@@ -18,6 +18,8 @@ await page.addInitScript(()=>{
   const api={
     Version:async()=>"0.5.0",
     Capabilities:async()=>[{id:"diagnostics",state:"available",detail:"Go diagnostics",provider:"go/net"},{id:"wifi",state:"available",detail:"Windows WLAN",provider:"windows"},{id:"capture_live",state:"permission_required",detail:"Raw IPv4",provider:"windows"}],
+    CaptureBackends:async()=>[{id:"capture_live",state:"available",detail:"Synthetic raw IPv4 capture",provider:"fake"},{id:"capture_pktmon",state:"permission_required",detail:"Administrator required",provider:"pktmon"},{id:"capture_npcap",state:"dependency_missing",detail:"Install Npcap yourself",provider:"npcap"}],
+    OpenNpcapDownload:async()=>{},
     Interfaces:async()=>[{index:1,name:"Fixture Ethernet",mac:"02:00:00:00:00:01",mtu:1500,up:true,loopback:false,addresses:["192.0.2.10/24"]}],
     Inventory:async()=>({adapters:[{index:1,name:"Fixture Ethernet",gateways:["192.0.2.1"],dns:["192.0.2.53"]}],counters:[{id:"1",received:count+=100,sent:count}]}),
     Settings:async()=>settings,SaveSettings:async(v:typeof settings)=>{settings=v;},
@@ -33,6 +35,7 @@ await page.addInitScript(()=>{
     },
     SaveCapture:async(format:string)=>{document.documentElement.dataset.savedCapture=format;return true;},ImportCapture:async()=>({packets:[{number:1,timestamp:"2026-10-19T12:00:00Z",length:64,source:"192.0.2.1",destination:"192.0.2.2",protocol:"DNS",info:"example.test"}],limited:false,format:"pcap"}),StartCapture:async()=>{},StopCapture:async()=>{}
   };
+  window.addEventListener("fixture-capture", event=>handlers.capture?.forEach(fn=>fn((event as CustomEvent).detail)));
   Object.assign(window,{go:{wailsui:{Bindings:api}},runtime:{EventsOn:(name:string,fn:(v:unknown)=>void)=>{handlers[name]??=[];handlers[name].push(fn);return()=>{handlers[name]=handlers[name].filter(f=>f!==fn);};}}});
 });
    await page.goto("/"); await expect(page.getByText("Fixture Ethernet")).toBeVisible();

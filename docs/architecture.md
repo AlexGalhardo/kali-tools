@@ -112,7 +112,7 @@ Folders marked *(empty)* contain only `.gitkeep`. They mark target locations fro
 | Shared kernel | `internal/domain` | stdlib | anything in the module |
 | Capabilities (inner hexagon) | `internal/network`, `internal/capture`, `internal/wifi` | `domain`, stdlib, pure libraries (gopacket) | `adapter/*`, `app`, Wails, `database/sql` |
 | Application | `internal/app`, `internal/job` | `domain`, capability packages, `job` | `adapter/*`, Wails, `net/http`, `os/exec`, `database/sql` |
-| Driven adapters | `internal/adapter/{storage,tools,probe,platform}` | `domain`, capability packages, OS/driver libraries | driving adapters, `cmd`, `app` (except for types) |
+| Driven adapters | `internal/adapter/{storage,tools,probe,platform,pcap}` | `domain`, capability packages, OS/driver libraries | driving adapters, `cmd`, `app` (except for types) |
 | Driving adapters | `internal/adapter/{wailsui,cli,httpapi}` | `app`, `domain`, `adapter/contract` DTO types | driven adapters directly (they go through `app`) |
 | Frontend contract | `internal/adapter/contract` | `domain`, `app`, `job`, capability packages | other adapters, Wails, `net/http`, `os/exec`, `database/sql` |
 | Composition roots | `main.go`, `cmd/*`, `internal/bootstrap` | everything | nothing imports them |
@@ -184,6 +184,8 @@ A06 steps 3–4 register `adapter/pcap.Npcap`. Default builds inspect fixed Syst
 A06 step 5 registers `tools.Pktmon`. It uses fixed argv through the shared bounded subprocess runner, with one process-local capture lock. A successful start owns exactly one cancellation-independent stop; start failures never stop foreign sessions. A private temporary directory contains the bounded circular ETL and converted PCAPNG until import, then is removed. Only in-memory artifacts survive. Pktmon reports all-NIC scope, truncation, duplicates, lost component identity and circular overwrite; unavailable or incomplete drop data stays unknown. Native capture acceptance remains pending.
 
 A06 step 6 exposes ordered backend status through Application, Wails and authenticated HTTP. CLI capture routes `--backend` through the same use case. The fixed Npcap download URL belongs to domain; Wails opens it through its injected runtime and never imports the driven pcap adapter. Browser transport reports that opening action unsupported. Generated bindings include the new methods.
+
+A06's inspector selects an available backend, renders translated stable loss codes and distinguishes unknown drops from zero. Pktmon sends no address; Npcap exposes local IPv4/IPv6 including loopback. ADR 005 remains proposed with native measurements open; the raw_socket default is preserved pending qualification.
 
 ## 5. Runtime flows
 

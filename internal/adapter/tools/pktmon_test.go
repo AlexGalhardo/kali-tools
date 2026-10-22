@@ -17,7 +17,7 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 )
 
-func TestPktmonArguments(t *testing.T) {
+func TestPktmonArgv(t *testing.T) {
 	if got := pktmonStartArgs("C:/private/capture.etl"); !reflect.DeepEqual(got, []string{"start", "--capture", "--comp", "nics", "--pkt-size", "512", "--file-name", "C:/private/capture.etl", "--file-size", "48", "--log-mode", "circular"}) {
 		t.Fatal(got)
 	}
@@ -79,7 +79,7 @@ func pktmonFixture(t *testing.T) (*Pktmon, *[][]string, *string) {
 	return p, &calls, &dir
 }
 
-func TestPktmonSessionAndCleanup(t *testing.T) {
+func TestPktmonSessionSequence(t *testing.T) {
 	p, calls, dir := pktmonFixture(t)
 	result, artifact, err := p.Capture(t.Context(), capture.LiveRequest{Backend: capture.BackendPktmon, DurationSeconds: 1, PacketLimit: 2})
 	if err != nil || artifact == nil || len(result.Packets) != 2 || !result.Limited || result.Dropped == nil || *result.Dropped != 2 {
@@ -96,7 +96,7 @@ func TestPktmonSessionAndCleanup(t *testing.T) {
 	}
 }
 
-func TestPktmonCancellationStopsExactlyOnce(t *testing.T) {
+func TestPktmonCancelAlwaysStops(t *testing.T) {
 	p, calls, dir := pktmonFixture(t)
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
@@ -117,7 +117,7 @@ func TestPktmonCancellationStopsExactlyOnce(t *testing.T) {
 	}
 }
 
-func TestPktmonFailureOwnershipAndRedaction(t *testing.T) {
+func TestPktmonStartAndStopFailures(t *testing.T) {
 	for _, step := range []string{"start", "stop", "convert", "drops", "import"} {
 		t.Run(step, func(t *testing.T) {
 			p, calls, dir := pktmonFixture(t)
@@ -180,7 +180,7 @@ func TestPktmonConflictAndValidation(t *testing.T) {
 	}
 }
 
-func TestPktmonStatusBoundaries(t *testing.T) {
+func TestPktmonStatusStates(t *testing.T) {
 	for _, test := range []struct {
 		build    uint32
 		path     string
