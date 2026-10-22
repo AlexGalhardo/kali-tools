@@ -130,3 +130,26 @@ func TestCaptureTransferCap(t *testing.T) {
 		}
 	}
 }
+
+func TestCaptureUploadReadDeadlineAndReset(t *testing.T) {
+	dir := tempFiles(t)
+	s := &Server{app: testApp(t), transfers: make(chan struct{}, maxFileTransfers)}
+	for _, body := range [][]byte{fixtureCapture(t), []byte("invalid synthetic capture")} {
+		r := httptest.NewRequest("POST", "/api/capture/import", bytes.NewReader(body))
+		r.Header.Set("Content-Type", "application/octet-stream")
+		w := &readDeadlineWriter{ResponseRecorder: httptest.NewRecorder()}
+		before := time.Now()
+		s.handleImport()(w, r)
+		after := time.Now()
+		if len(w.deadlines) != 2 || !w.deadlines[1].IsZero() {
+			t.Fatalf("upload read deadline not reset: %v", w.deadlines)
+		}
+		if w.deadlines[0].Before(before.Add(120*time.Second)) || w.deadlines[0].After(after.Add(120*time.Second)) {
+			t.Fatalf("upload deadline outside 120-second bound: %v", w.deadlines[0])
+		}
+		if len(s.transfers) != 0 {
+			t.Fatal("upload transfer slot leaked")
+		}
+		requireEmptyTemp(t, dir)
+	}
+}

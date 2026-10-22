@@ -4,6 +4,27 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [0.6.0-dev.1] - 2026-10-22
+
+Unsigned development preview requested by the owner. Native capture, Windows gateway/GUI comparisons and full release qualification remain open.
+
+### Added
+
+- Passive neighbor inventory through Wails, authenticated HTTP and CLI JSON/CSV, with bounded OS parsing, family filtering, refresh, pagination and English/PT-BR tables ([A01 evidence](docs/verification/specs/A01.md)).
+- Optional Npcap and Pktmon capture backends, read-only availability detection, backend selection in all interfaces and explicit packet-loss disclosures. Native backend qualification remains pending ([A06 evidence](docs/verification/specs/A06.md)).
+- Wi-Fi consent guidance, fixed-address Windows settings action and retry notices for desktop/browser modes ([A05 evidence](docs/verification/specs/A05.md)).
+- Shared HTTP acceptance scenarios and additional web concurrency, deadline, SSE and shutdown boundary coverage ([W01](docs/verification/specs/W01.md), [W04](docs/verification/specs/W04.md)).
+
+### Fixed
+
+- Discard Wi-Fi metadata and saved keys when the provider returns an error, preventing failed responses from exposing partial data (A05).
+- Synchronize application, frontend and Wails versions for this preview, resolving the previous development metadata mismatch.
+
+### Changed
+
+- Linux Docker lab now verifies passive netlink neighbors through the production CLI, running the full Go and integration suite as non-root with all capabilities dropped and the race detector enabled.
+- B08 dependency authorization and license review are recorded; TLS audit implementation remains pending and zlint is not included in this preview.
+
 ## [0.5.1] - 2026-10-21
 
 ### Fixed

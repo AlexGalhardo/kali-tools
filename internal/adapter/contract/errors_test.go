@@ -21,6 +21,8 @@ func TestFromError(t *testing.T) {
 		{"nil", nil, contract.Error{}},
 		{"idempotent", contract.Error{Code: "timeout", Message: "x"}, contract.Error{Code: "timeout", Message: "x"}},
 		{"domain", &domain.Error{Code: "permission_required", Message: "x"}, contract.Error{Code: "permission_required", Message: "x"}},
+		{"consent", &domain.Error{Code: "location_consent_required", Message: "x"}, contract.Error{Code: "location_consent_required", Message: "x", SettingsURI: domain.LocationSettingsURI}},
+		{"consent idempotent", contract.Error{Code: "location_consent_required", Message: "x"}, contract.Error{Code: "location_consent_required", Message: "x", SettingsURI: domain.LocationSettingsURI}},
 		{"wrapped domain", fmt.Errorf("internal detail: %w", &domain.Error{Code: "permission_required", Message: "x"}), contract.Error{Code: "permission_required", Message: "x"}},
 		{"unknown code", &domain.Error{Code: "made_up", Message: "x"}, contract.Error{Code: "failed", Message: "x"}},
 		{"cancelled", context.Canceled, contract.Error{Code: "cancelled", Message: "Operation cancelled"}},

@@ -62,7 +62,9 @@ func newTestApp(t *testing.T) *app.Application {
 		Host: fake.Host{Snapshot: app.HostSnapshot{
 			Adapters: []app.HostAdapter{{Index: 1, Name: "Fixture Ethernet", Gateways: []string{"192.0.2.1"}, DNS: []string{"192.0.2.53"}}},
 			Counters: []network.Counter{{ID: "1", Received: 200, Sent: 100}},
-		}},
+		}, NeighborTable: network.NeighborTable{Neighbors: []network.Neighbor{
+			{Address: "192.0.2.1", MAC: "02:00:00:00:00:01", Family: "ipv4", InterfaceIndex: 1, InterfaceName: "Fixture Ethernet", State: "reachable", Router: true},
+		}, Provider: "synthetic cache"}},
 		WiFi: fake.WiFi{
 			Network: wifi.Network{SSID: "Fixture Network", Profile: "Fixture", BSSID: "02:00:00:00:00:02", Signal: 80, Authentication: 7, State: "connected"},
 			Secret:  wifi.Secret{State: "available", Value: "synthetic-test-key"},

@@ -78,6 +78,8 @@ func runLegacy(ctx context.Context, application *app.Application, call invocatio
 	format := flags.String("format", "json", "json/csv discovery; pcap/pcapng with --output")
 	duration := flags.Int("duration", 5, "capture duration seconds")
 	limit := flags.Int("limit", 1000, "capture packet limit")
+	backend := flags.String("backend", "raw_socket", "capture backend: raw_socket, pktmon or npcap")
+	family := flags.String("family", "all", "neighbor family: all, ipv4 or ipv6")
 	if e := flags.Parse(args[1:]); e != nil {
 		return exitInvalid
 	}
@@ -89,13 +91,41 @@ func runLegacy(ctx context.Context, application *app.Application, call invocatio
 			data = map[string]string{"version": domain.Version, "go": runtime.Version(), "os": runtime.GOOS, "arch": runtime.GOARCH}
 		case "doctor":
 			inventory, _ := application.Tools(ctx)
-			data = map[string]any{"os": runtime.GOOS, "arch": runtime.GOARCH, "capabilities": contract.FromCapabilities(application.Capabilities(ctx)), "tools": contract.FromTools(inventory), "capture": "Windows raw IPv4 requires administrator authorization; no external driver. Other platforms unavailable.", "wifi": "Windows WLAN API; key reveal requires wifi reveal --confirm or the desktop reveal action"}
+			data = map[string]any{"os": runtime.GOOS, "arch": runtime.GOARCH, "capabilities": contract.FromCapabilities(application.Capabilities(ctx)), "tools": contract.FromTools(inventory), "capture": "Raw IPv4 and Pktmon require administrator authorization. Optional Npcap is user-installed from https://npcap.com/#download and requires a pcap-tagged build; it is never bundled or installed. See capture backend capabilities.", "wifi": "Windows WLAN API; key reveal requires wifi reveal --confirm or the desktop reveal action"}
 		case "interfaces":
 			value, e := application.Interfaces(ctx)
 			data, err = contract.FromInterfaces(value), e
 		case "inventory":
 			value, e := application.Inventory(ctx)
 			data, err = contract.FromInventory(value), e
+		case "neighbors":
+			if *format != "json" && *format != "csv" {
+				err = domain.Invalid("format must be json or csv")
+				break
+			}
+			value, e := application.Neighbors(ctx, *family)
+			data, err = contract.FromNeighborTable(value), e
+			if err == nil && *format == "csv" {
+				writer := csv.NewWriter(out)
+				if e := writer.Write([]string{
+					"schema_version", "interface_index", "interface_name", "family", "address", "mac", "state", "router",
+				}); e != nil {
+					return exitFailure
+				}
+				for _, row := range value.Neighbors {
+					if e := writer.Write([]string{
+						strconv.Itoa(domain.SchemaVersion), strconv.FormatUint(uint64(row.InterfaceIndex), 10),
+						row.InterfaceName, row.Family, row.Address, row.MAC, row.State, strconv.FormatBool(row.Router),
+					}); e != nil {
+						return exitFailure
+					}
+				}
+				writer.Flush()
+				if writer.Error() != nil {
+					return exitFailure
+				}
+				return exitOK
+			}
 		case "diagnose":
 			value, e := runDiagnostic(ctx, application, network.Request{Kind: *kind, Target: *target, Port: *port, TimeoutMS: *timeout, RecordType: *recordType})
 			data, err = contract.FromDiagnosticResult(value), e
@@ -145,7 +175,7 @@ func runLegacy(ctx context.Context, application *app.Application, call invocatio
 				break
 			}
 			if args[0] == "capture" {
-				request := capture.LiveRequest{Address: *target, DurationSeconds: *duration, PacketLimit: *limit}
+				request := capture.LiveRequest{Backend: *backend, Address: *target, DurationSeconds: *duration, PacketLimit: *limit}
 				value, e := runCapture(ctx, application, request)
 				data, err = contract.FromLiveResult(value), e
 			} else {

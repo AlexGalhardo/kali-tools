@@ -4,8 +4,9 @@ import "time"
 
 // Error is the only error shape that leaves a driving adapter.
 type Error struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
+	Code        string `json:"code"`
+	Message     string `json:"message"`
+	SettingsURI string `json:"settings_uri,omitempty"`
 }
 
 // Error keeps the "<code>: <message>" form that the frontend parses (App.tsx errorText).
@@ -16,6 +17,22 @@ type Capability struct {
 	State    string `json:"state"`
 	Detail   string `json:"detail"`
 	Provider string `json:"provider"`
+}
+
+type Neighbor struct {
+	Address        string `json:"address"`
+	MAC            string `json:"mac"`
+	Family         string `json:"family"`
+	InterfaceIndex uint32 `json:"interface_index"`
+	InterfaceName  string `json:"interface_name"`
+	State          string `json:"state"`
+	Router         bool   `json:"router"`
+}
+
+type NeighborTable struct {
+	Neighbors []Neighbor `json:"neighbors"`
+	Limited   bool       `json:"limited"`
+	Provider  string     `json:"provider"`
 }
 
 type Interface struct {
@@ -110,6 +127,7 @@ type Capture struct {
 }
 
 type LiveCaptureRequest struct {
+	Backend         string `json:"backend,omitempty"`
 	Address         string `json:"address"`
 	DurationSeconds int    `json:"duration_seconds"`
 	PacketLimit     int    `json:"packet_limit"`
@@ -120,6 +138,7 @@ type LiveCapture struct {
 	Packets  []Packet  `json:"packets"`
 	Provider string    `json:"provider"`
 	Dropped  *uint64   `json:"dropped"`
+	Limits   []string  `json:"limits"`
 	Started  time.Time `json:"started"`
 	Finished time.Time `json:"finished"`
 }

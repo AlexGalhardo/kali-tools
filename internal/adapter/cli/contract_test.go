@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -15,6 +16,111 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/porttest/fake"
 )
+
+type hintFailureWriter struct{ calls int }
+
+type closedOutput struct{}
+
+func (closedOutput) Write([]byte) (int, error) { return 0, io.ErrClosedPipe }
+
+func TestWiFiOutputWriteFailures(t *testing.T) {
+	for _, test := range []struct {
+		name         string
+		json, denied bool
+	}{
+		{"JSON consent envelope", true, true},
+		{"human consent message", false, true},
+		{"human metadata", false, false},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			a, provider := revealApplication(t)
+			if test.denied {
+				provider.Err = &domain.Error{Code: domain.CodeLocationConsentRequired, Message: "Windows location access is off"}
+			}
+			args := []string{"wifi", "show"}
+			if test.json {
+				args = append([]string{"--json"}, args...)
+			}
+			if code := cli.Run(t.Context(), a, args, closedOutput{}, closedOutput{}); code != cli.ExitFailed {
+				t.Fatalf("exit=%d", code)
+			}
+		})
+	}
+}
+
+func (w *hintFailureWriter) Write(value []byte) (int, error) {
+	w.calls++
+	if w.calls == 2 {
+		return 0, io.ErrClosedPipe
+	}
+	return len(value), nil
+}
+
+func TestConsentHintWriteFailure(t *testing.T) {
+	a, provider := revealApplication(t)
+	provider.Err = &domain.Error{Code: domain.CodeLocationConsentRequired, Message: "Windows location access is off"}
+	var stderr hintFailureWriter
+	if code := cli.Run(t.Context(), a, []string{"wifi", "show"}, io.Discard, &stderr); code != cli.ExitFailed || stderr.calls != 2 {
+		t.Fatalf("exit=%d writes=%d", code, stderr.calls)
+	}
+}
+
+func TestCLIWiFiConsentEnvelope(t *testing.T) {
+	a, provider := revealApplication(t)
+	provider.Network.SSID = "synthetic-ssid"
+	provider.Network.BSSID = "synthetic-bssid"
+	provider.Network.Profile = "synthetic-profile"
+	provider.Err = &domain.Error{Code: domain.CodeLocationConsentRequired, Message: "Windows location access is off; open " + domain.LocationSettingsURI}
+	for _, jsonMode := range []bool{true, false} {
+		var out, stderr bytes.Buffer
+		args := []string{"wifi", "show"}
+		if jsonMode {
+			args = append([]string{"--json"}, args...)
+		}
+		code := cli.Run(t.Context(), a, args, &out, &stderr)
+		if code != cli.ExitPermission {
+			t.Fatalf("exit=%d", code)
+		}
+		if jsonMode {
+			var body struct {
+				Error struct {
+					Code        string `json:"code"`
+					SettingsURI string `json:"settings_uri"`
+				} `json:"error"`
+			}
+			if err := json.Unmarshal(out.Bytes(), &body); err != nil {
+				t.Fatal(err)
+			}
+			if body.Error.Code != "location_consent_required" || body.Error.SettingsURI != domain.LocationSettingsURI {
+				t.Fatal(out.String())
+			}
+		} else if !strings.Contains(stderr.String(), "Open: "+domain.LocationSettingsURI) {
+			t.Fatal("missing settings hint", stderr.String())
+		}
+		for _, secret := range []string{"synthetic-ssid", "synthetic-bssid", "synthetic-profile", "synthetic-test-key"} {
+			if strings.Contains(out.String()+stderr.String(), secret) {
+				t.Fatal("consent output contains Wi-Fi data")
+			}
+		}
+	}
+}
+
+func TestCLIWiFiConsentRevealDoesNotPrintProviderKey(t *testing.T) {
+	a, provider := revealApplication(t)
+	provider.Err = &domain.Error{Code: domain.CodeLocationConsentRequired, Message: "Windows location access is off"}
+	for _, args := range [][]string{{"--json", "wifi", "reveal", "--confirm"}, {"--lang", "pt-BR", "wifi", "reveal", "--confirm"}} {
+		var out, stderr bytes.Buffer
+		if code := cli.Run(t.Context(), a, args, &out, &stderr); code != cli.ExitPermission {
+			t.Fatal(code)
+		}
+		if strings.Contains(out.String()+stderr.String(), "synthetic-test-key") {
+			t.Fatal("error response leaked provider key")
+		}
+		if args[0] == "--lang" && !strings.Contains(stderr.String(), "Abrir: "+domain.LocationSettingsURI) {
+			t.Fatal("missing translated hint")
+		}
+	}
+}
 
 func TestExitCodePerErrorCode(t *testing.T) {
 	for _, code := range domain.ErrorCodes() {
@@ -228,9 +334,6 @@ func TestJSONModeAlwaysEnvelope(t *testing.T) {
 				t.Fatal(err)
 			}
 			want := 0
-			if args[0] == "neighbors" {
-				want = 3
-			}
 			if got != want || response.SchemaVersion != 1 || strings.Contains(stderr.String(), "schema_version") {
 				t.Fatalf("exit=%d, stdout=%s, stderr=%s", got, out.String(), stderr.String())
 			}

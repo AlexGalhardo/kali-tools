@@ -26,6 +26,12 @@ func handleCapabilities(a *app.Application) http.HandlerFunc {
 		writeJSON(w, http.StatusOK, contract.FromCapabilities(a.Capabilities(r.Context())))
 	}
 }
+
+func handleCaptureBackends(a *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, http.StatusOK, contract.FromCapabilities(a.CaptureBackendStatus(r.Context())))
+	}
+}
 func handleInterfaces(a *app.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		value, err := a.Interfaces(r.Context())
@@ -34,6 +40,21 @@ func handleInterfaces(a *app.Application) http.HandlerFunc {
 			return
 		}
 		writeJSON(w, http.StatusOK, contract.FromInterfaces(value))
+	}
+}
+
+func handleNeighbors(a *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		family := r.URL.Query().Get("family")
+		if family == "" {
+			family = "all"
+		}
+		value, err := a.Neighbors(r.Context(), family)
+		if err != nil {
+			writeError(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, contract.FromNeighborTable(value))
 	}
 }
 func handleInventory(a *app.Application) http.HandlerFunc {

@@ -3,12 +3,14 @@ import { useEffect, useState } from "react";
 import type { PageProps } from "../../app/shell";
 import {
   backend,
+  type Capability,
   type Capture,
   connected,
   type Interface,
   onEvent,
   type Packet,
   type Settings,
+  transportKind,
 } from "../../shared/api/bridge";
 import { download } from "../../shared/lib/download";
 import { Empty } from "../../shared/ui/Empty";
@@ -36,15 +38,60 @@ export function CapturePage({
     [duration, setDuration] = useState(5),
     [limit, setLimit] = useState(1000),
     [capturing, setCapturing] = useState(false),
+    [captureBackend, setCaptureBackend] = useState("raw_socket"),
+    [backends, setBackends] = useState<Capability[]>([]),
+    [limits, setLimits] = useState<string[]>([]),
+    [dropped, setDropped] = useState<number | null>(null),
     [captureFormat, setCaptureFormat] = useState("pcapng");
+  useEffect(() => {
+    if (!connected()) return;
+    let active = true;
+    backend()
+      .CaptureBackends()
+      .then((value) => {
+        if (active) setBackends(value);
+      })
+      .catch((error) => {
+        if (active) setError(error);
+      });
+    return () => {
+      active = false;
+    };
+  }, [setError]);
+  const choices = [
+    { value: "raw_socket", id: "capture_live", label: t.backendRawSocket },
+    { value: "pktmon", id: "capture_pktmon", label: t.backendPktmon },
+    { value: "npcap", id: "capture_npcap", label: t.backendNpcap },
+  ];
+  const selected = backends.find(
+    (c) => c.id === choices.find((c) => c.value === captureBackend)?.id,
+  );
+  const installNpcap =
+    backends.find((c) => c.id === "capture_npcap")?.state ===
+    "dependency_missing";
+  const limitLabels: Record<string, string> = {
+    circular_buffer_may_overwrite_oldest: t.limitCircularBuffer,
+    packets_truncated: t.limitTruncated,
+    component_identity_lost: t.limitComponentIdentity,
+    capture_scope_all_nics: t.limitAllNICs,
+    duplicates_possible: t.limitDuplicates,
+    drop_count_unavailable: t.limitDropCountMissing,
+  };
   useEffect(
     () =>
       onEvent<{
-        result: { packets: Packet[]; limited?: boolean };
+        result: {
+          packets: Packet[];
+          limited?: boolean;
+          limits?: string[];
+          dropped?: number | null;
+        };
         error: string;
       }>("capture", (e) => {
         setCapturing(false);
         setPackets(e.result.packets ?? []);
+        setLimits(e.result.limits ?? []);
+        setDropped(e.result.dropped ?? null);
         setPacketPage(0);
         if (e.error) setError(e.error);
         if (e.result.limited) setNotice(t.captureMemoryLimited);
@@ -65,25 +112,63 @@ export function CapturePage({
     <>
       <section className="card form">
         <div className="form-grid">
-          <Field label={t.captureAddress}>
+          <Field label={t.captureBackend}>
             <select
-              value={captureAddress}
-              onChange={(e) => setCaptureAddress(e.target.value)}
+              value={captureBackend}
+              disabled={capturing || busy}
+              aria-describedby="capture-backend-detail"
+              onChange={(e) => {
+                setCaptureBackend(e.target.value);
+                setCaptureAddress("");
+              }}
             >
-              <option value="">{t.selectCaptureAddress}</option>
-              {interfaces
-                .filter((i) => i.up && !i.loopback)
-                .flatMap((i) =>
-                  i.addresses
-                    .filter((a) => !a.includes(":"))
-                    .map((a) => (
-                      <option key={`${i.index}:${a}`} value={a.split("/")[0]}>
-                        {i.name} ? {a}
-                      </option>
-                    )),
-                )}
+              {choices.map((choice) => {
+                const status = backends.find((c) => c.id === choice.id);
+                return (
+                  <option
+                    key={choice.value}
+                    value={choice.value}
+                    disabled={status?.state !== "available"}
+                    title={status?.detail}
+                  >
+                    {choice.label}
+                  </option>
+                );
+              })}
             </select>
           </Field>
+          {captureBackend !== "pktmon" && (
+            <Field
+              label={
+                captureBackend === "npcap"
+                  ? t.captureLocalAddress
+                  : t.captureAddress
+              }
+            >
+              <select
+                value={captureAddress}
+                disabled={capturing || busy}
+                onChange={(e) => setCaptureAddress(e.target.value)}
+              >
+                <option value="">{t.selectCaptureAddress}</option>
+                {interfaces
+                  .filter(
+                    (i) => i.up && (captureBackend === "npcap" || !i.loopback),
+                  )
+                  .flatMap((i) =>
+                    i.addresses
+                      .filter(
+                        (a) => captureBackend === "npcap" || !a.includes(":"),
+                      )
+                      .map((a) => (
+                        <option key={`${i.index}:${a}`} value={a.split("/")[0]}>
+                          {i.name} ? {a}
+                        </option>
+                      )),
+                  )}
+              </select>
+            </Field>
+          )}
           <Field label={t.duration}>
             <input
               type="number"
@@ -103,15 +188,48 @@ export function CapturePage({
             />
           </Field>
         </div>
+        <p id="capture-backend-detail" className="footnote">
+          {selected?.detail ?? t.selectCaptureBackend}
+        </p>
+        {installNpcap && (
+          <p className="footnote">
+            {transportKind() === "wails" ? (
+              <Button
+                className="secondary"
+                disabled={busy}
+                onClick={() => execute(() => backend().OpenNpcapDownload())}
+              >
+                {t.installNpcap}
+              </Button>
+            ) : (
+              <a
+                href="https://npcap.com/#download"
+                target="_blank"
+                rel="noreferrer"
+              >
+                https://npcap.com/#download
+              </a>
+            )}
+          </p>
+        )}
         <div className="actions">
           <Button
-            disabled={!connected() || capturing || busy || !captureAddress}
+            disabled={
+              !connected() ||
+              capturing ||
+              busy ||
+              selected?.state !== "available" ||
+              (captureBackend !== "pktmon" && !captureAddress)
+            }
             onClick={() =>
               execute(async () => {
                 setCapturing(true);
+                setLimits([]);
+                setDropped(null);
                 try {
                   await backend().StartCapture({
-                    address: captureAddress,
+                    backend: captureBackend,
+                    address: captureBackend === "pktmon" ? "" : captureAddress,
                     duration_seconds: duration,
                     packet_limit: limit,
                   });
@@ -138,6 +256,8 @@ export function CapturePage({
               execute(async () => {
                 const value: Capture = await backend().ImportCapture();
                 setPackets(value.packets);
+                setLimits([]);
+                setDropped(null);
                 if (value.limited) setNotice(t.captureLimited);
                 setPacketPage(0);
               })
@@ -175,6 +295,18 @@ export function CapturePage({
           </Button>
         </div>
         <p className="footnote">{t.captureSavePrivacy}</p>
+        {dropped !== null && (
+          <p>
+            {t.droppedPackets}: {dropped}
+          </p>
+        )}
+        {limits.length > 0 && (
+          <ul className="footnote">
+            {limits.map((code) => (
+              <li key={code}>{limitLabels[code] ?? code}</li>
+            ))}
+          </ul>
+        )}
       </section>
       <section className="card">
         <p className="footnote">{t.filterIntro}</p>
@@ -192,7 +324,8 @@ export function CapturePage({
             {filtered.length} {t.packetCount}
           </span>
         </div>
-        <div className="table-wrap">
+        {/* biome-ignore lint/a11y/noNoninteractiveTabindex: Keyboard users must be able to scroll the packet table. */}
+        <section className="table-wrap" aria-label={t.packets} tabIndex={0}>
           <table>
             <thead>
               <tr>
@@ -231,7 +364,7 @@ export function CapturePage({
                 ))}
             </tbody>
           </table>
-        </div>
+        </section>
         {filtered.length === 0 && <Empty text={t.empty} />}
         <div className="pagination">
           <Button

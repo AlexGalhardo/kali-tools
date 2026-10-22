@@ -5,6 +5,7 @@ stdout:
     "dropped": null,
     "finished": "0001-01-01T00:00:00Z",
     "limited": false,
+    "limits": null,
     "packets": null,
     "provider": "",
     "started": "0001-01-01T00:00:00Z"
@@ -14,6 +15,6 @@ stdout:
     "message": "select a local non-loopback IPv4, duration 1..60 and packet limit 1..10000"
   },
   "schema_version": 1,
-  "version": "0.5.1"
+  "version": "0.6.0-dev.1"
 }
 stderr:

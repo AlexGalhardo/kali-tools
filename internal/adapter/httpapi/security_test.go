@@ -1,7 +1,9 @@
 package httpapi
 
 import (
+	"bufio"
 	"bytes"
+	"context"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -13,6 +15,7 @@ import (
 	"strings"
 	"testing"
 	"testing/fstest"
+	"time"
 )
 
 func securedServer(t *testing.T) (*Server, *bytes.Buffer) {
@@ -234,5 +237,122 @@ func TestInflightCap(t *testing.T) {
 	w = serveRequest(s, "GET", "/api/history", "", true)
 	if w.Code != 200 || len(s.inflight) != maxInflight-1 {
 		t.Fatal(w.Code, len(s.inflight))
+	}
+}
+
+func TestSSEConcurrentClientsAtLimit(t *testing.T) {
+	s := &Server{app: testApp(t), subscribers: make(chan struct{}, maxSSESubscribers), keepAlive: sseKeepAlive}
+	finished := make(chan struct{}, maxSSESubscribers+2)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() { finished <- struct{}{} }()
+		s.handleEvents()(w, r)
+	}))
+	defer server.Close()
+	ctx, cancel := context.WithTimeout(t.Context(), 3*time.Second)
+	defer cancel()
+	open := func() (*http.Response, context.CancelFunc) {
+		t.Helper()
+		stream, stop := context.WithCancel(ctx)
+		r, err := http.NewRequestWithContext(stream, "GET", server.URL, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		response, err := server.Client().Do(r)
+		if err != nil {
+			stop()
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { stop(); _ = response.Body.Close() })
+		return response, stop
+	}
+	var first context.CancelFunc
+	for i := range maxSSESubscribers {
+		response, stop := open()
+		defer response.Body.Close()
+		if response.StatusCode != 200 {
+			t.Fatalf("stream %d: %d", i, response.StatusCode)
+		}
+		line, err := bufio.NewReader(response.Body).ReadString('\n')
+		if err != nil || line != "retry: 3000\n" {
+			t.Fatalf("stream %d not established: %q %v", i, line, err)
+		}
+		if i == 0 {
+			first = stop
+		}
+	}
+	response, stop := open()
+	defer response.Body.Close()
+	if response.StatusCode != 429 {
+		t.Fatalf("ninth stream: %d", response.StatusCode)
+	}
+	stop()
+	select {
+	case <-finished: // rejected ninth stream
+	case <-ctx.Done():
+		t.Fatal(ctx.Err())
+	}
+	first()
+	select {
+	case <-finished: // cancelled first stream released its slot
+	case <-ctx.Done():
+		t.Fatal(ctx.Err())
+	}
+	response, stop = open()
+	defer response.Body.Close()
+	defer stop()
+	if response.StatusCode != 200 {
+		t.Fatalf("replacement stream: %d", response.StatusCode)
+	}
+}
+
+func TestInflightConcurrentRequestsAtLimit(t *testing.T) {
+	s := &Server{inflight: make(chan struct{}, maxInflight)}
+	entered := make(chan struct{}, maxInflight+1)
+	release := make(chan struct{})
+	handler := s.limitRequests(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		entered <- struct{}{}
+		select {
+		case <-release:
+		case <-r.Context().Done():
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	ctx, cancel := context.WithTimeout(t.Context(), 3*time.Second)
+	defer cancel()
+	done := make(chan int, maxInflight)
+	for range maxInflight {
+		go func() {
+			w := httptest.NewRecorder()
+			handler.ServeHTTP(w, httptest.NewRequestWithContext(ctx, "GET", "/api/history", nil))
+			done <- w.Code
+		}()
+	}
+	for range maxInflight {
+		select {
+		case <-entered:
+		case <-ctx.Done():
+			t.Fatal("requests did not reach handler")
+		}
+	}
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, httptest.NewRequest("GET", "/api/history", nil))
+	if w.Code != 429 {
+		t.Fatalf("seventeenth request: %d", w.Code)
+	}
+	close(release)
+	for range maxInflight {
+		select {
+		case code := <-done:
+			if code != 204 {
+				t.Errorf("admitted request: %d", code)
+			}
+		case <-ctx.Done():
+			t.Fatal("requests did not stop")
+		}
+	}
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, httptest.NewRequest("GET", "/api/history", nil))
+	if w.Code != 204 || len(s.inflight) != 0 {
+		t.Fatal("request slots were not released")
 	}
 }

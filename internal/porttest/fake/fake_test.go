@@ -40,6 +40,7 @@ func TestFakeCancellation(t *testing.T) {
 		{"settings", func() error { _, err := store.Settings(ctx); return err }},
 		{"save settings", func() error { return store.SaveSettings(ctx, app.Settings{}) }},
 		{"host", func() error { _, err := (fake.Host{}).Inventory(ctx); return err }},
+		{"neighbors", func() error { _, err := (fake.Host{}).Neighbors(ctx); return err }},
 		{"tools", func() error { _, err := (fake.Tools{}).RunNmap(ctx, "", nil); return err }},
 		{"wifi", func() error { _, err := (fake.WiFi{}).Current(ctx); return err }},
 		{"reveal", func() error { _, err := (fake.WiFi{}).Reveal(ctx); return err }},
@@ -58,6 +59,18 @@ func TestFakeCancellation(t *testing.T) {
 }
 
 func TestFakeReturnedValuesAreCopies(t *testing.T) {
+	t.Run("neighbors", func(t *testing.T) {
+		f := fake.Host{NeighborTable: network.NeighborTable{Neighbors: []network.Neighbor{{Address: "192.0.2.1", Family: "ipv4"}}, Provider: "fake cache"}}
+		value, err := f.Neighbors(t.Context())
+		if err != nil {
+			t.Fatal(err)
+		}
+		value.Neighbors[0].Address = "changed"
+		again, err := f.Neighbors(t.Context())
+		if err != nil || again.Neighbors[0].Address != "192.0.2.1" {
+			t.Fatal(again, err)
+		}
+	})
 	t.Run("host", func(t *testing.T) {
 		f := fake.Host{Snapshot: app.HostSnapshot{Adapters: []app.HostAdapter{{Name: "one", Gateways: []string{"192.0.2.1"}, DNS: []string{"192.0.2.53"}}}, Counters: []network.Counter{{ID: "one"}}}}
 		v, err := f.Inventory(t.Context())

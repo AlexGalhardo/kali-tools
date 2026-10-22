@@ -112,7 +112,7 @@ Folders marked *(empty)* contain only `.gitkeep`. They mark target locations fro
 | Shared kernel | `internal/domain` | stdlib | anything in the module |
 | Capabilities (inner hexagon) | `internal/network`, `internal/capture`, `internal/wifi` | `domain`, stdlib, pure libraries (gopacket) | `adapter/*`, `app`, Wails, `database/sql` |
 | Application | `internal/app`, `internal/job` | `domain`, capability packages, `job` | `adapter/*`, Wails, `net/http`, `os/exec`, `database/sql` |
-| Driven adapters | `internal/adapter/{storage,tools,probe,platform}` | `domain`, capability packages, OS/driver libraries | driving adapters, `cmd`, `app` (except for types) |
+| Driven adapters | `internal/adapter/{storage,tools,probe,platform,pcap}` | `domain`, capability packages, OS/driver libraries | driving adapters, `cmd`, `app` (except for types) |
 | Driving adapters | `internal/adapter/{wailsui,cli,httpapi}` | `app`, `domain`, `adapter/contract` DTO types | driven adapters directly (they go through `app`) |
 | Frontend contract | `internal/adapter/contract` | `domain`, `app`, `job`, capability packages | other adapters, Wails, `net/http`, `os/exec`, `database/sql` |
 | Composition roots | `main.go`, `cmd/*`, `internal/bootstrap` | everything | nothing imports them |
@@ -139,10 +139,10 @@ A port is a small Go interface declared **in the package that consumes it**. Ada
 | --- | --- | --- |
 | `app.Application` | `JobStore`, `SettingsStore` | `*storage.Store`, hand-written in-memory test fakes |
 | `app.Application` | `job.Manager` with injected clock function | `internal/job`; `bootstrap.Config.Now` or UTC system clock |
-| `app.Application` | `HostNetwork` | `platform.Host` |
+| `app.Application` | `HostNetwork` (Inventory and passive Neighbors) | `platform.Host` |
 | `app.Application` | `ToolRunner` (including service inspection) | `tools.Runner` |
 | `app.Application` | `WiFiProvider` | `wifi.Native` |
-| `app.Application` | `CaptureProvider` alias of `capture.LiveProvider` | `capture.Native` selected by build constraints |
+| `app.Application` | `CaptureBackend` (LiveProvider plus Status), keyed registry | `capture.Native`, `adapter/pcap.Npcap` (optional tagged implementation) |
 | `network.Diagnostics` | `network.Prober` interface (injected by `bootstrap.New` for both roots) | `probe.ICMP` in `adapter/probe` |
 
 ### 4.3 Implemented driven ports (H03)
@@ -169,9 +169,33 @@ H07 suite wiring:
 | `ProberContract` | `probe.ICMP` | `fake.Prober` |
 | `LiveProviderContract` | `capture.Native` | `fake.LiveCapture` |
 
-Only test files outside `internal/porttest` import the suites or fakes. `tests/acceptance` creates a fresh application per scenario; diagnostics, discovery and history run through direct, CLI and Wails drivers after C01 step 4. Bootstrap still wires real SQLite in memory for interface acceptance; persistence remains covered by real-file storage/bootstrap tests. The HTTP driver remains W01. No Wails runtime or native dialogs are launched by these drivers.
+Only test files outside `internal/porttest` import the suites or fakes. `tests/acceptance` creates a fresh application per scenario; diagnostics, discovery and history run through direct, CLI, Wails and HTTP drivers. The HTTP driver starts the production server on loopback, exchanges the launch token for a cookie and verifies shutdown. Bootstrap wires real SQLite in memory for interface acceptance; persistence remains covered by real-file storage/bootstrap tests. No Wails runtime or native dialogs are launched by these drivers.
 
 H07 native OS-port suites passed on Windows build 26300 with active Wi-Fi and administrator capture on 2026-10-21. The capture suite selects an active non-loopback interface; disconnected interfaces may retain addresses that Windows cannot bind. This qualifies H07 OS-port data branches only, not desktop IPC or other platform acceptance.
+
+A05 adds mutex-protected, process-local Wi-Fi observations in `app.Application`: only explicit CurrentWiFi/RevealWiFi calls update consent/permission/available state. Capabilities overlays that observation without querying WLAN. Error results discard metadata and keys before reaching any adapter. Only opcode-7 access denial on Windows build >= 26100 maps to location consent; other native API errors keep their existing mapping. No WinRT pre-check, automatic retry or persisted observation is added.
+
+A06 step 1 adds backend identifiers (`raw_socket`, `pktmon`, `npcap`) and stable loss-limit codes. Validation retains the raw IPv4 restriction, permits local IPv4/IPv6 for Npcap and requires an empty address for Pktmon. Native raw capture rejects requests for another backend. Contract request/result models carry backend/limits fields; selection and optional adapter wiring follow in the next steps. This does not enable a new capture backend by itself.
+
+A06 step 2 replaces the single capture dependency with the consumer-owned `app.CaptureBackend` (Capture plus cheap Status) and a constructor-copied backend registry. Bootstrap currently registers raw sockets; the optional adapters follow in subsequent steps. StartCapture rejects unavailable providers before capture, and runs the selected backend through the existing job manager. History contains backend/state/counts only; the capture stream still carries exactly one terminal capture result alongside job-state events.
+
+A06 steps 3–4 register `adapter/pcap.Npcap`. Default builds inspect fixed System32 paths and read-only registry values without importing gopacket/pcap or loading capture DLLs. Only `windows && pcap` links that package; the tagged adapter bounds device enumeration, packet buffers, read timeouts and retained artifacts. Its process-wide DLL initialization remains an explicit native qualification gate. Depguard treats pcap as a driven adapter; driving adapters must not import it. The untagged stub shares the live-provider contract suite. No driver is redistributed or installed.
+
+A06 step 5 registers `tools.Pktmon`. It uses fixed argv through the shared bounded subprocess runner, with one process-local capture lock. A successful start owns exactly one cancellation-independent stop; start failures never stop foreign sessions. A private temporary directory contains the bounded circular ETL and converted PCAPNG until import, then is removed. Only in-memory artifacts survive. Pktmon reports all-NIC scope, truncation, duplicates, lost component identity and circular overwrite; unavailable or incomplete drop data stays unknown. Native capture acceptance remains pending.
+
+A06 step 6 exposes ordered backend status through Application, Wails and authenticated HTTP. CLI capture routes `--backend` through the same use case. The fixed Npcap download URL belongs to domain; Wails opens it through its injected runtime and never imports the driven pcap adapter. Browser transport reports that opening action unsupported. Generated bindings include the new methods.
+
+A06's inspector selects an available backend, renders translated stable loss codes and distinguishes unknown drops from zero. Pktmon sends no address; Npcap exposes local IPv4/IPv6 including loopback. ADR 005 remains proposed with native measurements open; the raw_socket default is preserved pending qualification.
+
+A01 step 1 adds passive neighbor value types and pure normalization in network: discard unusable/broadcast rows, deduplicate by interface/address, sort deterministically and return at most 4,096 rows with an explicit Limited flag. This group adds no OS query, port extension or public route.
+
+A01 step 2 adds untagged netlink/procfs parsing inside adapter/platform. Length/alignment checks precede slicing, inputs are capped at 4 MiB/1 MiB and raw rows at 65,536, and summaries retain no borrowed input bytes. These parsers are tested on the host independently of Linux OS access; the OS glue follows separately.
+
+A01 steps 3–4 add platform.Host.Neighbors: Windows uses a fixed system GetIpNetTable2 shim with pinned layout, bounded entries and FreeMibTable cleanup; Linux uses RTM_GETNEIGH with a procfs fallback only on call failure. Both normalize and bound returned summaries; other OSes return unsupported. Context checks surround non-interruptible OS calls. A Windows read-only smoke is separate from the still-open gateway/GUI and Linux lab acceptance.
+
+A01 steps 5–6 extend the consumer-owned HostNetwork port and its real/shared/e2e implementations. Application.Neighbors validates family, bounds its context to five seconds, normalizes results and writes no job/history. Wails, authenticated GET /api/neighbors and CLI JSON/CSV call that same use case. Explicit DTO mapping preserves owned slices, and generated bindings and both frontend transports expose the method. Passive neighbor cache availability is reported separately from active discovery.
+
+A01's Interfaces page includes NeighborsTable with explicit refresh/family queries and 100-row pages, translated states and bounded-result notices. It never polls or persists neighbor addresses. Shared browser workflows exercise both transports. The private Linux lab test is present but Docker execution and Windows gateway/GUI comparisons remain qualification gates.
 
 ## 5. Runtime flows
 
@@ -216,12 +240,13 @@ H02 moves all three streams through `job.Manager`. `Subscribe(ctx)` uses a defau
 
 - `frontend.Dist()` owns the sole embed of `frontend/dist`; `main.go` (build tags `desktop || bindings`) obtains `app.Application` from bootstrap and binds `wailsui.Bindings` to `wails.Run`.
 - `run(ctx, args, getenv, stdout, stderr) int` owns composition and deferred cleanup. `OnStartup` and `OnShutdown` receive `b.Startup` and `b.Shutdown` directly, so Wails exempts those lifecycle methods from its generated API. The binding adapter owns no storage or application cleanup.
-- `internal/adapter/wailsui` owns the 20 frontend methods, native dialogs and cancellable forwarder. `Runtime` functions are injected for headless tests. Startup subscribes before opting into metrics; shutdown waits at most 3 s for its forwarder. The old root `app.go` is deleted.
+- `internal/adapter/wailsui` owns the 21 frontend methods, native dialogs and cancellable forwarder. `Runtime` functions are injected for headless tests. Startup subscribes before opting into metrics; shutdown waits at most 3 s for its forwarder. The old root `app.go` is deleted.
 - **Why it stays at the repository root:**
   - Wails v2 builds the project-root package next to `wails.json`.
   - Wails keeps its project root; the shared `frontend` Go package owns the embedded build used by both delivery modes.
 - The generated namespace is `frontend/wailsjs/go/wailsui/Bindings`, following the bound receiver's package. `transport.ts`, Playwright fakes and native smoke calls use that namespace. The binding drift task regenerates it and rejects differences from Git.
 - All bound request/result structs belong to `adapter/contract`; explicit mappers preserve JSON field order and nil slices while cloning mutable data. `fail` delegates error mapping to `contract.FromError`, preserving rejected-promise strings. Events use `contract.EventPayload`.
+- `OpenLocationSettings()` accepts no URL; its injected runtime opener receives only `domain.LocationSettingsURI`. Non-Windows and missing-runtime cases return unsupported. The browser transport has no settings-opening route and displays the URI instead. The Wi-Fi notice supports explicit retry and retains existing secret clearing.
 - Metrics and capture lifecycle live in `internal/app` after H02. Wails retains native dialogs and a payload translator; it forwards a manager subscription without owning producer state.
 
 ### 6.2 Web server: same UI in a browser
@@ -246,7 +271,9 @@ H02 moves all three streams through `job.Manager`. `Subscribe(ctx)` uses a defau
 
 The only embedded asset source is `frontend/embed.go`; `Dist()` serves the same bytes to Wails and HTTP. All API routes except `POST /api/session` require cookie or bearer authentication. Health and static assets remain public. Lifecycle/preflight helpers have no separate routes. SSE subscribes before flushing, emits retry/sequence/resync and closes on cancellation; terminal job state is recoverable from `/api/jobs/{id}`. Capture import/export accepts bytes and format, never server paths.
 
-Middleware order is recovery ? redacted access log ? security headers ? Host allowlist ? CrossOriginProtection ? Fetch Metadata ? in-flight cap ? session ? mux. Limits: JSON 64 KiB, session JSON 1 KiB, upload 64 MiB, one file transfer, eight SSE clients, 16 in-flight API requests, five-second header/shutdown deadlines, 120-second idle/upload bounds, 15-second SSE keepalive and ten-second SSE write deadline. CSP allows only same-origin scripts/styles; no inline exemption was needed. Remote listeners require specific binding plus explicit opt-in and TLS 1.2 minimum. See [W04 threat model](specs/W04-web-security.md) and [verification](verification/specs/W04.md). Native account/browser acceptance remains open.
+Consent failures return HTTP 403 with the usual error envelope and an optional `error.settings_uri`. The shared error mapper adds the fixed URI only for `location_consent_required`; CLI JSON uses the same field, and human output adds an English/PT-BR settings hint. C01's permission exit status remains 4. Reveal remains explicit: desktop action, authenticated HTTP POST, or CLI `wifi reveal --confirm`.
+
+Middleware order is recovery ? redacted access log ? security headers ? Host allowlist ? CrossOriginProtection ? Fetch Metadata ? in-flight cap ? session ? mux. Limits: JSON 64 KiB, session JSON 1 KiB, upload 64 MiB, one file transfer, eight SSE clients, 16 in-flight API requests, five-second header/shutdown deadlines, 120-second idle/upload bounds, 15-second SSE keepalive and ten-second SSE write deadline. Go's 16 KiB MaxHeaderBytes configuration includes 4096 bytes of parser read-ahead; wire tests cover the effective 20 KiB boundary and its rejection above that limit. Concurrent-client, deadline/reset, active-SSE shutdown and synthetic-clock boundary checks cover the web adapter. CSP allows only same-origin scripts/styles; no inline exemption was needed. Remote listeners require specific binding plus explicit opt-in and TLS 1.2 minimum. See [W04 threat model](specs/W04-web-security.md) and [verification](verification/specs/W04.md). Native account/browser acceptance remains open.
 
 ### 6.3 CLI
 

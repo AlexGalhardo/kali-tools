@@ -7,6 +7,8 @@ import (
 	"net"
 	"net/netip"
 	"path/filepath"
+	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -17,7 +19,88 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/job"
+	"github.com/AlexGalhardo/kali-tools/internal/porttest/fake"
 )
+
+func TestCaptureBackendStatusIsOrderedAndDoesNotCapture(t *testing.T) {
+	deps := fakeDeps()
+	deps.CaptureBackends = map[string]app.CaptureBackend{
+		capture.BackendPktmon: fake.LiveCapture{Capability: domain.Capability{ID: "capture_pktmon", State: "permission_required", Detail: "needs administrator"}, CaptureFunc: func(context.Context, capture.LiveRequest) (capture.LiveResult, *capture.Artifact, error) {
+			t.Fatal("status started capture")
+			return capture.LiveResult{}, nil, nil
+		}},
+	}
+	a := serviceWithDeps(t, deps)
+	got := a.CaptureBackendStatus(t.Context())
+	if len(got) != 3 || got[0].ID != "capture_live" || got[1].ID != "capture_pktmon" || got[2].ID != "capture_npcap" || got[0].State != "unsupported" || got[1].State != "permission_required" {
+		t.Fatal(got)
+	}
+	count := 0
+	for _, c := range a.Capabilities(t.Context()) {
+		if c.ID == "capture_live" || c.ID == "capture_pktmon" || c.ID == "capture_npcap" {
+			count++
+		}
+	}
+	if count != 3 {
+		t.Fatal("missing or duplicate capabilities", count)
+	}
+}
+
+func TestStartCaptureSelectsBackendAndRefusesUnavailable(t *testing.T) {
+	for _, state := range []string{"available", "permission_required", "dependency_missing", "unsupported"} {
+		t.Run(state, func(t *testing.T) {
+			var calls atomic.Int32
+			provider := fake.LiveCapture{
+				Capability: domain.Capability{ID: "capture_pktmon", State: state, Detail: "synthetic state"},
+				CaptureFunc: func(context.Context, capture.LiveRequest) (capture.LiveResult, *capture.Artifact, error) {
+					calls.Add(1)
+					dropped := uint64(2)
+					return capture.LiveResult{Packets: []capture.Packet{{Number: 1}}, Dropped: &dropped, Limits: []string{capture.LimitAllNICs}}, nil, nil
+				},
+			}
+			deps := fakeDeps()
+			deps.CaptureBackends = map[string]app.CaptureBackend{capture.BackendPktmon: provider}
+			a := serviceWithDeps(t, deps)
+			clear(deps.CaptureBackends) // constructor owns its backend registry
+			ctx, cancel := context.WithTimeout(t.Context(), 3*time.Second)
+			defer cancel()
+			events, _ := a.Subscribe(ctx)
+			err := a.StartCapture(ctx, capture.LiveRequest{Backend: "pktmon", DurationSeconds: 1, PacketLimit: 1})
+			if state != "available" {
+				var failure *domain.Error
+				if !errors.As(err, &failure) || failure.Code != state || calls.Load() != 0 {
+					t.Fatalf("error=%v calls=%d", err, calls.Load())
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			for {
+				select {
+				case event := <-events:
+					if event.Topic != job.TopicCapture {
+						continue
+					}
+					rows, err := a.History(ctx)
+					if err != nil || len(rows) != 1 || rows[0].Summary != "Capture pktmon completed: 1 packets, 2 dropped" {
+						t.Fatalf("history=%v err=%v", rows, err)
+					}
+					raw, err := json.Marshal(rows)
+					if err != nil {
+						t.Fatal(err)
+					}
+					if strings.Contains(string(raw), "synthetic state") || calls.Load() != 1 {
+						t.Fatal("capture history leaked details or wrong backend called")
+					}
+					return
+				case <-ctx.Done():
+					t.Fatal(ctx.Err())
+				}
+			}
+		})
+	}
+}
 
 func newService(t *testing.T) *app.Application {
 	return serviceWithDeps(t, fakeDeps())
@@ -117,11 +200,11 @@ func TestCaptureSessionStates(t *testing.T) {
 	address := captureAddress(t)
 	deps := fakeDeps()
 	started := make(chan struct{})
-	deps.Capture = fakeCapture{CaptureFunc: func(ctx context.Context, r capture.LiveRequest) (capture.LiveResult, *capture.Artifact, error) {
+	deps.CaptureBackends = map[string]app.CaptureBackend{capture.BackendRawSocket: fakeCapture{CaptureFunc: func(ctx context.Context, r capture.LiveRequest) (capture.LiveResult, *capture.Artifact, error) {
 		close(started)
 		<-ctx.Done()
 		return capture.LiveResult{Packets: []capture.Packet{}}, nil, ctx.Err()
-	}}
+	}}}
 	s := serviceWithDeps(t, deps)
 	events, _ := s.Subscribe(t.Context())
 	request := capture.LiveRequest{Address: address, DurationSeconds: 1, PacketLimit: 1}
@@ -145,25 +228,30 @@ func TestCaptureSessionStates(t *testing.T) {
 		t.Fatal("export accepted during capture")
 	}
 	s.StopCapture(t.Context())
-	select {
-	case event := <-events:
-		outcome, ok := event.Data.(app.CaptureEvent)
-		if event.Topic != job.TopicCapture || !ok || !errors.Is(outcome.Err, context.Canceled) {
-			t.Fatalf("event = %+v", event)
+	var event job.Event
+	timer := time.NewTimer(3 * time.Second)
+	defer timer.Stop()
+	for event.Topic != job.TopicCapture {
+		select {
+		case event = <-events:
+		case <-timer.C:
+			t.Fatal("capture completion missing")
 		}
-		raw, err := json.Marshal(outcome)
-		if err != nil {
-			t.Fatal(err)
-		}
-		var shape map[string]json.RawMessage
-		if err := json.Unmarshal(raw, &shape); err != nil {
-			t.Fatal(err)
-		}
-		if len(shape) != 2 || shape["result"] == nil || shape["error"] == nil {
-			t.Fatalf("capture JSON = %s", raw)
-		}
-	case <-time.After(3 * time.Second):
-		t.Fatal("capture completion missing")
+	}
+	outcome, ok := event.Data.(app.CaptureEvent)
+	if event.Topic != job.TopicCapture || !ok || !errors.Is(outcome.Err, context.Canceled) {
+		t.Fatalf("event = %+v", event)
+	}
+	raw, err := json.Marshal(outcome)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var shape map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &shape); err != nil {
+		t.Fatal(err)
+	}
+	if len(shape) != 2 || shape["result"] == nil || shape["error"] == nil {
+		t.Fatalf("capture JSON = %s", raw)
 	}
 	select {
 	case extra := <-events:

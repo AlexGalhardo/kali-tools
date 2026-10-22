@@ -51,7 +51,7 @@ func TestInterruptStopsCaptureWithoutExport(t *testing.T) {
 		return capture.LiveResult{Provider: "synthetic", Packets: []capture.Packet{{Number: 1, Protocol: "TCP"}}}, nil, nil
 	}}
 	store := fake.NewStore()
-	a := app.New(app.Deps{Jobs: store, Settings: store, Capture: provider})
+	a := app.New(app.Deps{Jobs: store, Settings: store, CaptureBackends: map[string]app.CaptureBackend{capture.BackendRawSocket: provider}})
 	t.Cleanup(func() { _ = a.Close() })
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
@@ -87,6 +87,27 @@ func TestInterruptStopsCaptureWithoutExport(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertGoroutinesReturn(t, before)
+}
+
+func TestCaptureBackendFlagRoutesPktmon(t *testing.T) {
+	for _, command := range [][]string{{"capture", "live"}, {"capture"}} {
+		store := fake.NewStore()
+		var calls atomic.Int32
+		p := fake.LiveCapture{CaptureFunc: func(_ context.Context, request capture.LiveRequest) (capture.LiveResult, *capture.Artifact, error) {
+			if request.Backend != capture.BackendPktmon || request.Address != "" {
+				t.Fatal(request)
+			}
+			calls.Add(1)
+			return capture.LiveResult{Packets: []capture.Packet{}, Limits: []string{capture.LimitAllNICs}}, nil, nil
+		}}
+		a := app.New(app.Deps{Jobs: store, Settings: store, CaptureBackends: map[string]app.CaptureBackend{capture.BackendPktmon: p}})
+		t.Cleanup(func() { _ = a.Close() })
+		var out, stderr bytes.Buffer
+		args := append(append([]string{}, command...), "--backend", "pktmon", "--duration", "1", "--limit", "1", "--json")
+		if code := cli.Run(t.Context(), a, args, &out, &stderr); code != cli.ExitOK || calls.Load() != 1 {
+			t.Fatal(code, calls.Load(), out.String(), stderr.String())
+		}
+	}
 }
 
 func TestAwaitCapturePreservesTypedError(t *testing.T) {
@@ -175,6 +196,10 @@ func TestAwaitCaptureLegacyErrorAndUnexpectedData(t *testing.T) {
 
 type captureProvider struct{ code string }
 
+func (f captureProvider) Status(context.Context) domain.Capability {
+	return domain.Capability{ID: "capture_live", State: f.code, Detail: "synthetic provider state"}
+}
+
 func (f captureProvider) Capture(context.Context, capture.LiveRequest) (capture.LiveResult, *capture.Artifact, error) {
 	return capture.LiveResult{Packets: []capture.Packet{}, Provider: "synthetic"}, nil, &domain.Error{Code: f.code, Message: "synthetic provider state"}
 }
@@ -204,7 +229,7 @@ func TestCLICaptureReportsProviderState(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		code = "permission_required"
 	}
-	a := app.New(app.Deps{Jobs: store, Settings: store, Capture: captureProvider{code: code}})
+	a := app.New(app.Deps{Jobs: store, Settings: store, CaptureBackends: map[string]app.CaptureBackend{capture.BackendRawSocket: captureProvider{code: code}}})
 	defer func() { _ = a.Close() }()
 	var out, stderr bytes.Buffer
 	start := time.Now()

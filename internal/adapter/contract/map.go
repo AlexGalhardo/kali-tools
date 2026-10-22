@@ -33,6 +33,13 @@ func FromCapabilities(v []domain.Capability) []Capability {
 		return Capability{ID: c.ID, State: c.State, Detail: c.Detail, Provider: c.Provider}
 	})
 }
+
+func FromNeighborTable(v network.NeighborTable) NeighborTable {
+	return NeighborTable{Neighbors: mapSlice(v.Neighbors, func(row network.Neighbor) Neighbor {
+		return Neighbor{Address: row.Address, MAC: row.MAC, Family: row.Family,
+			InterfaceIndex: row.InterfaceIndex, InterfaceName: row.InterfaceName, State: row.State, Router: row.Router}
+	}), Limited: v.Limited, Provider: v.Provider}
+}
 func FromInterfaces(v []network.InterfaceInfo) []Interface {
 	return mapSlice(v, func(i network.InterfaceInfo) Interface {
 		return Interface{Index: i.Index, Name: i.Name, MAC: i.MAC, MTU: i.MTU, Up: i.Up, Loopback: i.Loopback, Addresses: slices.Clone(i.Addresses)}
@@ -69,10 +76,10 @@ func FromImportResult(v capture.ImportResult) Capture {
 	return Capture{Packets: mapSlice(v.Packets, fromPacket), Limited: v.Limited, Format: v.Format}
 }
 func (r LiveCaptureRequest) LiveRequest() capture.LiveRequest {
-	return capture.LiveRequest{Address: r.Address, DurationSeconds: r.DurationSeconds, PacketLimit: r.PacketLimit}
+	return capture.LiveRequest{Backend: r.Backend, Address: r.Address, DurationSeconds: r.DurationSeconds, PacketLimit: r.PacketLimit}
 }
 func FromLiveResult(v capture.LiveResult) LiveCapture {
-	return LiveCapture{Limited: v.Limited, Packets: mapSlice(v.Packets, fromPacket), Provider: v.Provider, Dropped: copyPointer(v.Dropped), Started: v.Started, Finished: v.Finished}
+	return LiveCapture{Limited: v.Limited, Packets: mapSlice(v.Packets, fromPacket), Provider: v.Provider, Dropped: copyPointer(v.Dropped), Limits: mapSlice(v.Limits, func(s string) string { return s }), Started: v.Started, Finished: v.Finished}
 }
 func FromMetrics(v network.Metrics) Metrics {
 	return Metrics{Timestamp: v.Timestamp, ReceiveBPS: v.ReceiveBPS, SendBPS: v.SendBPS, Interfaces: mapSlice(v.Interfaces, func(r network.Rate) Rate {

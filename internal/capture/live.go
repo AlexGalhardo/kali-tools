@@ -12,6 +12,7 @@ import (
 )
 
 type LiveRequest struct {
+	Backend         string `json:"backend,omitempty"`
 	Address         string `json:"address"`
 	DurationSeconds int    `json:"duration_seconds"`
 	PacketLimit     int    `json:"packet_limit"`
@@ -21,6 +22,7 @@ type LiveResult struct {
 	Packets  []Packet  `json:"packets"`
 	Provider string    `json:"provider"`
 	Dropped  *uint64   `json:"dropped"`
+	Limits   []string  `json:"limits"`
 	Started  time.Time `json:"started"`
 	Finished time.Time `json:"finished"`
 }
@@ -43,8 +45,24 @@ func LiveSession(ctx context.Context, r LiveRequest) (LiveResult, *Artifact, err
 }
 
 func ValidateLiveRequest(r LiveRequest) error {
+	if r.DurationSeconds < 1 || r.DurationSeconds > 60 || r.PacketLimit < 1 || r.PacketLimit > MaxPackets {
+		return domain.Invalid("select a local non-loopback IPv4, duration 1..60 and packet limit 1..10000")
+	}
+	switch r.Backend {
+	case BackendPktmon:
+		if r.Address != "" {
+			return domain.Invalid("pktmon captures all NICs; address must be empty")
+		}
+		return nil
+	case "", BackendRawSocket, BackendNpcap:
+	default:
+		return domain.Invalid("backend must be raw_socket, pktmon or npcap")
+	}
 	ip, err := netip.ParseAddr(r.Address)
-	if err != nil || !ip.Is4() || ip.IsLoopback() || r.DurationSeconds < 1 || r.DurationSeconds > 60 || r.PacketLimit < 1 || r.PacketLimit > MaxPackets {
+	if err != nil {
+		return domain.Invalid("select a local non-loopback IPv4, duration 1..60 and packet limit 1..10000")
+	}
+	if r.Backend != BackendNpcap && (!ip.Is4() || ip.IsLoopback()) {
 		return domain.Invalid("select a local non-loopback IPv4, duration 1..60 and packet limit 1..10000")
 	}
 	addresses, err := net.InterfaceAddrs()

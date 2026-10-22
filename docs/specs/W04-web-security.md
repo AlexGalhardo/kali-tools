@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | W04 |
-| Status | Ready |
+| Status | Implementation and non-native acceptance verified 2026-10-22; native browser acceptance pending |
 | Depends on | H01–H08; implemented inside W01 step 6 (no commit contains `kali-tools serve` without this spec Done) |
 | Risk | High: the server can start network diagnostics, discovery and capture, and can reveal the saved Wi-Fi key; it is reachable from any web page the user visits |
 
@@ -137,6 +137,8 @@ const (
 - Every request body is wrapped in `http.MaxBytesReader` with the route's limit (0 for routes without a body). Exceeding it gives 413 `invalid_input` "request body too large".
 - Caps use buffered-channel semaphores acquired with `select { case sem <- struct{}{}: default: 429 }`. A full cap is 429 `conflict` "too many concurrent requests" (or "too many event streams" for SSE). No request waits for a slot.
 - Concurrent jobs: the application cap (8, H02) applies unchanged; the server adds no job cap of its own, and `maxInflight` bounds synchronous long operations (Discover, InspectServices, Diagnose).
+
+Verification clarification (2026-10-22): `MaxHeaderBytes` delegates to Go's HTTP parser, which reserves 4096 additional bytes for buffered read-ahead. Wire tests cover 16 KiB, the effective 20 KiB boundary and boundary+1; this is not a custom exact 16 KiB wire cap. Deadline delegation is verified by recording the 30/120-second read deadlines and their reset on success/failure, real header/idle connection closure, synthetic-clock SSE and forced-shutdown boundary tests. These checks verify application configuration and delegation without reimplementing the standard library's timers.
 
 ### 4.7 Logging
 

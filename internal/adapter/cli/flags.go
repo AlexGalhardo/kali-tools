@@ -178,6 +178,8 @@ func parseInvocation(args []string) (invocation, error) {
 				value = "80,443"
 			case "format":
 				value = "json"
+			case "family":
+				value = "all"
 			}
 			fs.String(name, value, name)
 		}
@@ -241,8 +243,11 @@ func parseInvocation(args []string) (invocation, error) {
 		if f.Name == "kind" && positionalKind != "" && value != positionalKind {
 			parseErr = domain.Invalid("kind given twice")
 		}
-		if f.Name == "format" && value == "csv" && call.g.JSON && call.command.path == "discover" {
+		if f.Name == "format" && value == "csv" && call.g.JSON && (call.command.path == "discover" || call.command.path == "neighbors") {
 			parseErr = domain.Invalid("CSV cannot be combined with --json")
+		}
+		if f.Name == "format" && value == "json" && call.command.path == "neighbors" {
+			call.g.JSON = true
 		}
 		call.legacy = append(call.legacy, "--"+f.Name, value)
 	})

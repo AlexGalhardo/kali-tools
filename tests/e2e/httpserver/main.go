@@ -77,10 +77,10 @@ func run(ctx context.Context, args []string, out io.Writer) error {
 		WiFi:        WiFi{Network: wifi.Network{SSID: "Fixture Network", Profile: "Fixture", BSSID: "02:00:00:00:00:02", Signal: 80, Authentication: 7, State: "connected"}, Secret: wifi.Secret{State: "available", Value: "synthetic-test-key"}},
 		Tools:       Tools{Tools: []app.Tool{{Name: "nmap", State: "dependency_missing"}, {Name: "tshark", State: "dependency_missing"}}},
 		Diagnostics: network.Diagnostics{Prober: Prober{Values: []string{"echo reply"}}},
-		Capture: LiveCapture{CaptureFunc: func(ctx context.Context, _ capture.LiveRequest) (capture.LiveResult, *capture.Artifact, error) {
+		CaptureBackends: map[string]app.CaptureBackend{capture.BackendRawSocket: LiveCapture{CaptureFunc: func(ctx context.Context, _ capture.LiveRequest) (capture.LiveResult, *capture.Artifact, error) {
 			result, artifact, err := capture.ReadArtifactFile(capturePath)
 			return capture.LiveResult{Packets: result.Packets, Provider: "fixture"}, artifact, err
-		}},
+		}}},
 	})
 	defer func() { _ = a.Close() }()
 	server, err := httpapi.New(a, httpapi.Options{Addr: *listen, Assets: os.DirFS(*assets)})

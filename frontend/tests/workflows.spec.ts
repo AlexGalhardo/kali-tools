@@ -1,6 +1,93 @@
 import { expect, test, fillDiagnosticTarget, importCapture } from "./support";
 import AxeBuilder from "@axe-core/playwright";
 
+test("Wi-Fi location consent shows settings link and never retries automatically @wails-only", async ({page,connect}, testInfo) => {
+ await connect(page);
+ await page.evaluate(() => {
+  let calls = 0;
+  const api = window.go!.wailsui!.Bindings!;
+  api.CurrentWiFi = async () => {
+   document.documentElement.dataset.wifiCalls = String(++calls);
+   if (calls === 1) throw new Error("location_consent_required: Windows location access is off");
+   return {profile:"Fixture",ssid:"Fixture Network",bssid:"02:00:00:00:00:02",signal:80,authentication:7,state:"connected"};
+  };
+  Object.assign(api, {OpenLocationSettings:async () => {document.documentElement.dataset.settingsOpened = "1";}});
+ });
+ await page.getByRole("button",{name:"Wi-Fi",exact:true}).click();
+ await expect(page.getByRole("alert")).toContainText("Windows location access is off");
+ await expect(page.locator("code")).toHaveText("ms-settings:privacy-location");
+ await page.screenshot({path:testInfo.outputPath("wifi-consent-desktop.png")});
+ await page.setViewportSize({width:390,height:844});
+ await page.getByLabel("Language").selectOption("pt-BR");
+ await expect(page.getByRole("alert")).toContainText("O acesso à localização do Windows está desativado");
+ await page.screenshot({path:testInfo.outputPath("wifi-consent-compact-pt.png"),fullPage:true});
+ expect((await new AxeBuilder({page}).analyze()).violations.filter(v=>v.impact==="serious"||v.impact==="critical")).toEqual([]);
+ await page.getByRole("combobox").selectOption("en");
+ await page.setViewportSize({width:1280,height:720});
+ await page.getByRole("button",{name:"Open location settings",exact:true}).click();
+ await expect(page.locator("html")).toHaveAttribute("data-settings-opened","1");
+ await expect(page.locator("html")).toHaveAttribute("data-wifi-calls","1");
+ await page.getByRole("button",{name:"Check again",exact:true}).click();
+ await expect(page.getByRole("heading",{name:"Fixture Network",exact:true})).toBeVisible();
+ await expect(page.locator("html")).toHaveAttribute("data-wifi-calls","2");
+ await expect(page.getByRole("alert")).toHaveCount(0);
+});
+
+test("consent denial during reveal clears an already visible key @wails-only", async ({page,connect}) => {
+ await connect(page);
+ await page.getByRole("button",{name:"Wi-Fi",exact:true}).click();
+ await page.getByRole("button",{name:"Reveal current network key",exact:true}).click();
+ await expect(page.getByText("synthetic-test-key")).toBeVisible();
+ await page.evaluate(() => { window.go!.wailsui!.Bindings!.RevealWiFi = async () => { throw new Error("location_consent_required: denied"); }; });
+ await page.getByRole("button",{name:"Reveal current network key",exact:true}).click();
+ await expect(page.getByRole("alert")).toContainText("Windows location access is off");
+ await expect(page.getByText("synthetic-test-key")).toHaveCount(0);
+});
+
+test("HTTP transport bounds tracked jobs and closes its event source @wails-only", async ({page,connect}) => {
+ await connect(page);
+ const results = await page.evaluate(async () => {
+  const modulePath = "/src/shared/api/transport.ts";
+  const {HttpTransport} = await import(modulePath);
+  const originalFetch = window.fetch;
+  const OriginalSource = window.EventSource;
+  const results: {count: number; ids: string[]; closed: boolean}[] = [];
+  try {
+   for (const count of [64, 65]) {
+    let source: FixtureSource | undefined;
+    class FixtureSource extends EventTarget {
+     closed = false;
+     constructor() { super(); source = this; }
+     close() { this.closed = true; }
+    }
+    window.EventSource = FixtureSource as unknown as typeof EventSource;
+    let next = 0;
+    const ids: string[] = [];
+    window.fetch = (async (path: string) => {
+     const id = path === "/api/diagnostics" ? String(++next).padStart(32, "0") : path.split("/").at(-1)!;
+     if (path.startsWith("/api/jobs/")) ids.push(id);
+     return Response.json({id, state: "running"});
+    }) as typeof fetch;
+    const transport = new HttpTransport();
+    const unsubscribe = transport.on("job", () => {});
+    for (let i = 0; i < count; i++) await transport.backend.StartDiagnostic({kind: "tcp", target: "127.0.0.1", port: 9, timeout_ms: 100});
+    source!.dispatchEvent(new Event("resync"));
+    for (let attempt = 0; attempt < 100 && ids.length < 64; attempt++) await new Promise(resolve => setTimeout(resolve, 1));
+    unsubscribe();
+    results.push({count, ids, closed: source!.closed});
+   }
+  } finally {
+   window.fetch = originalFetch;
+   window.EventSource = OriginalSource;
+  }
+  return results;
+ });
+ for (const {count, ids, closed} of results) {
+  expect(ids).toEqual(Array.from({length: 64}, (_, i) => String(i + (count === 64 ? 1 : 2)).padStart(32, "0")));
+  expect(closed).toBe(true);
+ }
+});
+
 test("diagnostic job returns real contract result and history",async({page,connect})=>{await connect(page);await page.getByRole("button",{name:"Diagnostics",exact:true}).click();await fillDiagnosticTarget(page);await page.getByRole("button",{name:/Run diagnostic/}).click();await expect(page.locator("pre")).toHaveText("connected");await page.getByRole("button",{name:"History",exact:true}).click();await expect(page.getByRole("cell",{name:"Diagnostic completed",exact:true})).toBeVisible();});
 test("Wi-Fi key clears on navigation and blur",async({page,connect})=>{await connect(page);await page.getByRole("button",{name:"Wi-Fi",exact:true}).click();await page.getByRole("button",{name:"Reveal current network key"}).click();await expect(page.getByText("synthetic-test-key")).toBeVisible();await page.evaluate(()=>window.dispatchEvent(new Event("blur")));await expect(page.getByText("synthetic-test-key")).toHaveCount(0);await page.getByRole("button",{name:"Reveal current network key"}).click();await page.getByRole("button",{name:"Overview",exact:true}).click();await expect(page.getByText("synthetic-test-key")).toHaveCount(0);});
 test("packet import and display filtering",async({page,connect})=>{await connect(page);await page.getByRole("button",{name:"Packet inspector",exact:true}).click();await importCapture(page);await expect(page.getByRole("cell",{name:"DNS",exact:true})).toBeVisible();await page.getByLabel("Display filter (protocol or address)").fill("TCP");await expect(page.getByRole("cell",{name:"DNS",exact:true})).toHaveCount(0);});

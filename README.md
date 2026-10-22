@@ -201,6 +201,7 @@ Docker builds Linux CLI images. It does not create native Windows/macOS desktop 
 go run ./cmd/kali-tools version
 go run ./cmd/kali-tools doctor
 go run ./cmd/kali-tools --json interfaces
+go run ./cmd/kali-tools neighbors --family all --format json
 go run ./cmd/kali-tools diagnose dns --target example.com --record MX
 go run ./cmd/kali-tools diagnose tcp --target localhost --port 8080
 go run ./cmd/kali-tools diagnose http --target http://localhost:8080/health
@@ -225,6 +226,10 @@ Start a listening local service for the TCP/HTTP examples; refusal is an expecte
 | Wi-Fi/capture denied or unsupported | Read the capability response; permissions and hardware need separate native acceptance. |
 
 Windows raw capture is limited to IPv4, requires administrator authorization, reports no reliable drop count, and is bounded to 60 seconds/10000 packets. Revealed Wi-Fi keys are never written to ordinary history. See [capture boundaries](docs/adr/002-capture-backend.md).
+
+Capture backends are selectable in the packet inspector and with `capture live --backend raw_socket|pktmon|npcap`. Pktmon requires an elevated Windows process, captures all NICs with 512-byte truncation and reports circular-buffer/duplicate limits. Npcap must be [installed separately by the user](https://npcap.com/#download) and requires a build with `-tags pcap`; kali-tools never bundles or installs the driver. Npcap permits local IPv4/IPv6 selection; Pktmon requires no target address. Optional backends have automated implementation evidence but native qualification remains open; see [ADR 005](docs/adr/005-windows-capture-backend.md).
+
+On Windows 11 24H2+, a Wi-Fi location-consent notice points to Settings > Privacy & security > Location (`ms-settings:privacy-location`); allow location for desktop apps and select **Check again**. Browser mode displays the URI for the server account and cannot open that host's settings.
 
 ## Guides
 

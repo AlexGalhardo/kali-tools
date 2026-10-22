@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
@@ -14,6 +15,9 @@ const persistTimeout = 5 * time.Second
 
 func jobSummary(kind string, state job.State, detail string) string {
 	label := "Diagnostic"
+	if strings.HasPrefix(kind, "capture ") {
+		label = "Capture " + strings.TrimPrefix(kind, "capture ")
+	}
 	switch kind {
 	case "discovery":
 		label = "Discovery"

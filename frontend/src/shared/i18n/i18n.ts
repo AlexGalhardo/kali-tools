@@ -1,7 +1,27 @@
 export const en = {
+  neighbors: "Neighbors",
+  neighborsIntro:
+    "Devices your computer recently exchanged traffic with, read from the operating system cache. No packets are sent.",
+  noNeighbors: "No neighbors are in the operating system cache.",
+  neighborsLimited: "Only the first 4,096 usable neighbors are shown.",
+  family: "Address family",
+  familyAll: "All",
+  router: "Router",
+  state_reachable: "Reachable",
+  state_stale: "Stale",
+  state_delay: "Delay",
+  state_probe: "Probe",
+  state_incomplete: "Incomplete",
+  state_unreachable: "Unreachable",
+  state_permanent: "Permanent",
+  state_unknown: "Unknown",
   serverMode:
     "Served by kali-tools serve. Capability states are those of the server process.",
   locationConsent: "Location consent required",
+  locationConsentRequired:
+    "Windows location access is off for kali-tools, so Wi-Fi details are hidden. Allow location for desktop apps in Settings, then check again.",
+  openLocationSettings: "Open location settings",
+  checkAgain: "Check again",
   locationConsentError:
     "Windows location consent is required to read Wi-Fi details.",
   conflictError: "The operation conflicts with one already running.",
@@ -88,13 +108,27 @@ export const en = {
   captureMemoryLimited:
     "Capture stopped at its memory limit. Only the retained packets are available.",
   captureIntro:
-    "Windows raw IPv4 capture requires administrator authorization. Up to 60 seconds and 10,000 packets. Drop counts are unavailable. Encrypted content stays encrypted.",
+    "Select an available backend for up to 60 seconds and 10,000 packets. Capture scope, privileges and drop accounting depend on the backend. Encrypted content stays encrypted.",
   duration: "Duration (seconds)",
   limit: "Packet limit",
   filter: "Display filter (protocol or address)",
   filterIntro:
     "Display filtering hides rows only. No capture filter is applied; saved files include all retained packets.",
   captureAddress: "Local non-loopback IPv4",
+  captureBackend: "Capture backend",
+  backendRawSocket: "Raw IPv4 socket",
+  backendPktmon: "Windows Pktmon",
+  backendNpcap: "Npcap",
+  captureLocalAddress: "Local interface address (IPv4 or IPv6)",
+  selectCaptureBackend: "Checking capture backend availability…",
+  installNpcap: "Install Npcap (opens npcap.com)",
+  droppedPackets: "Dropped packets",
+  limitCircularBuffer: "The circular buffer may overwrite the oldest packets.",
+  limitTruncated: "Packets were truncated.",
+  limitComponentIdentity: "Pktmon component identity is not retained.",
+  limitAllNICs: "Capture includes all network interfaces.",
+  limitDuplicates: "Duplicate packets may be present.",
+  limitDropCountMissing: "Drop count is unavailable.",
   selectCaptureAddress: "Select a local interface address",
   protocol: "Protocol",
   source: "Source",
@@ -139,10 +173,30 @@ export const en = {
     "TCP connect discovery stays inside the selected CIDR. A failed connection is reported as unreachable; it does not prove a closed port.",
 };
 export const pt: typeof en = {
+  neighbors: "Vizinhos",
+  neighborsIntro:
+    "Dispositivos com que seu computador trocou tráfego recentemente, lidos da cache do sistema operacional. Nenhum pacote é enviado.",
+  noNeighbors: "Nenhum vizinho na cache do sistema operacional.",
+  neighborsLimited: "Somente os primeiros 4.096 vizinhos válidos são exibidos.",
+  family: "Família de endereços",
+  familyAll: "Todas",
+  router: "Roteador",
+  state_reachable: "Alcançável",
+  state_stale: "Antigo",
+  state_delay: "Aguardando",
+  state_probe: "Verificando",
+  state_incomplete: "Incompleto",
+  state_unreachable: "Inalcançável",
+  state_permanent: "Permanente",
+  state_unknown: "Desconhecido",
   serverMode:
     "Interface servida por kali-tools serve. Os estados das capacidades pertencem ao processo servidor.",
   viewInterfaces: "Ver interfaces",
   locationConsent: "Consentimento de localiza\u00e7\u00e3o necess\u00e1rio",
+  locationConsentRequired:
+    "O acesso à localização do Windows está desativado para o kali-tools, por isso os detalhes do Wi-Fi ficam ocultos. Permita a localização para apps da área de trabalho em Configurações e verifique novamente.",
+  openLocationSettings: "Abrir configurações de localização",
+  checkAgain: "Verificar novamente",
   locationConsentError:
     "\u00c9 necess\u00e1rio o consentimento de localiza\u00e7\u00e3o do Windows para ler os detalhes do Wi-Fi.",
   conflictError:
@@ -231,13 +285,29 @@ export const pt: typeof en = {
   captureMemoryLimited:
     "A captura parou no limite de mem\u00f3ria. Somente os pacotes retidos est\u00e3o dispon\u00edveis.",
   captureIntro:
-    "A captura IPv4 nativa do Windows exige autorização administrativa. Limite de 60 segundos e 10.000 pacotes. A contagem de perdas está indisponível. Conteúdo criptografado permanece criptografado.",
+    "Selecione um backend dispon\u00edvel para at\u00e9 60 segundos e 10.000 pacotes. O escopo, as permiss\u00f5es e a contagem de perdas dependem do backend. Conte\u00fado criptografado permanece criptografado.",
   duration: "Duração (segundos)",
   limit: "Limite de pacotes",
   filter: "Filtro de exibição (protocolo ou endereço)",
   filterIntro:
     "O filtro apenas oculta linhas. Nenhum filtro de captura \u00e9 aplicado; o arquivo salvo inclui todos os pacotes retidos.",
   captureAddress: "IPv4 local fora de loopback",
+  captureBackend: "Backend de captura",
+  backendRawSocket: "Socket IPv4 nativo",
+  backendPktmon: "Windows Pktmon",
+  backendNpcap: "Npcap",
+  captureLocalAddress: "Endere\u00e7o da interface local (IPv4 ou IPv6)",
+  selectCaptureBackend: "Verificando disponibilidade dos backends de captura…",
+  installNpcap: "Instalar Npcap (abre npcap.com)",
+  droppedPackets: "Pacotes perdidos",
+  limitCircularBuffer:
+    "O buffer circular pode sobrescrever os pacotes mais antigos.",
+  limitTruncated: "Os pacotes foram truncados.",
+  limitComponentIdentity:
+    "A identidade do componente Pktmon n\u00e3o \u00e9 preservada.",
+  limitAllNICs: "A captura inclui todas as interfaces de rede.",
+  limitDuplicates: "Pode haver pacotes duplicados.",
+  limitDropCountMissing: "A contagem de perdas est\u00e1 indispon\u00edvel.",
   selectCaptureAddress: "Selecione o endere\u00e7o de uma interface local",
   protocol: "Protocolo",
   source: "Origem",

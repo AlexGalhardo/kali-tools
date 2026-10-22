@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | A01 (passive neighbor inventory from the OS ARP/ND cache) |
-| Status | Ready |
+| Status | Implementation complete (2026-10-22); Linux Docker acceptance passed; Windows native comparison pending |
 | Depends on | H03 (`app.HostNetwork` port), H04 (`app.Application`), H05/H06 (adapters, DTOs), W01 + W04 (HTTP route) |
 | Risk | Medium: a hand-written Win32 struct layout (`MIB_IPNET_ROW2`) and a hand-written netlink parser read OS memory and kernel messages |
 
@@ -28,6 +28,8 @@ The result is bounded to 4,096 rows, deterministic and exposed through the Wails
 - No modification of the neighbor cache (no `FlushIpNetTable2`, no `CreateIpNetEntry2`).
 
 ## 3. Current state
+
+Implementation reconciliation (2026-10-22): H03/H04 already moved Adapter/Snapshot types to app with platform aliases and injected platform.Host. The CLI has an unsupported neighbors stub. References below describe the pre-H03 checkout; use the completed consumer port and driving-adapter locations. x/sys 0.49.0 still has no GetIpNetTable2 binding. A06 automated implementation is complete with native gates pending; owner-authorized headless continuation applies.
 
 Re-verify each fact before starting:
 

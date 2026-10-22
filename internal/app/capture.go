@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
@@ -10,6 +11,19 @@ import (
 )
 
 const CaptureExportTimeout = 30 * time.Second
+
+func (a *Application) CaptureBackendStatus(ctx context.Context) []domain.Capability {
+	result := make([]domain.Capability, 0, 3)
+	for _, entry := range []struct{ backend, id string }{{capture.BackendRawSocket, "capture_live"}, {capture.BackendPktmon, "capture_pktmon"}, {capture.BackendNpcap, "capture_npcap"}} {
+		c := domain.Capability{ID: entry.id, Provider: entry.backend, State: domain.CapabilityUnsupported, Detail: "live capture provider is not configured"}
+		if provider := a.deps.CaptureBackends[entry.backend]; provider != nil {
+			c = provider.Status(ctx)
+			c.ID = entry.id
+		}
+		result = append(result, c)
+	}
+	return result
+}
 
 type CaptureEvent struct {
 	Result capture.LiveResult `json:"result"`
@@ -26,8 +40,16 @@ func (a *Application) StartCapture(ctx context.Context, request capture.LiveRequ
 	if a.closed {
 		return domain.Invalid("application is shutting down")
 	}
-	if a.deps.Capture == nil {
+	backend := request.Backend
+	if backend == "" {
+		backend = capture.BackendRawSocket
+	}
+	provider := a.deps.CaptureBackends[backend]
+	if provider == nil {
 		return domain.Unsupported("live capture provider is not configured")
+	}
+	if status := provider.Status(ctx); status.State != domain.CapabilityAvailable {
+		return &domain.Error{Code: status.State, Message: status.Detail}
 	}
 	a.capMu.Lock()
 	defer a.capMu.Unlock()
@@ -41,7 +63,17 @@ func (a *Application) StartCapture(ctx context.Context, request capture.LiveRequ
 	go func() {
 		defer a.bg.Done()
 		defer cancel()
-		result, artifact, err := a.deps.Capture.Capture(ctx, request)
+		var result capture.LiveResult
+		var artifact *capture.Artifact
+		err := a.runOperation(ctx, "capture "+backend, func(jobCtx context.Context) (string, error) {
+			var err error
+			result, artifact, err = provider.Capture(jobCtx, request)
+			dropped := "unknown"
+			if result.Dropped != nil {
+				dropped = fmt.Sprint(*result.Dropped)
+			}
+			return fmt.Sprintf("%d packets, %s dropped", len(result.Packets), dropped), err
+		})
 		a.capMu.Lock()
 		a.capArtifact = artifact
 		a.capCancel = nil

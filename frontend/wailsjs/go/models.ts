@@ -272,6 +272,7 @@ export namespace contract {
 		}
 	}
 	export class LiveCaptureRequest {
+	    backend?: string;
 	    address: string;
 	    duration_seconds: number;
 	    packet_limit: number;
@@ -282,10 +283,69 @@ export namespace contract {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.backend = source["backend"];
 	        this.address = source["address"];
 	        this.duration_seconds = source["duration_seconds"];
 	        this.packet_limit = source["packet_limit"];
 	    }
+	}
+	export class Neighbor {
+	    address: string;
+	    mac: string;
+	    family: string;
+	    interface_index: number;
+	    interface_name: string;
+	    state: string;
+	    router: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new Neighbor(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.address = source["address"];
+	        this.mac = source["mac"];
+	        this.family = source["family"];
+	        this.interface_index = source["interface_index"];
+	        this.interface_name = source["interface_name"];
+	        this.state = source["state"];
+	        this.router = source["router"];
+	    }
+	}
+	export class NeighborTable {
+	    neighbors: Neighbor[];
+	    limited: boolean;
+	    provider: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new NeighborTable(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.neighbors = this.convertValues(source["neighbors"], Neighbor);
+	        this.limited = source["limited"];
+	        this.provider = source["provider"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class NmapAddress {
 	    address: string;

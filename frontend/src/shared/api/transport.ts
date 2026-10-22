@@ -39,7 +39,18 @@ export class HttpTransport implements Transport {
       (await this.request<{ version: string }>("/api/version")).version,
     Capabilities: () =>
       this.request<Result<"Capabilities">>("/api/capabilities"),
+    CaptureBackends: () =>
+      this.request<Result<"CaptureBackends">>("/api/capture/backends"),
+    OpenNpcapDownload: async () => {
+      throw new Error(
+        "unsupported: open https://npcap.com/#download in your browser",
+      );
+    },
     Interfaces: () => this.request<Result<"Interfaces">>("/api/interfaces"),
+    Neighbors: (family) =>
+      this.request<Result<"Neighbors">>(
+        `/api/neighbors?family=${encodeURIComponent(family)}`,
+      ),
     Inventory: () => this.request<Result<"Inventory">>("/api/inventory"),
     Tools: () => this.request<Result<"Tools">>("/api/tools"),
     Diagnose: (request) => this.json("POST", "/api/diagnose", request),
@@ -64,6 +75,11 @@ export class HttpTransport implements Transport {
       this.request<Result<"RevealWiFi">>("/api/wifi/reveal", {
         method: "POST",
       }),
+    OpenLocationSettings: async () => {
+      throw new Error(
+        "unsupported: location settings can only be opened by the desktop app",
+      );
+    },
     Discover: (cidr, ports) =>
       this.json("POST", "/api/discovery", { cidr, ports }),
     InspectServices: (cidr, ports) =>

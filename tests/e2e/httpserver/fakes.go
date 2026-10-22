@@ -133,6 +133,15 @@ type Host struct {
 	InventoryFunc func(context.Context) (app.HostSnapshot, error)
 }
 
+func (h Host) Neighbors(ctx context.Context) (network.NeighborTable, error) {
+	if err := ctx.Err(); err != nil {
+		return network.NeighborTable{}, fmt.Errorf("fake neighbors: %w", err)
+	}
+	return network.NeighborTable{Neighbors: []network.Neighbor{
+		{Address: "192.0.2.1", MAC: "02:00:00:00:00:01", Family: "ipv4", InterfaceIndex: 1, InterfaceName: "Fixture Ethernet", State: "reachable", Router: true},
+	}, Provider: "synthetic passive cache"}, nil
+}
+
 func (h Host) Inventory(ctx context.Context) (app.HostSnapshot, error) {
 	if err := ctx.Err(); err != nil {
 		return app.HostSnapshot{}, fmt.Errorf("fake host: %w", err)
@@ -229,6 +238,10 @@ type LiveCapture struct {
 	CaptureFunc func(context.Context, capture.LiveRequest) (capture.LiveResult, *capture.Artifact, error)
 }
 
+func (f LiveCapture) Status(context.Context) domain.Capability {
+	return domain.Capability{ID: "capture_live", State: "available", Provider: "fake", Detail: "synthetic capture"}
+}
+
 func (f LiveCapture) Capture(ctx context.Context, r capture.LiveRequest) (capture.LiveResult, *capture.Artifact, error) {
 	if err := ctx.Err(); err != nil {
 		return capture.LiveResult{}, nil, fmt.Errorf("fake capture: %w", err)
@@ -242,6 +255,7 @@ func (f LiveCapture) Capture(ctx context.Context, r capture.LiveRequest) (captur
 		v, artifact, err = f.CaptureFunc(ctx, r)
 	}
 	v.Packets = slices.Clone(v.Packets)
+	v.Limits = slices.Clone(v.Limits)
 	if v.Dropped != nil {
 		dropped := *v.Dropped
 		v.Dropped = &dropped

@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/pcap"
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/platform"
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/probe"
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/storage"
@@ -45,7 +46,12 @@ func New(ctx context.Context, cfg Config) (*app.Application, func() error, error
 	}
 	application := app.New(app.Deps{
 		Jobs: store, Settings: store, Diagnostics: network.Diagnostics{Prober: probe.ICMP{}},
-		Host: platform.Host{}, Tools: tools.Runner{}, WiFi: wifi.Native{}, Capture: capture.Native{}, Clock: now,
+		Host: platform.Host{}, Tools: tools.Runner{}, WiFi: wifi.Native{}, Clock: now,
+		CaptureBackends: map[string]app.CaptureBackend{
+			capture.BackendRawSocket: capture.Native{},
+			capture.BackendNpcap:     pcap.NewNpcap(),
+			capture.BackendPktmon:    tools.NewPktmon(),
+		},
 	})
 	var once sync.Once
 	var closeErr error

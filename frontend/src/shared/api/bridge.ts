@@ -3,6 +3,8 @@ import type { Backend, Topic, TransportKind } from "./types";
 
 export * from "./types";
 
+export const LOCATION_SETTINGS_URI = "ms-settings:privacy-location";
+
 let transport: Transport | undefined;
 let ready = false;
 

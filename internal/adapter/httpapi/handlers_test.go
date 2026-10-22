@@ -11,8 +11,10 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"testing/fstest"
 	"time"
 
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/contract"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/porttest/fake"
@@ -25,6 +27,41 @@ func testMux(t *testing.T, a *app.Application) *http.ServeMux {
 	mux := http.NewServeMux()
 	addRoutes(mux, a, s)
 	return mux
+}
+
+func TestCaptureBackendRouteMatchesApplication(t *testing.T) {
+	a := testApp(t)
+	response := httptest.NewRecorder()
+	testMux(t, a).ServeHTTP(response, httptest.NewRequest("GET", "/api/capture/backends", nil))
+	if response.Code != http.StatusOK {
+		t.Fatal(response.Code, response.Body)
+	}
+	var got []domain.Capability
+	if err := json.Unmarshal(response.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got, a.CaptureBackendStatus(t.Context())) {
+		t.Fatal(got)
+	}
+}
+
+func TestNeighborsRouteRejectsBadFamily(t *testing.T) {
+	mux := testMux(t, testApp(t))
+	for _, test := range []struct {
+		query string
+		want  int
+	}{{"", 200}, {"?family=all", 200}, {"?family=ipv4", 200}, {"?family=ipv6", 200}, {"?family=bogus", 400}, {"?family=IPv4", 400}} {
+		t.Run(test.query, func(t *testing.T) {
+			response := httptest.NewRecorder()
+			mux.ServeHTTP(response, httptest.NewRequest("GET", "/api/neighbors"+test.query, nil))
+			if response.Code != test.want {
+				t.Fatal(response.Code, response.Body)
+			}
+			if test.want == 400 && !strings.Contains(response.Body.String(), "invalid_input") {
+				t.Fatal(response.Body)
+			}
+		})
+	}
 }
 
 func TestWriteRoutes(t *testing.T) {
@@ -112,6 +149,38 @@ func testApp(t *testing.T) *app.Application {
 	return a
 }
 
+func TestWiFiConsentHTTPError(t *testing.T) {
+	store := fake.NewStore()
+	a := app.New(app.Deps{Jobs: store, Settings: store, WiFi: fake.WiFi{
+		Network: wifi.Network{SSID: "synthetic-ssid", BSSID: "synthetic-bssid", Profile: "synthetic-profile"},
+		Secret:  wifi.Secret{State: "available", Value: "synthetic-psk"},
+		Err:     &domain.Error{Code: domain.CodeLocationConsentRequired, Message: "Windows location access is off"},
+	}})
+	t.Cleanup(func() { _ = a.Close() })
+	s, err := New(a, Options{Addr: "127.0.0.1:0", Assets: fstest.MapFS{"index.html": &fstest.MapFile{Data: []byte("fixture")}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.listener.Close()
+	for _, route := range []struct{ method, path string }{{"GET", "/api/wifi"}, {"POST", "/api/wifi/reveal"}} {
+		w := serveRequest(s, route.method, route.path, "", true)
+		var body struct {
+			Error contract.Error `json:"error"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+			t.Fatal(err)
+		}
+		if w.Code != 403 || body.Error.Code != "location_consent_required" || body.Error.SettingsURI != domain.LocationSettingsURI {
+			t.Fatal(w.Code, w.Body)
+		}
+		for _, secret := range []string{"synthetic-ssid", "synthetic-bssid", "synthetic-profile", "synthetic-psk"} {
+			if strings.Contains(w.Body.String(), secret) {
+				t.Fatal("Wi-Fi data leaked in consent response")
+			}
+		}
+	}
+}
+
 func TestStatusForEveryCode(t *testing.T) {
 	for code, want := range map[string]int{"invalid_input": 400, "unauthorized": 401, "forbidden": 403, "permission_required": 403, "location_consent_required": 403, "not_found": 404, "conflict": 409, "dependency_missing": 424, "cancelled": 499, "failed": 500, "unsupported": 501, "no_connection": 502, "certificate_invalid": 502, "timeout": 504, "unknown": 500} {
 		if got := statusFor(code); got != want {
@@ -154,7 +223,7 @@ func TestReadRouteErrors(t *testing.T) {
 func TestRoutesMatchApplication(t *testing.T) {
 	// Lifecycle and preflight helpers are not remotely callable operations.
 	excluded := map[string]bool{"Close": true, "StartMetrics": true, "CanImportCapture": true, "CanExportCapture": true, "RunMetricsForTest": true, "PublishForTest": true, "WaitForTest": true}
-	operations := map[string]string{"Capabilities": "GET /api/capabilities", "Interfaces": "GET /api/interfaces", "Inventory": "GET /api/inventory", "Tools": "GET /api/tools", "Diagnose": "POST /api/diagnose", "StartDiagnostic": "POST /api/diagnostics", "CancelJob": "POST /api/jobs/{id}/cancel", "JobSnapshot": "GET /api/jobs/{id}", "Subscribe": "GET /api/events", "History": "GET /api/history", "ClearHistory": "DELETE /api/history", "Settings": "GET /api/settings", "SaveSettings": "PUT /api/settings", "CurrentWiFi": "GET /api/wifi", "RevealWiFi": "POST /api/wifi/reveal", "Discover": "POST /api/discovery", "InspectServices": "POST /api/inspect", "StartCapture": "POST /api/capture/start", "StopCapture": "POST /api/capture/stop", "ImportCapture": "POST /api/capture/import", "ExportCapture": "GET /api/capture/export"}
+	operations := map[string]string{"Capabilities": "GET /api/capabilities", "CaptureBackendStatus": "GET /api/capture/backends", "Interfaces": "GET /api/interfaces", "Neighbors": "GET /api/neighbors", "Inventory": "GET /api/inventory", "Tools": "GET /api/tools", "Diagnose": "POST /api/diagnose", "StartDiagnostic": "POST /api/diagnostics", "CancelJob": "POST /api/jobs/{id}/cancel", "JobSnapshot": "GET /api/jobs/{id}", "Subscribe": "GET /api/events", "History": "GET /api/history", "ClearHistory": "DELETE /api/history", "Settings": "GET /api/settings", "SaveSettings": "PUT /api/settings", "CurrentWiFi": "GET /api/wifi", "RevealWiFi": "POST /api/wifi/reveal", "Discover": "POST /api/discovery", "InspectServices": "POST /api/inspect", "StartCapture": "POST /api/capture/start", "StopCapture": "POST /api/capture/stop", "ImportCapture": "POST /api/capture/import", "ExportCapture": "GET /api/capture/export"}
 	file, err := parser.ParseFile(token.NewFileSet(), "routes.go", nil, 0)
 	if err != nil {
 		t.Fatal(err)

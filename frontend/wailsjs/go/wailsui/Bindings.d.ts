@@ -6,6 +6,8 @@ export function CancelJob(arg1:string):Promise<boolean>;
 
 export function Capabilities():Promise<Array<contract.Capability>>;
 
+export function CaptureBackends():Promise<Array<contract.Capability>>;
+
 export function ClearHistory():Promise<void>;
 
 export function CurrentWiFi():Promise<contract.WiFi>;
@@ -23,6 +25,12 @@ export function InspectServices(arg1:string,arg2:Array<number>):Promise<contract
 export function Interfaces():Promise<Array<contract.Interface>>;
 
 export function Inventory():Promise<contract.Inventory>;
+
+export function Neighbors(arg1:string):Promise<contract.NeighborTable>;
+
+export function OpenLocationSettings():Promise<void>;
+
+export function OpenNpcapDownload():Promise<void>;
 
 export function RevealWiFi():Promise<contract.WiFiSecret>;
 

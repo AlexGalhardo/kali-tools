@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"slices"
 	"sync/atomic"
 	"testing"
@@ -26,6 +27,68 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/job"
 	"github.com/AlexGalhardo/kali-tools/internal/network"
 )
+
+func TestOpenLocationSettingsUsesConstantURI(t *testing.T) {
+	var opened []string
+	rt := quietRuntime()
+	rt.OpenURL = func(_ context.Context, uri string) { opened = append(opened, uri) }
+	b := wailsui.NewWithRuntime(newApplication(t), rt)
+	b.Startup(t.Context())
+	t.Cleanup(func() { b.Shutdown(t.Context()) })
+	err := b.OpenLocationSettings()
+	if runtime.GOOS != "windows" {
+		if err == nil || contract.FromError(err).Code != "unsupported" || len(opened) != 0 {
+			t.Fatal("non-Windows opener invoked", err)
+		}
+		return
+	}
+	if err != nil || !slices.Equal(opened, []string{domain.LocationSettingsURI}) {
+		t.Fatalf("opened=%v err=%v", opened, err)
+	}
+}
+
+func TestNpcapActionsUseFixedURLAndBackendStatus(t *testing.T) {
+	var opened string
+	rt := quietRuntime()
+	rt.OpenURL = func(_ context.Context, uri string) { opened = uri }
+	b := wailsui.NewWithRuntime(newApplication(t), rt)
+	if b.OpenNpcapDownload() == nil {
+		t.Fatal("opener before startup")
+	}
+	if _, err := b.CaptureBackends(); err == nil {
+		t.Fatal("status before startup")
+	}
+	b.Startup(t.Context())
+	t.Cleanup(func() { b.Shutdown(t.Context()) })
+	if err := b.OpenNpcapDownload(); err != nil || opened != "https://npcap.com/#download" {
+		t.Fatal(opened, err)
+	}
+	if got, err := b.CaptureBackends(); err != nil || len(got) != 3 {
+		t.Fatal(got, err)
+	}
+	rt.OpenURL = nil
+	withoutOpener := wailsui.NewWithRuntime(newApplication(t), rt)
+	withoutOpener.Startup(t.Context())
+	t.Cleanup(func() { withoutOpener.Shutdown(t.Context()) })
+	if err := withoutOpener.OpenNpcapDownload(); err == nil || contract.FromError(err).Code != "unsupported" {
+		t.Fatal(err)
+	}
+}
+
+func TestNeighborsBindingValidatesFamilyAndLifecycle(t *testing.T) {
+	b := wailsui.NewWithRuntime(newApplication(t), quietRuntime())
+	if _, err := b.Neighbors("all"); err == nil {
+		t.Fatal("query before startup")
+	}
+	b.Startup(t.Context())
+	t.Cleanup(func() { b.Shutdown(t.Context()) })
+	if _, err := b.Neighbors("bogus"); err == nil || contract.FromError(err).Code != "invalid_input" {
+		t.Fatal(err)
+	}
+	if value, err := b.Neighbors("all"); runtime.GOOS == "windows" && (err != nil || value.Neighbors == nil) {
+		t.Fatal(err)
+	}
+}
 
 func newApplication(t *testing.T) *app.Application {
 	t.Helper()
@@ -77,6 +140,7 @@ func TestBindingsRejectBeforeStartupAndAfterShutdown(t *testing.T) {
 			func() error { return b.SaveSettings(contract.Settings{}) },
 			func() error { _, err := b.CurrentWiFi(); return err },
 			func() error { _, err := b.RevealWiFi(); return err },
+			func() error { return b.OpenLocationSettings() },
 			func() error { _, err := b.Discover("", nil); return err },
 			func() error { _, err := b.InspectServices("", nil); return err },
 			func() error { _, err := b.ImportCapture(); return err },
@@ -246,6 +310,35 @@ func TestImportCaptureEmptySelection(t *testing.T) {
 	}
 }
 
+func TestDialogFailureAndClosedApplicationAreMapped(t *testing.T) {
+	a := newApplication(t)
+	rt := quietRuntime()
+	rt.OpenFile = func(context.Context, wruntime.OpenDialogOptions) (string, error) {
+		return "", errors.New("synthetic internal dialog error")
+	}
+	b := wailsui.NewWithRuntime(a, rt)
+	b.Startup(t.Context())
+	defer b.Shutdown(t.Context())
+	if _, err := b.ImportCapture(); err == nil || contract.FromError(err).Message != "Operation failed" {
+		t.Fatal("dialog failure was not safely mapped", err)
+	}
+	if err := a.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := b.ImportCapture(); err == nil || contract.FromError(err).Code != "invalid_input" {
+		t.Fatal("closed application reached dialog", err)
+	}
+}
+
+func TestOpenLocationSettingsWithoutOpener(t *testing.T) {
+	b := wailsui.NewWithRuntime(newApplication(t), quietRuntime())
+	b.Startup(t.Context())
+	defer b.Shutdown(t.Context())
+	if err := b.OpenLocationSettings(); err == nil || contract.FromError(err).Code != "unsupported" {
+		t.Fatal("missing opener was not reported", err)
+	}
+}
+
 func TestImportCaptureReadsSelectedFile(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "synthetic.pcapng")
 	artifact := capture.NewArtifact(layers.LinkTypeRaw)
@@ -393,7 +486,7 @@ func TestBindingMethodSetMatchesBackend(t *testing.T) {
 			names = append(names, name)
 		}
 	}
-	want := []string{"CancelJob", "Capabilities", "ClearHistory", "CurrentWiFi", "Diagnose", "Discover", "History", "ImportCapture", "InspectServices", "Interfaces", "Inventory", "RevealWiFi", "SaveCapture", "SaveSettings", "Settings", "StartCapture", "StartDiagnostic", "StopCapture", "Tools", "Version"}
+	want := []string{"CancelJob", "Capabilities", "CaptureBackends", "ClearHistory", "CurrentWiFi", "Diagnose", "Discover", "History", "ImportCapture", "InspectServices", "Interfaces", "Inventory", "Neighbors", "OpenLocationSettings", "OpenNpcapDownload", "RevealWiFi", "SaveCapture", "SaveSettings", "Settings", "StartCapture", "StartDiagnostic", "StopCapture", "Tools", "Version"}
 	if !slices.Equal(names, want) {
 		t.Fatalf("methods=%v, want=%v", names, want)
 	}

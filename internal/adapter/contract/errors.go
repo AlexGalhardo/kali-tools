@@ -42,7 +42,11 @@ func normalizedError(code, message string) Error {
 	if !domain.IsErrorCode(code) {
 		code = domain.CodeFailed
 	}
-	return Error{Code: code, Message: sanitize(message)}
+	result := Error{Code: code, Message: sanitize(message)}
+	if code == domain.CodeLocationConsentRequired {
+		result.SettingsURI = domain.LocationSettingsURI
+	}
+	return result
 }
 func sanitize(s string) string {
 	var out strings.Builder

@@ -306,6 +306,11 @@ These are reusable delivery requirements, not a separate completed milestone. De
   - [ ] Native Windows adapter; contracts and explicit unavailable states for other OSes.
   - [ ] Handle disconnected devices, VPNs, loopback and multiple default routes.
   - [ ] Passive neighbor inventory from the OS ARP/ND cache (`GetIpNetTable2`), with no raw packets.
+    - [x] A01 step 1: pure family validation and normalized, sorted, deduplicated neighbor tables, verified at 4,096 and 4,097 rows. [Evidence](docs/verification/specs/A01.md).
+    - [x] A01 step 2: bounded netlink/procfs parsers, malformed-input tests and 30-second fuzz smoke (791,337 executions). [Evidence](docs/verification/specs/A01.md).
+    - [x] A01 steps 3–4: Windows read-only shim/layout/conversion and Linux/fallback glue; Windows smoke and cross-vet pass. Windows hardware comparison gates remain open; Linux Docker lab passes. [Evidence](docs/verification/specs/A01.md).
+    - [x] A01 steps 5–6: shared passive neighbor use case, expanded real/fake port contracts and Wails/HTTP/CLI JSON/CSV exposure; cancellation, bounds and no-history tests pass. [Evidence](docs/verification/specs/A01.md).
+    - [x] A01 step 7: translated neighbor table, family filter, explicit refresh and pagination; both transports pass, 38 browser workflows total. Windows native acceptance stays open; Linux Docker lab passes. [Evidence](docs/verification/specs/A01.md).
   - Assert: compare against OS data; hot-plug/reconnect does not duplicate stale interfaces.
 - [ ] A02 Passive traffic monitoring.
   - [x] Sample native interface counters with monotonic elapsed time.
@@ -332,7 +337,8 @@ These are reusable delivery requirements, not a separate completed milestone. De
   - [ ] Windows WLAN metadata: current profile, SSID/BSSID, signal/channel when available.
     - [x] Channel query and bounded native-structure decoding implemented; synthetic Windows metadata/layout tests passed.
     - [ ] Controlled native Wi-Fi network acceptance.
-  - [ ] Windows 11 24H2 location consent: detect it (`AppCapability.CheckAccess("wiFiControl")`), report `location_consent_required` and deep-link to `ms-settings:privacy-location`; never retry silently.
+  - [ ] Windows 11 24H2 location consent: implementation maps opcode-7 `ERROR_ACCESS_DENIED` on build >= 26100, reports `location_consent_required` and offers the fixed settings URI; no automatic retry. `AppCapability.CheckAccess` remains a WinRT follow-up. Native consent acceptance and Linux coverage remain open. [Evidence](docs/verification/specs/A05.md).
+    - [x] Synthetic consent/reveal mapping, observed capability state, fixed-URI desktop opener, HTTP/CLI error hints and translated UI recovery; key/metadata discarded on provider errors.
   - [ ] Explicit reveal action for the current saved network; native authorization as required.
   - [ ] Distinguish open network, enterprise authentication, no saved key, denied and unsupported.
   - [x] Mask by default; automatically clear displayed secret; no logs, database or default clipboard writes.
@@ -340,6 +346,8 @@ These are reusable delivery requirements, not a separate completed milestone. De
   - Assert: native Windows acceptance verifies reveal, denial and consent-denied states with the owner's test network; automated tests use synthetic secrets and check redaction.
 - [ ] A06 Live packet capture and offline import.
   - Spec: [A06-capture-backends](docs/specs/A06-capture-backends.md)
+  - [x] Implement shared backend selection, optional Npcap/Pktmon adapters, safe count-only history and translated selector/loss UI; automated adapter, interface and browser acceptance passed. Native evaluation remains open. [Evidence](docs/verification/specs/A06.md).
+  - Headless continuation: A06 A06 implementation and automated acceptance cover contracts, history, Npcap/Pktmon adapters, all interfaces and the translated selector; native spike measurements and qualification remain open. [Evidence](docs/verification/specs/A06.md).
   - [ ] Spike an eligible open-source Windows capture backend; document driver/license/performance tradeoffs.
     - [ ] Evaluate user-installed Npcap through gopacket/pcap (detection plus download link only; never bundled or silently installed).
     - [ ] Evaluate built-in Pktmon → pcapng (`etl2pcap`) as an elevated optional adapter; record the privilege and data-loss limits.
@@ -440,33 +448,33 @@ These start after H04 and can run in parallel with late alpha work. Parity is de
 
 - [x] W01 Shared frontend assets. [Implementation evidence](docs/verification/specs/W01.md).
   - Spec: [W01-web-server](docs/specs/W01-web-server.md)
-  - [ ] Expose the built `frontend/dist` through one embed package used by both Wails and `httpapi`.
+  - [x] Expose the built `frontend/dist` through one embed package used by both Wails and `httpapi`.
   - Assert: desktop and server serve byte-identical assets from one build.
-- [x] W02 Transport-neutral frontend. [30 browser tests](docs/verification/specs/W01.md).
+- [x] W02 Transport-neutral frontend. [31 browser tests](docs/verification/specs/W01.md).
   - Spec: [W01-web-server](docs/specs/W01-web-server.md)
-  - [ ] `shared/api/bridge.ts` selects Wails or HTTP/SSE at runtime.
-  - [ ] Feature code never imports `wailsjs` directly.
-  - [ ] Split `app/App.tsx` into `features/<capability>/` modules (D7).
+  - [x] `shared/api/bridge.ts` selects Wails or HTTP/SSE at runtime.
+  - [x] Feature code never imports `wailsjs` directly.
+  - [x] Split `app/App.tsx` into `features/<capability>/` modules (D7).
   - Assert: Playwright runs the same workflows against the Wails-fake transport and against a real `httpapi` test server.
-- [ ] W03 HTTP adapter (`internal/adapter/httpapi`). Implemented and tested; shared acceptance driver and complete boundary-gate matrix remain open. [Evidence](docs/verification/specs/W01.md).
+- [x] W03 HTTP adapter (`internal/adapter/httpapi`). Shared HTTP acceptance driver and non-native boundary verification pass. [Evidence](docs/verification/specs/W01.md).
   - Spec: [W01-web-server](docs/specs/W01-web-server.md)
-  - [ ] REST routes mirroring every application operation. `GET /api/events` Server-Sent Events carry the job, metrics and capture streams. Also `/healthz`.
-  - [ ] Go 1.22+ `ServeMux` patterns in one `routes.go`. Per-route request limits. One error-mapping function.
+  - [x] REST routes mirroring every application operation. `GET /api/events` Server-Sent Events carry the job, metrics and capture streams. Also `/healthz`.
+  - [x] Go 1.22+ `ServeMux` patterns in one `routes.go`. Per-route request limits. One error-mapping function.
   - Assert: an acceptance driver over `httptest` passes the H07 specifications; SSE reconnect with `seq`/`Snapshot` loses no terminal state.
-- [ ] W04 Security baseline: implemented and automated security checks pass; full boundary matrix and native Edge/Chrome acceptance remain open. [Evidence](docs/verification/specs/W04.md).
+- [ ] W04 Security baseline: implementation, automated security checks and non-native boundary verification pass; native Edge/Chrome acceptance remains open. [Evidence](docs/verification/specs/W04.md).
   - Spec: [W04-web-security](docs/specs/W04-web-security.md)
-  - [ ] Loopback bind by default.
-  - [ ] Host allowlist against DNS rebinding.
-  - [ ] Per-launch `crypto/rand` token, delivered in a URL fragment and exchanged for an `HttpOnly; SameSite=Strict` cookie, required on every `/api` route including SSE.
-  - [ ] `http.NewCrossOriginProtection`.
-  - [ ] No CORS.
-  - [ ] CSP and `nosniff`.
-  - [ ] `ReadHeaderTimeout` and `MaxBytesReader`.
-  - [ ] Caps on concurrent jobs and SSE subscribers.
+  - [x] Loopback bind by default.
+  - [x] Host allowlist against DNS rebinding.
+  - [x] Per-launch `crypto/rand` token, delivered in a URL fragment and exchanged for an `HttpOnly; SameSite=Strict` cookie, required on every `/api` route including SSE.
+  - [x] `http.NewCrossOriginProtection`.
+  - [x] No CORS.
+  - [x] CSP and `nosniff`.
+  - [x] `ReadHeaderTimeout` and `MaxBytesReader`.
+  - [x] Caps on concurrent jobs and SSE subscribers.
   - Assert: tests reject a foreign Host, a cross-origin POST, a missing or invalid token and oversized bodies; the token never appears in logs, history or responses.
 - [x] W05 Remote exposure (explicit opt-in). TLS validation and warning verified. [Evidence](docs/verification/specs/W01.md).
   - Spec: [W01-web-server](docs/specs/W01-web-server.md)
-  - [ ] `--listen` on a non-loopback address requires TLS (user certificate or generated self-signed with fingerprint display) and an explicit acknowledgement flag; print a warning.
+  - [x] `--listen` on a non-loopback address requires TLS (user certificate with fingerprint display, per W01) and an explicit acknowledgement flag; print a warning.
   - Assert: non-loopback without TLS fails to start; the documented threat model is reviewed.
 - [ ] W06 Capability honesty in server mode. Browser/API parity verified; alternate account/consent acceptance remains open. [Evidence](docs/verification/specs/W01.md).
   - Spec: [W01-web-server](docs/specs/W01-web-server.md)
@@ -517,8 +525,9 @@ Interfaces exit: a parity matrix (capability × desktop/CLI/web) is recorded in 
   - [ ] Dependency doctor and install instructions; clean-machine smoke checks.
   - [ ] Dependency/source notices, installer uninstall behavior and writable-data locations.
   - Assert: verified matrix names OS/version/architecture/provider; untested combinations are not advertised.
-- [ ] B08 TLS and certificate audit module (`internal/tls` + adapters).
+- [ ] B08 TLS and certificate audit module (`internal/tlsaudit` + adapters).
   - Spec: [B08-tls-audit](docs/specs/B08-tls-audit.md)
+  - Dependency authorization and license review recorded; implementation remains open. [Evidence](docs/verification/specs/B08.md).
   - [ ] Chain report (validity, SAN coverage, key/signature algorithms, AIA/OCSP/CRL, stapling, SCT count), protocol matrix via `MinVersion`/`MaxVersion`, zlint findings.
   - [ ] Optional zcrypto legacy-protocol observation behind a labelled switch, isolated from kali-tools' own connections.
   - Assert: controlled local certificates cover expired, self-signed, mismatch, weak key and legacy-only servers; no exploit checks.
@@ -678,9 +687,9 @@ The plan does not claim feature parity with every Kali package.
 
 **Next tasks, in order** (each is a spec in [docs/specs](docs/specs/README.md)):
 
-1. W01/W04: shared frontend assets, HTTP/SSE transport and mandatory web security. C01 implementation and non-native acceptance are complete; native SSH acceptance remains open.
+1. A05 implementation is verified on Windows; Linux-host pure-function coverage and manual consent/reveal acceptance remain open. W01/W04 implementation and non-native acceptance are verified; native account/browser/desktop gates remain open.
 2. H09 owner approval: ADR 004 is proposed; H08 mechanical enforcement and hosted positive/negative proofs pass.
-3. W01–W06: shared UI and HTTP/SSE; implement W04 security with W01 before committing `serve` to main.
+3. Retain the W01/W04 native gates; the server's shared acceptance driver, bounds and shutdown verification are recorded.
 4. A05, A06, A01, B08–B11: follow the remaining SDD execution order. Keep H01–H07 native checks and the A07 NPSL owner decision visible; do not treat them as headless passes.
 
 **Constraints.**

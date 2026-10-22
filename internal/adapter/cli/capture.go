@@ -23,7 +23,11 @@ func runCapture(ctx context.Context, application *app.Application, request captu
 	if err := application.StartCapture(ctx, request); err != nil {
 		return capture.LiveResult{}, err
 	}
-	return awaitCapture(ctx, events, func() { application.StopCapture(context.Background()) }, time.Duration(request.DurationSeconds)*time.Second+captureGrace)
+	grace := captureGrace
+	if request.Backend == capture.BackendPktmon {
+		grace += 150 * time.Second
+	}
+	return awaitCapture(ctx, events, func() { application.StopCapture(context.Background()) }, time.Duration(request.DurationSeconds)*time.Second+grace)
 }
 
 func awaitCapture(ctx context.Context, events <-chan job.Event, stop func(), limit time.Duration) (capture.LiveResult, error) {

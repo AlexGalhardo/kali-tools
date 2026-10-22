@@ -46,12 +46,30 @@ stdout:
     },
     {
       "detail": "\u003cnative\u003e",
+      "id": "neighbors",
+      "provider": "\u003cnative\u003e",
+      "state": "\u003cnative\u003e"
+    },
+    {
+      "detail": "\u003cnative\u003e",
       "id": "capture_live",
+      "provider": "\u003cnative\u003e",
+      "state": "\u003cnative\u003e"
+    },
+    {
+      "detail": "\u003cnative\u003e",
+      "id": "capture_pktmon",
+      "provider": "\u003cnative\u003e",
+      "state": "\u003cnative\u003e"
+    },
+    {
+      "detail": "\u003cnative\u003e",
+      "id": "capture_npcap",
       "provider": "\u003cnative\u003e",
       "state": "\u003cnative\u003e"
     }
   ],
   "schema_version": 1,
-  "version": "0.5.1"
+  "version": "0.6.0-dev.1"
 }
 stderr:

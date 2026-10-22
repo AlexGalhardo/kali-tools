@@ -10,13 +10,64 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/cli"
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/contract"
+	"github.com/AlexGalhardo/kali-tools/internal/bootstrap"
 	"github.com/AlexGalhardo/kali-tools/internal/network"
 )
+
+func TestPrivateLabNeighbors(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("requires the Linux Docker lab with all capabilities dropped")
+	}
+	host := os.Getenv("LAB_FIXTURE")
+	if host == "" {
+		t.Fatal("LAB_FIXTURE is required; use the private Docker lab")
+	}
+	ctx, cancel := context.WithTimeout(t.Context(), 20*time.Second)
+	defer cancel()
+	addresses, err := net.DefaultResolver.LookupIP(ctx, "ip4", host)
+	if err != nil || len(addresses) == 0 {
+		t.Fatal("fixture IPv4 lookup failed", err)
+	}
+	address := addresses[0].String()
+	_, err = (network.Diagnostics{}).Diagnose(ctx, network.Request{Kind: "http", Target: "http://" + net.JoinHostPort(address, "8080") + "/health", TimeoutMS: 1000})
+	if err != nil {
+		t.Fatal("fixture contact failed", err)
+	}
+	a, cleanup, err := bootstrap.New(ctx, bootstrap.Config{DataPath: ":memory:"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := cleanup(); err != nil {
+			t.Error(err)
+		}
+	}()
+	var out, stderr bytes.Buffer
+	if code := cli.Run(ctx, a, []string{"neighbors", "--family", "ipv4", "--json"}, &out, &stderr); code != 0 {
+		t.Fatal(code, stderr.String())
+	}
+	var response struct {
+		SchemaVersion int                    `json:"schema_version"`
+		Data          contract.NeighborTable `json:"data"`
+	}
+	if err := json.Unmarshal(out.Bytes(), &response); err != nil || response.SchemaVersion != 1 || response.Data.Provider != "Linux netlink RTM_GETNEIGH" {
+		t.Fatal("invalid neighbor response", err)
+	}
+	for _, row := range response.Data.Neighbors {
+		if row.Address == address {
+			return
+		}
+	}
+	t.Fatal("contacted fixture is absent from the passive neighbor cache")
+}
 
 func TestPrivateLab(t *testing.T) {
 	host := os.Getenv("LAB_FIXTURE")

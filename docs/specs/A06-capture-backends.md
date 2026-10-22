@@ -3,11 +3,13 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | A06 (capture backend spike, Npcap evaluation, Pktmon evaluation, dropped-packet counters) |
-| Status | Ready |
+| Status | Implementation complete (2026-10-22); native acceptance and ADR measurements pending |
 | Depends on | H02 (capture session in the job manager), H03 (`capture.LiveProvider` port), H04 (`app.Application`), H05/H06 (adapters, DTOs), W01 + W04 (HTTP route) |
 | Risk | High: driver licensing, process-wide DLL side effects of `gopacket/pcap`, and a system-wide Pktmon session that must always be stopped |
 
 ## 1. Goal
+
+Architecture correction during step 6: the fixed Npcap URL is declared in domain and aliased by adapter/pcap. Wails uses domain.NpcapDownloadURL, because importing the driven adapter would violate docs/architecture.md and depguard. The URL and behavior are unchanged.
 
 Give kali-tools two optional Windows capture backends besides the existing raw IPv4 socket, without bundling any driver and without making the default build depend on cgo:
 
@@ -32,6 +34,8 @@ Both are spikes. They must deliver working, tested adapters plus the decision re
 ## 3. Current state
 
 Re-verify each fact before starting:
+
+Checkout corrections (2026-10-22): H03 already supplies the three-result LiveProvider and Native implementation; app capture lifecycle is in `internal/app/capture.go`; contracts use `LiveCaptureRequest`/`LiveCapture`, and the HTTP start route is `POST /api/capture/start`. Backend/result fields must also update contract mappers, generated models and CLI JSON fixtures. Keep the established CLI permission exit 4. The existing capture provider field is migrated in step 2, not before its selection tests. Native spike measurements and the default-backend decision remain open; do not infer them from headless checks. The renewed owner instruction authorizes continuing implementation while prior platform-specific acceptance remains explicitly pending.
 
 1. `internal/capture/live.go:14-18`: `LiveRequest{Address, DurationSeconds, PacketLimit}`.
 2. `internal/capture/live.go:19-26`: `LiveResult{Limited, Packets, Provider, Dropped *uint64, Started, Finished}`.
@@ -608,7 +612,7 @@ Native: AC-9 to AC-13 and the ADR 005 measurements on the owner's Windows 11 hos
 | DA-8 [native] | Npcap detection | Procedure: the owner installs Npcap (default options) from npcap.com, runs `kali-tools doctor`, then reinstalls with "Restrict to Administrators" and reruns non-elevated | `available` with version, then `permission_required` | [native] |
 | DA-9 [native] | Npcap capture | Procedure: `-tags pcap` desktop build; select the Wi-Fi/Ethernet IPv4; capture 10 s while running `ping -n 20 <gateway>`; press Stop; navigate to Overview | ≥ 20 ICMP rows; `dropped` numeric; stop < 1 s; UI responsive | [native] |
 | DA-10 [native] | Pktmon capture and cleanup | Procedure: elevated PowerShell runs `kali-tools capture --backend pktmon --duration 10`, then `pktmon status`, then `Get-ChildItem $env:TEMP -Filter kali-tools-pktmon-*` | packets > 0; no session; no directory | [native] |
-| DA-11 [native] | Pktmon refused when not elevated | Procedure: non-elevated `kali-tools capture --backend pktmon --duration 5` | exit 1, `permission_required` | [native] |
+| DA-11 [native] | Pktmon refused when not elevated | Procedure: non-elevated `kali-tools capture --backend pktmon --duration 5` | exit 4, `permission_required` | [native] |
 
 For every [native] row, record:
 
