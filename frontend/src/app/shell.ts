@@ -8,3 +8,23 @@ export type PageProps = {
   setError: (value: string) => void;
   setNotice: (value: string) => void;
 };
+
+export type Page =
+  | "dashboard"
+  | "interfaces"
+  | "diagnostics"
+  | "wifi"
+  | "packets"
+  | "toolkit"
+  | "history"
+  | "settings";
+export const pages: Page[] = [
+  "dashboard",
+  "interfaces",
+  "diagnostics",
+  "wifi",
+  "packets",
+  "toolkit",
+  "history",
+  "settings",
+];
