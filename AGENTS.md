@@ -14,6 +14,10 @@ Before writing code, plans or reviews in this repository, always read and apply 
 
 Do this for every task, including small ones. If a skill conflicts with docs/architecture.md, the architecture document wins and the conflict must be reported.
 
+## Release naming
+
+GitHub releases follow the pattern: `kali-tools X.Y.Z — description`. All development releases are unsigned and published with status note: "unsigned development preview; hardware qualification remains open. Not a release-qualified build."
+
 ## Implementation workflow
 
 - Open work is specified in docs/specs/ (Spec Driven Development). Implement exactly one spec at a time, following docs/specs/README.md:
