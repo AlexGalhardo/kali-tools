@@ -4,6 +4,24 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-22
+
+### Added
+
+- Browser mode with shared embedded assets, authenticated HTTP routes, SSE events, streamed capture imports and binary exports.
+- Per-launch token exchange, HttpOnly sessions, Host and origin checks, strict CSP, bounded requests and explicit TLS-only remote opt-in.
+- HTTP browser workflows and security regression tests.
+
+### Changed
+
+- CLI output is human-readable by default; scripts must pass `--json`. English and PT-BR output and stable JSON contracts are verified.
+- CLI settings/history use the shared persistent SQLite composition; long operations report bounded progress and support cancellation.
+- Frontend pages now own feature state behind a transport-neutral bridge.
+
+### Fixed
+
+- Invalid diagnostic requests no longer reflect credential-bearing targets in partial results.
+
 ### Changed
 
 - W01 step 1 centralizes the frontend build in one Go embed package shared by desktop and future HTTP delivery. No web listener is added in this step. [W01 evidence](docs/verification/specs/W01.md).

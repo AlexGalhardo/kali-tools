@@ -4,7 +4,7 @@ Planning baseline: 2026-10-19. Architecture revision: 2026-10-21.
 
 Owner release instruction (2026-10-21): publish v0.3.0 and rename the earlier release records to v0.1.0/v0.2.0. This explicitly authorizes publication with disclosed unsigned development status; it does not complete any native or release-qualification checkbox below.
 
-Owner checkpoint instruction (2026-10-21): expedite the current work with limited credits, synchronize PLAN/docs/changelog, commit, push and publish the next development release (0.4.0). Earlier 0.1.0/0.2.0 drafts were published without replacing their contents. This publication remains unsigned and does not mark the full PLAN or partial C01 complete.
+Owner checkpoint instruction (2026-10-21): expedite the current work with limited credits, synchronize PLAN/docs/changelog, commit, push and publish the next development release (0.5.0). Earlier 0.1.0/0.2.0 drafts were published without replacing their contents. This publication remains unsigned and does not mark the full PLAN or native acceptance complete. C01 non-native implementation is verified; W01/W04 implementation is present with the explicit open gates below.
 
 Related documents:
 
@@ -364,7 +364,7 @@ These are reusable delivery requirements, not a separate completed milestone. De
   - [ ] Qualify the actual separately installed Nmap executable; it is absent from this host.
   - Assert: core works without tools installed; optional results preserve provider/version and cannot execute arbitrary shell input.
 - [ ] A08 Integrated UI.
-  - [x] Owner-requested black/neon-green terminal theme, bundled JetBrains Mono, mobile layout and Impeccable review. [Theme spec](docs/specs/A08-terminal-theme.md); [evidence](docs/verification/specs/A08-theme.md). Shared styling applies to desktop and browser; HTTP implementation remains W01/W04.
+  - [x] Owner-requested black/neon-green terminal theme, bundled JetBrains Mono, mobile layout and Impeccable review. [Theme spec](docs/specs/A08-terminal-theme.md); [evidence](docs/verification/specs/A08-theme.md). Shared styling applies to desktop and browser; HTTP implementation and security are present; open acceptance is recorded in W01/W04.
   - [x] Dashboard, interfaces, diagnostics, Wi-Fi, packet inspector, toolkit, history and settings.
   - [ ] PT-BR/English catalogs, keyboard access, focus states and Base UI primitives.
   - [ ] Virtualized packet/result tables, loading/error/permission states and cancel controls.
@@ -438,22 +438,22 @@ These start after H04 and can run in parallel with late alpha work. Parity is de
 
 ### 7.2 Web server: same UI in a browser
 
-- [ ] W01 Shared frontend assets.
+- [x] W01 Shared frontend assets. [Implementation evidence](docs/verification/specs/W01.md).
   - Spec: [W01-web-server](docs/specs/W01-web-server.md)
   - [ ] Expose the built `frontend/dist` through one embed package used by both Wails and `httpapi`.
   - Assert: desktop and server serve byte-identical assets from one build.
-- [ ] W02 Transport-neutral frontend.
+- [x] W02 Transport-neutral frontend. [30 browser tests](docs/verification/specs/W01.md).
   - Spec: [W01-web-server](docs/specs/W01-web-server.md)
   - [ ] `shared/api/bridge.ts` selects Wails or HTTP/SSE at runtime.
   - [ ] Feature code never imports `wailsjs` directly.
   - [ ] Split `app/App.tsx` into `features/<capability>/` modules (D7).
   - Assert: Playwright runs the same workflows against the Wails-fake transport and against a real `httpapi` test server.
-- [ ] W03 HTTP adapter (`internal/adapter/httpapi`).
+- [ ] W03 HTTP adapter (`internal/adapter/httpapi`). Implemented and tested; shared acceptance driver and complete boundary-gate matrix remain open. [Evidence](docs/verification/specs/W01.md).
   - Spec: [W01-web-server](docs/specs/W01-web-server.md)
   - [ ] REST routes mirroring every application operation. `GET /api/events` Server-Sent Events carry the job, metrics and capture streams. Also `/healthz`.
   - [ ] Go 1.22+ `ServeMux` patterns in one `routes.go`. Per-route request limits. One error-mapping function.
   - Assert: an acceptance driver over `httptest` passes the H07 specifications; SSE reconnect with `seq`/`Snapshot` loses no terminal state.
-- [ ] W04 Security baseline (blocking for any build that includes `serve`).
+- [ ] W04 Security baseline: implemented and automated security checks pass; full boundary matrix and native Edge/Chrome acceptance remain open. [Evidence](docs/verification/specs/W04.md).
   - Spec: [W04-web-security](docs/specs/W04-web-security.md)
   - [ ] Loopback bind by default.
   - [ ] Host allowlist against DNS rebinding.
@@ -464,11 +464,11 @@ These start after H04 and can run in parallel with late alpha work. Parity is de
   - [ ] `ReadHeaderTimeout` and `MaxBytesReader`.
   - [ ] Caps on concurrent jobs and SSE subscribers.
   - Assert: tests reject a foreign Host, a cross-origin POST, a missing or invalid token and oversized bodies; the token never appears in logs, history or responses.
-- [ ] W05 Remote exposure (explicit opt-in).
+- [x] W05 Remote exposure (explicit opt-in). TLS validation and warning verified. [Evidence](docs/verification/specs/W01.md).
   - Spec: [W01-web-server](docs/specs/W01-web-server.md)
   - [ ] `--listen` on a non-loopback address requires TLS (user certificate or generated self-signed with fingerprint display) and an explicit acknowledgement flag; print a warning.
   - Assert: non-loopback without TLS fails to start; the documented threat model is reviewed.
-- [ ] W06 Capability honesty in server mode.
+- [ ] W06 Capability honesty in server mode. Browser/API parity verified; alternate account/consent acceptance remains open. [Evidence](docs/verification/specs/W01.md).
   - Spec: [W01-web-server](docs/specs/W01-web-server.md)
   - [ ] Report permission, consent and session differences (for example, Wi-Fi location consent or capture permission under a service account) as capability states.
   - Assert: the UI shows the server's actual capability states, not the desktop's.
@@ -687,3 +687,7 @@ The plan does not claim feature parity with every Kali package.
 
 - Hardware acceptance, privilege architecture, license/signing decisions and Linux/macOS parity are not inferred from compilation.
 - Do not mark the plan complete. The owner's current explicit 0.4.0 checkpoint-publication request supersedes the earlier no-tag instruction only for that disclosed development release after its checks pass.
+
+## 0.5.0 owner checkpoint (2026-10-22)
+
+The owner requested a 20-minute completion/publication checkpoint. C01 is implemented; W01/W04 now provide HTTP/SSE browser mode and automated security verification. This is an unsigned development preview, with open native acceptance and remaining SDD gates explicitly retained. See [release verification](docs/verification/0.5.0.md). No published tag or release content was rewritten.

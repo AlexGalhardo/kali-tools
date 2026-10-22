@@ -112,3 +112,159 @@ func handleJob(a *app.Application) http.HandlerFunc {
 		writeJSON(w, http.StatusOK, contract.FromStatus(value))
 	}
 }
+
+func handleDiagnose(a *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var request contract.DiagnosticRequest
+		if err := decodeJSON(w, r, &request, maxJSONBody); err != nil {
+			writeError(w, r, err)
+			return
+		}
+		value, err := a.Diagnose(r.Context(), request.Request())
+		if err != nil {
+			writeError(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, contract.FromDiagnosticResult(value))
+	}
+}
+
+func handleStartDiagnostic(a *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var request contract.DiagnosticRequest
+		if err := decodeJSON(w, r, &request, maxJSONBody); err != nil {
+			writeError(w, r, err)
+			return
+		}
+		value, err := a.StartDiagnostic(r.Context(), request.Request())
+		if err != nil {
+			writeError(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusAccepted, contract.FromStatus(value))
+	}
+}
+
+func handleCancel(a *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := decodeEmpty(w, r); err != nil {
+			writeError(w, r, err)
+			return
+		}
+		id, err := requestJobID(r)
+		if err != nil {
+			writeError(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]bool{"cancelled": a.CancelJob(r.Context(), id)})
+	}
+}
+
+func handleClearHistory(a *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := decodeEmpty(w, r); err != nil {
+			writeError(w, r, err)
+			return
+		}
+		if err := a.ClearHistory(r.Context()); err != nil {
+			writeError(w, r, err)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func handleSaveSettings(a *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var request contract.Settings
+		if err := decodeJSON(w, r, &request, maxJSONBody); err != nil {
+			writeError(w, r, err)
+			return
+		}
+		if err := a.SaveSettings(r.Context(), request.AppSettings()); err != nil {
+			writeError(w, r, err)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func handleReveal(a *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := decodeEmpty(w, r); err != nil {
+			writeError(w, r, err)
+			return
+		}
+		value, err := a.RevealWiFi(r.Context())
+		if err != nil {
+			writeError(w, r, err)
+			return
+		}
+		w.Header().Set("Cache-Control", "no-store")
+		w.Header().Set("Pragma", "no-cache")
+		writeJSON(w, http.StatusOK, contract.FromWiFiSecret(value))
+	}
+}
+
+type scopeRequest struct {
+	CIDR  string `json:"cidr"`
+	Ports []int  `json:"ports"`
+}
+
+func handleDiscover(a *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var request scopeRequest
+		if err := decodeJSON(w, r, &request, maxJSONBody); err != nil {
+			writeError(w, r, err)
+			return
+		}
+		value, err := a.Discover(r.Context(), request.CIDR, request.Ports, app.DefaultDiscoveryTimeout)
+		if err != nil {
+			writeError(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, contract.FromPortResults(value))
+	}
+}
+
+func handleInspect(a *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var request scopeRequest
+		if err := decodeJSON(w, r, &request, maxJSONBody); err != nil {
+			writeError(w, r, err)
+			return
+		}
+		value, err := a.InspectServices(r.Context(), request.CIDR, request.Ports)
+		if err != nil {
+			writeError(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, contract.FromServiceInspection(value))
+	}
+}
+
+func handleStartCapture(a *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var request contract.LiveCaptureRequest
+		if err := decodeJSON(w, r, &request, maxJSONBody); err != nil {
+			writeError(w, r, err)
+			return
+		}
+		if err := a.StartCapture(r.Context(), request.LiveRequest()); err != nil {
+			writeError(w, r, err)
+			return
+		}
+		w.WriteHeader(http.StatusAccepted)
+	}
+}
+
+func handleStopCapture(a *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := decodeEmpty(w, r); err != nil {
+			writeError(w, r, err)
+			return
+		}
+		a.StopCapture(r.Context())
+		w.WriteHeader(http.StatusNoContent)
+	}
+}

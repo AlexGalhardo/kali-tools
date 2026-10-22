@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/cli"
+	"github.com/AlexGalhardo/kali-tools/internal/adapter/httpapi"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
 	"github.com/AlexGalhardo/kali-tools/internal/bootstrap"
 )
@@ -20,6 +21,9 @@ func run(ctx context.Context, args []string, getenv func(string) string, stdout,
 	defer stopReset()
 	if getenv("NO_COLOR") != "" {
 		args = append([]string{"--no-color"}, args...)
+	}
+	if serveArgs, ok := serveArguments(args); ok {
+		return runServe(ctx, serveArgs, stdout, stderr, httpapi.New)
 	}
 	return runWithBootstrap(ctx, args, stdout, stderr, bootstrap.New)
 }

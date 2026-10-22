@@ -1,4 +1,6 @@
 export const en = {
+  serverMode:
+    "Served by kali-tools serve. Capability states are those of the server process.",
   locationConsent: "Location consent required",
   locationConsentError:
     "Windows location consent is required to read Wi-Fi details.",
@@ -43,7 +45,7 @@ export const en = {
   connected: "Connected",
   disconnected: "Disconnected",
   native:
-    "Native bridge unavailable. Launch the desktop app to access your network.",
+    "Not connected. Launch the desktop app, or open the URL printed by kali-tools serve.",
   active: "Active interfaces",
   received: "Receive rate",
   sent: "Send rate",
@@ -137,6 +139,8 @@ export const en = {
     "TCP connect discovery stays inside the selected CIDR. A failed connection is reported as unreachable; it does not prove a closed port.",
 };
 export const pt: typeof en = {
+  serverMode:
+    "Interface servida por kali-tools serve. Os estados das capacidades pertencem ao processo servidor.",
   viewInterfaces: "Ver interfaces",
   locationConsent: "Consentimento de localiza\u00e7\u00e3o necess\u00e1rio",
   locationConsentError:
@@ -184,7 +188,7 @@ export const pt: typeof en = {
   connected: "Conectado",
   disconnected: "Desconectado",
   native:
-    "Ponte nativa indisponível. Abra o aplicativo desktop para acessar sua rede.",
+    "Sem conexão. Abra o aplicativo desktop ou a URL exibida por kali-tools serve.",
   active: "Interfaces ativas",
   received: "Taxa de recebimento",
   sent: "Taxa de envio",

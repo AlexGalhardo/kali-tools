@@ -84,3 +84,9 @@ After a native CLI/desktop build, `go mod download all` and `node scripts/packag
 DNS accepts `--record A|AAAA|CNAME|MX|NS|TXT|PTR`. Discovery launches at most 100 probes/second with 32 workers and a two-minute total deadline. Nmap service inspection has its own fixed two-minute deadline. Packet conversion is explicit: `go run ./cmd/kali-tools capture import --file input.pcap --output output.pcapng --format pcapng`.
 
 The local Windows preview can be copied from build/bin/kali-tools-desktop.exe to the repository root; both locations are ignored. Existing user preferences/history under the previous hacker-tools directory are reused without moving files; new installations use kali-tools. No configuration outside the repository is rewritten during the rename.
+
+## HTTP browser verification
+
+Build the frontend before running Playwright: `cd frontend`, `bun run build`, then `bunx playwright test`. The `wails-fake` project retains 19 desktop workflows. The `http` project runs five shared workflows and six HTTP-only checks against `go run -tags e2e ./tests/e2e/httpserver`. The fixture is not part of production builds. It uses synthetic Wi-Fi data, a local TCP target and a synthetic PCAP.
+
+`PW_PORT` defaults to 4173 and `PW_HTTP_PORT` to 4174; both accept integer ports 1024?65535. Tests use one worker to isolate shared settings/history. Global teardown terminates the fixture process tree. The production server composes the same application services through `bootstrap.New`; tests do not add production injection hooks.

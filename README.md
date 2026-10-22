@@ -264,3 +264,9 @@ CI/CD is active under `.github/workflows/ci.yml`. It checks code, vulnerabilitie
 New installations use the per-user `kali-tools/history.db` configuration path. Existing development data under the legacy `hacker-tools` path remains readable without moving an open database. Source and CLI paths changed to `cmd/kali-tools`; the working directory itself need not be renamed.
 
 Impeccable, Karpathy guidelines and Ponytail remain under `.agents/skills` with pinned source revisions. Signing, hardware qualification and stable distribution remain separate release gates.
+
+## Use it in a browser
+
+Run `kali-tools serve` and open the printed URL. The default listener is `127.0.0.1` on a free port. The URL fragment contains a per-launch token; the browser exchanges it for an HttpOnly session cookie and removes the fragment. Never share that URL. Stop the server with Ctrl-C.
+
+Remote access requires a specific address, `--allow-remote`, `--tls-cert` and `--tls-key`. Anyone holding the token can run diagnostics, discovery and capture and reveal the saved Wi-Fi key as the server user. Capabilities reflect that user's permissions and consent. See [web security](SECURITY.md) and [release limits](docs/releases/0.5.0.md).

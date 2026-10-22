@@ -16,6 +16,7 @@ import {
   type Inventory,
   onEvent,
   type Settings,
+  transportKind,
 } from "../shared/api/bridge";
 import { en, pt } from "../shared/i18n/i18n";
 import { NavIcon } from "../shared/ui/Icon";
@@ -166,7 +167,7 @@ export function App() {
         </nav>
         <div className="sidebar-bottom">
           <span className="status-dot" /> {t.development}
-          <small>0.4.0</small>
+          <small>0.5.0</small>
         </div>
       </aside>
       <div className="workspace">
@@ -219,6 +220,9 @@ export function App() {
             </Button>
           </div>
           {!connected() && <div className="notice">{t.native}</div>}
+          {connected() && transportKind() === "http" && (
+            <div className="notice">{t.serverMode}</div>
+          )}
           {error && (
             <div role="alert" className="error">
               {t.error}: {errorText(error)}

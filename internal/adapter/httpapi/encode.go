@@ -110,9 +110,24 @@ func decodeJSON(w http.ResponseWriter, r *http.Request, value any, limit int64) 
 }
 
 func decodeEmpty(w http.ResponseWriter, r *http.Request) error {
+	rc := http.NewResponseController(w)
+	if err := rc.SetReadDeadline(time.Now().Add(bodyReadTimeout)); err != nil && !errors.Is(err, http.ErrNotSupported) {
+		return err
+	}
+	defer func() { _ = rc.SetReadDeadline(time.Time{}) }()
 	r.Body = http.MaxBytesReader(w, r.Body, 0)
 	if _, err := io.Copy(io.Discard, r.Body); err != nil {
 		return bodyError(err)
 	}
 	return nil
+}
+
+func emptyRequest(next http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := decodeEmpty(w, r); err != nil {
+			writeError(w, r, err)
+			return
+		}
+		next.ServeHTTP(w, r)
+	}
 }

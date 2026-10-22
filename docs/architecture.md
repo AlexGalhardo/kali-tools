@@ -12,7 +12,7 @@ kali-tools is one Go core with three driving interfaces. It uses the hexagonal (
           DRIVING SIDE (primary actors)                      DRIVEN SIDE (secondary actors)
  ┌────────────────────────────────────────┐            ┌──────────────────────────────────────┐
  │ Wails desktop  main.go + wailsui        │            │ adapter/storage   SQLite (modernc)   │
- │ Web server     adapter/httpapi (plan)  │──calls──►  │ adapter/tools     Nmap/TShark exec   │
+ │ Web server     adapter/httpapi         │──calls──►  │ adapter/tools     Nmap/TShark exec   │
  │ CLI            cmd/kali-tools          │   ▲        │ adapter/probe     Windows ICMP       │
  └────────────────────────────────────────┘   │        │ adapter/platform  routes, counters   │
                  │                            │        └──────────────────────────────────────┘
@@ -58,7 +58,7 @@ kali-tools/
 │   │   ├── probe/                  driven: native Windows ICMP echo/traceroute
 │   │   ├── platform/               driven: OS routes, DNS servers and interface counters (windows/linux/other)
 │   │   ├── wailsui/                Wails bindings, native dialogs and event forwarder
-│   │   ├── httpapi/                (empty) target home of the web server: REST, SSE, security middleware
+│   │   ├── httpapi/                REST, SSE, security middleware and bounded file transfers
 │   │   └── cli/                    CLI parsing, commands, output and bounded capture wait
 │   ├── bootstrap/                  shared wiring used by every composition root
 │   └── porttest/                   shared driven-port suites; fake/ contains contract-tested in-memory adapters
@@ -69,7 +69,7 @@ kali-tools/
 │   │   ├── main.tsx                React entry point
 │   │   ├── app/App.tsx             application shell, routes/pages (to be split into features/)
 │   │   ├── features/               (empty) target home of per-capability UI modules
-│   │   ├── shared/api/bridge.ts    THE transport seam: typed calls to Go (Wails today; HTTP+SSE planned)
+│   │   ├── shared/api/bridge.ts    THE transport seam: typed calls to Go (Wails or authenticated HTTP+SSE)
 │   │   ├── shared/i18n/i18n.ts     English and PT-BR catalogs
 │   │   ├── shared/ui/Icon.tsx      shared presentational components
 │   │   └── styles/style.css        design tokens and styles (Tailwind source root is src/)
@@ -113,7 +113,7 @@ Folders marked *(empty)* contain only `.gitkeep`. They mark target locations fro
 | Capabilities (inner hexagon) | `internal/network`, `internal/capture`, `internal/wifi` | `domain`, stdlib, pure libraries (gopacket) | `adapter/*`, `app`, Wails, `database/sql` |
 | Application | `internal/app`, `internal/job` | `domain`, capability packages, `job` | `adapter/*`, Wails, `net/http`, `os/exec`, `database/sql` |
 | Driven adapters | `internal/adapter/{storage,tools,probe,platform}` | `domain`, capability packages, OS/driver libraries | driving adapters, `cmd`, `app` (except for types) |
-| Driving adapters | `internal/adapter/{wailsui,cli}`; `httpapi` planned | `app`, `domain`, `adapter/contract` DTO types | driven adapters directly (they go through `app`) |
+| Driving adapters | `internal/adapter/{wailsui,cli,httpapi}` | `app`, `domain`, `adapter/contract` DTO types | driven adapters directly (they go through `app`) |
 | Frontend contract | `internal/adapter/contract` | `domain`, `app`, `job`, capability packages | other adapters, Wails, `net/http`, `os/exec`, `database/sql` |
 | Composition roots | `main.go`, `cmd/*`, `internal/bootstrap` | everything | nothing imports them |
 
@@ -224,10 +224,10 @@ H02 moves all three streams through `job.Manager`. `Subscribe(ctx)` uses a defau
 - All bound request/result structs belong to `adapter/contract`; explicit mappers preserve JSON field order and nil slices while cloning mutable data. `fail` delegates error mapping to `contract.FromError`, preserving rejected-promise strings. Events use `contract.EventPayload`.
 - Metrics and capture lifecycle live in `internal/app` after H02. Wails retains native dialogs and a payload translator; it forwards a manager subscription without owning producer state.
 
-### 6.2 Web server (planned): same UI in a browser
+### 6.2 Web server: same UI in a browser
 
 - **Delivery:** `kali-tools serve` subcommand of the CLI binary. One binary serves headless SSH hosts and local browsers.
-- **Package:** `internal/adapter/httpapi`. Routes will use the shared `adapter/contract` DTOs, `EventPayload` and `FromError`.
+- **Package:** `internal/adapter/httpapi`. Routes use the shared `adapter/contract` DTOs, `EventPayload` and `FromError`.
   - REST endpoints mirror the binding methods one-to-one.
   - Server-Sent Events at `/api/events` carry `job`, `metrics` and `capture` events.
   - The frontend `embed.FS` is shared with the desktop build.
@@ -244,9 +244,13 @@ H02 moves all three streams through `job.Manager`. `Subscribe(ctx)` uses a defau
   - Exposing the server on the LAN requires an explicit flag plus TLS plus a warning.
 - **Capability honesty:** a server running as another user or as a service may lack Wi-Fi location consent or capture permission. It must report those states, not fail silently.
 
+The only embedded asset source is `frontend/embed.go`; `Dist()` serves the same bytes to Wails and HTTP. All API routes except `POST /api/session` require cookie or bearer authentication. Health and static assets remain public. Lifecycle/preflight helpers have no separate routes. SSE subscribes before flushing, emits retry/sequence/resync and closes on cancellation; terminal job state is recoverable from `/api/jobs/{id}`. Capture import/export accepts bytes and format, never server paths.
+
+Middleware order is recovery ? redacted access log ? security headers ? Host allowlist ? CrossOriginProtection ? Fetch Metadata ? in-flight cap ? session ? mux. Limits: JSON 64 KiB, session JSON 1 KiB, upload 64 MiB, one file transfer, eight SSE clients, 16 in-flight API requests, five-second header/shutdown deadlines, 120-second idle/upload bounds, 15-second SSE keepalive and ten-second SSE write deadline. CSP allows only same-origin scripts/styles; no inline exemption was needed. Remote listeners require specific binding plus explicit opt-in and TLS 1.2 minimum. See [W04 threat model](specs/W04-web-security.md) and [verification](verification/specs/W04.md). Native account/browser acceptance remains open.
+
 ### 6.3 CLI
 
-C01 provides the command tree, strict flags, stable exit codes, human output by default and explicit versioned JSON. Result labels, states and warnings support English and PT-BR; help stays English. A bounded progress subscriber forwards job-manager events to stderr only in human mode, tracking active jobs for cancellation. Diagnostics subscribe before StartDiagnostic, cancel through CancelJob and await terminal state with a three-second grace. Capture cancellation returns partial results without exporting. The root handles interrupt/SIGTERM, restores default handling for a second signal, forwards NO_COLOR and opens the shared persistent SQLite graph only when NeedsApp requires it. Jobs/capture artifacts remain process-local; retained history/settings survive invocations. Golden fixtures, JSON path/type fixtures and [the CLI contract](cli.md) freeze presentation and compatibility. Native SSH acceptance remains pending. The serve command is reserved and opens no listener until W01/W04.
+C01 provides the command tree, strict flags, stable exit codes, human output by default and explicit versioned JSON. Result labels, states and warnings support English and PT-BR; help stays English. A bounded progress subscriber forwards job-manager events to stderr only in human mode, tracking active jobs for cancellation. Diagnostics subscribe before StartDiagnostic, cancel through CancelJob and await terminal state with a three-second grace. Capture cancellation returns partial results without exporting. The root handles interrupt/SIGTERM, restores default handling for a second signal, forwards NO_COLOR and opens the shared persistent SQLite graph only when NeedsApp requires it. Jobs/capture artifacts remain process-local; retained history/settings survive invocations. Golden fixtures, JSON path/type fixtures and [the CLI contract](cli.md) freeze presentation and compatibility. Native SSH acceptance remains pending. The binary root dispatches serve to the HTTP composition in cmd/kali-tools/serve.go.
 
 - `cmd/kali-tools/main.go` only composes and cleans up. `internal/adapter/cli.Run(ctx, application, args, stdout, stderr) int` owns stdlib flag parsing and the commands: `version`, `doctor`, `interfaces`, `inventory`, `diagnose`, `discover`/`inspect`, `wifi`, `capture`/`import`.
 - All capability commands route through `app.Application`. CLI capture subscribes before starting and waits at most the requested duration plus 10 s; cancellation stops capture and waits for its typed completion. Import/export use application-managed artifacts and the shared 30 s export bound. Discovery and inspection keep count-only history in the CLI's in-memory store.
@@ -290,7 +294,7 @@ Use `git mv`, then rewrite import paths and run `gofmt`. Run `go vet ./...` for 
 | D4 | Resolved 2026-10-21: CLI and Wails map application values to separate `adapter/contract` DTOs; one safe `FromError` preserves stable codes | JSON, redaction, signature and headless workflow tests pass; native IPC acceptance pending | H06 |
 | D5 | Resolved: storage ports have shared suites run against SQLite and in-memory fakes; H07 also wires the ICMP regression after target validation | Native OS-port data-branch qualification remains pending | H03, H07 |
 | D6 | `capture`, `network`, `wifi` mix domain rules with OS or network I/O in one package | Harder to test without hardware | H03 (split only where a port is needed) |
-| D7 | `frontend/src/app/App.tsx` (about 1,250 lines) holds every page | Hard to evolve per feature | W02 |
+| D7 | Resolved: App is below 300 lines; eight feature pages own local state | Verified by typecheck and 30 browser tests | W01/W02 |
 | D8 | Resolved by eight depguard rules and deliberate violations via `node scripts/task.mjs arch` | Hosted proof recorded in H08 evidence | H08 |
 
 ## 9. Verification commands

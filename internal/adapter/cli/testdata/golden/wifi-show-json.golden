@@ -10,6 +10,6 @@ stdout:
     "state": "connected"
   },
   "schema_version": 1,
-  "version": "0.4.0"
+  "version": "0.5.0"
 }
 stderr:

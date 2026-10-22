@@ -6,7 +6,7 @@ stdout:
     "value": "synthetic-test-key"
   },
   "schema_version": 1,
-  "version": "0.4.0"
+  "version": "0.5.0"
 }
 stderr:
 warning: the saved Wi-Fi key will be printed to standard output. Terminal scrollback, shell logs and SSH session recordings may retain it.

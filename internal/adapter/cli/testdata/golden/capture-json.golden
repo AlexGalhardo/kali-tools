@@ -14,7 +14,7 @@ stdout:
     "message": "select a local non-loopback IPv4, duration 1..60 and packet limit 1..10000"
   },
   "schema_version": 1,
-  "version": "0.4.0"
+  "version": "0.5.0"
 }
 stderr:
 warning: "capture" is deprecated; use "capture live"

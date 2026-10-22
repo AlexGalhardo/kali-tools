@@ -181,7 +181,8 @@ func TestDrivingRootsImportOnlyApplication(t *testing.T) {
 		allowed []string
 	}{
 		{"../../main.go", []string{"bootstrap", "adapter/wailsui"}},
-		{"../../cmd/kali-tools/main.go", []string{"bootstrap", "app", "adapter/cli"}},
+		{"../../cmd/kali-tools/main.go", []string{"bootstrap", "app", "adapter/cli", "adapter/httpapi"}},
+		{"../../cmd/kali-tools/serve.go", []string{"bootstrap", "app", "domain", "adapter/cli", "adapter/httpapi", "adapter/contract"}},
 		{"../adapter/cli/cli.go", []string{"app", "domain", "network", "capture", "adapter/contract"}},
 		{"../adapter/cli/capture.go", []string{"app", "domain", "job", "capture", "adapter/contract"}},
 		{"../adapter/wailsui/bindings.go", []string{"app", "domain", "job", "adapter/contract"}},
@@ -198,7 +199,7 @@ func TestDrivingRootsImportOnlyApplication(t *testing.T) {
 			}
 			allowed := false
 			// W01 shares static assets through a pure package outside internal/.
-			if root.path == "../../main.go" && name == prefix+"frontend" {
+			if (root.path == "../../main.go" || root.path == "../../cmd/kali-tools/serve.go") && name == prefix+"frontend" {
 				allowed = true
 			}
 			for _, pkg := range root.allowed {

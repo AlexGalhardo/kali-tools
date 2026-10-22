@@ -250,7 +250,7 @@ Every row is one `mux.Handle` line. "Body limit" names the W04 constant.
 | `/api/` (catch-all) | none | — | 404 `not_found` | 0 |
 | `GET /` | none | — | `http.FileServerFS(opts.Assets)` | 0 |
 
-`Application.Close` has no route. `POST /api/discovery` passes the same probe timeout constant the Wails adapter passes (`app.go:180`: 500 ms). The JSON field names are those of `contract`/`bridge.ts`.
+`Application.Close`, `StartMetrics`, `CanImportCapture` and `CanExportCapture` are lifecycle/preflight helpers and have no separate route. Test-only methods are excluded. `POST /api/discovery` passes the same probe timeout constant the Wails adapter passes (`app.go:180`: 500 ms). The JSON field names are those of `contract`/`bridge.ts`.
 
 Handler rules:
 
@@ -363,7 +363,7 @@ Why remote exposure is opt-in: HTTP and TCP diagnostics, discovery and Nmap insp
 
 ### 4.8 Playwright against a real server (W02 assert)
 
-- New Go program `tests/e2e/httpserver/main.go` with `//go:build e2e`. Flags `--assets <dir>` (served with `os.DirFS`) and `--listen 127.0.0.1:<port>`. It builds `*app.Application` from hand-written fakes in `tests/e2e/httpserver/fakes.go` for every driven port H03 declared (in-memory job/settings store; Wi-Fi provider returning "Fixture Network" and `synthetic-test-key`; tool runner with `nmap` as `dependency_missing`; host network returning the fixture inventory; capture provider). It also opens a TCP listener on `127.0.0.1:0` that accepts and closes connections, and writes a one-packet DNS PCAP into `os.MkdirTemp` with gopacket (as `cmd/kali-tools/main_test.go:109-125` does). It starts `httpapi.New(...).Run` and prints, in order:
+- New Go program `tests/e2e/httpserver/main.go` with `//go:build e2e`. Flags `--assets <dir>` (served with `os.DirFS`) and `--listen 127.0.0.1:<port>`. It builds `*app.Application` from hand-written fakes in `tests/e2e/httpserver/fakes.go` (with `fakes_test.go` contract verification) for every driven port H03 declared (in-memory job/settings store; Wi-Fi provider returning "Fixture Network" and `synthetic-test-key`; tool runner with `nmap` as `dependency_missing`; host network returning the fixture inventory; capture provider). It also opens a TCP listener on `127.0.0.1:0` that accepts and closes connections, and writes a one-packet DNS PCAP into `os.MkdirTemp` with gopacket (as `cmd/kali-tools/main_test.go:109-125` does). It starts `httpapi.New(...).Run` and prints, in order:
 
 ```text
 KT_URL=http://127.0.0.1:<port>/#token=<token>
@@ -401,7 +401,7 @@ Create:
 - `internal/adapter/httpapi/{server,routes,handlers,events,files,encode}.go` and tests (security files in W04).
 - `internal/app/limits.go`.
 - `cmd/kali-tools/serve.go`, `cmd/kali-tools/serve_test.go`.
-- `tests/e2e/httpserver/main.go`, `tests/e2e/httpserver/fakes.go`.
+- `tests/e2e/httpserver/main.go`, `tests/e2e/httpserver/fakes.go` (with `fakes_test.go` contract verification).
 
 Modify:
 
@@ -524,7 +524,7 @@ node scripts/markdown.mjs
 | QG-5 | yes | `go test -race ./internal/adapter/httpapi/...` has no race report (SSE and caps are concurrent) |
 | QG-6 | yes | `internal/adapter/httpapi` ≥ 85 % statements (tightened: security-critical adapter); `frontend` package 100 % (one function); `cmd/kali-tools` not lower than before (record both) |
 | QG-7 | yes | as in README §5.1 |
-| QG-8 | yes | Playwright count rises: 17 `wails-fake` tests kept, plus the shared tests in `http`, plus 6 `@http-only` tests |
+| QG-8 | yes | Playwright count rises: 19 `wails-fake` tests kept, plus the shared tests in `http`, plus 6 `@http-only` tests |
 | QG-9 | yes | binding drift empty after step 2 (no Go binding change expected) |
 | QG-10 | yes | `httpapi` imports no `internal/adapter/{storage,tools,probe,platform,cli,wailsui}` and no `internal/{capture,network,wifi}` |
 | QG-11 | yes | AC-10, AC-12 tests and W04 token tests |
