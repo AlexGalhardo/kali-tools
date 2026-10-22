@@ -7,6 +7,7 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 ### Added
 
 - Run the unchanged diagnostic, discovery and history acceptance scenarios through the authenticated production HTTP server alongside CLI, Wails and direct application drivers (W01; [evidence](docs/verification/specs/W01.md)).
+- Verify web concurrency caps, HTTP header/body boundaries, deadline reset, SSE timing, forced shutdown and the browser's 64-job recovery bound (W01/W04; [evidence](docs/verification/specs/W04.md)).
 
 ## [0.5.1] - 2026-10-21
 

@@ -440,33 +440,33 @@ These start after H04 and can run in parallel with late alpha work. Parity is de
 
 - [x] W01 Shared frontend assets. [Implementation evidence](docs/verification/specs/W01.md).
   - Spec: [W01-web-server](docs/specs/W01-web-server.md)
-  - [ ] Expose the built `frontend/dist` through one embed package used by both Wails and `httpapi`.
+  - [x] Expose the built `frontend/dist` through one embed package used by both Wails and `httpapi`.
   - Assert: desktop and server serve byte-identical assets from one build.
-- [x] W02 Transport-neutral frontend. [30 browser tests](docs/verification/specs/W01.md).
+- [x] W02 Transport-neutral frontend. [31 browser tests](docs/verification/specs/W01.md).
   - Spec: [W01-web-server](docs/specs/W01-web-server.md)
-  - [ ] `shared/api/bridge.ts` selects Wails or HTTP/SSE at runtime.
-  - [ ] Feature code never imports `wailsjs` directly.
-  - [ ] Split `app/App.tsx` into `features/<capability>/` modules (D7).
+  - [x] `shared/api/bridge.ts` selects Wails or HTTP/SSE at runtime.
+  - [x] Feature code never imports `wailsjs` directly.
+  - [x] Split `app/App.tsx` into `features/<capability>/` modules (D7).
   - Assert: Playwright runs the same workflows against the Wails-fake transport and against a real `httpapi` test server.
-- [ ] W03 HTTP adapter (`internal/adapter/httpapi`). Implemented and tested; shared HTTP acceptance driver passes diagnostics, discovery and history. Complete boundary-gate matrix remains open. [Evidence](docs/verification/specs/W01.md).
+- [x] W03 HTTP adapter (`internal/adapter/httpapi`). Shared HTTP acceptance driver and non-native boundary verification pass. [Evidence](docs/verification/specs/W01.md).
   - Spec: [W01-web-server](docs/specs/W01-web-server.md)
-  - [ ] REST routes mirroring every application operation. `GET /api/events` Server-Sent Events carry the job, metrics and capture streams. Also `/healthz`.
-  - [ ] Go 1.22+ `ServeMux` patterns in one `routes.go`. Per-route request limits. One error-mapping function.
+  - [x] REST routes mirroring every application operation. `GET /api/events` Server-Sent Events carry the job, metrics and capture streams. Also `/healthz`.
+  - [x] Go 1.22+ `ServeMux` patterns in one `routes.go`. Per-route request limits. One error-mapping function.
   - Assert: an acceptance driver over `httptest` passes the H07 specifications; SSE reconnect with `seq`/`Snapshot` loses no terminal state.
-- [ ] W04 Security baseline: implemented and automated security checks pass; full boundary matrix and native Edge/Chrome acceptance remain open. [Evidence](docs/verification/specs/W04.md).
+- [ ] W04 Security baseline: implementation, automated security checks and non-native boundary verification pass; native Edge/Chrome acceptance remains open. [Evidence](docs/verification/specs/W04.md).
   - Spec: [W04-web-security](docs/specs/W04-web-security.md)
-  - [ ] Loopback bind by default.
-  - [ ] Host allowlist against DNS rebinding.
-  - [ ] Per-launch `crypto/rand` token, delivered in a URL fragment and exchanged for an `HttpOnly; SameSite=Strict` cookie, required on every `/api` route including SSE.
-  - [ ] `http.NewCrossOriginProtection`.
-  - [ ] No CORS.
-  - [ ] CSP and `nosniff`.
-  - [ ] `ReadHeaderTimeout` and `MaxBytesReader`.
-  - [ ] Caps on concurrent jobs and SSE subscribers.
+  - [x] Loopback bind by default.
+  - [x] Host allowlist against DNS rebinding.
+  - [x] Per-launch `crypto/rand` token, delivered in a URL fragment and exchanged for an `HttpOnly; SameSite=Strict` cookie, required on every `/api` route including SSE.
+  - [x] `http.NewCrossOriginProtection`.
+  - [x] No CORS.
+  - [x] CSP and `nosniff`.
+  - [x] `ReadHeaderTimeout` and `MaxBytesReader`.
+  - [x] Caps on concurrent jobs and SSE subscribers.
   - Assert: tests reject a foreign Host, a cross-origin POST, a missing or invalid token and oversized bodies; the token never appears in logs, history or responses.
 - [x] W05 Remote exposure (explicit opt-in). TLS validation and warning verified. [Evidence](docs/verification/specs/W01.md).
   - Spec: [W01-web-server](docs/specs/W01-web-server.md)
-  - [ ] `--listen` on a non-loopback address requires TLS (user certificate or generated self-signed with fingerprint display) and an explicit acknowledgement flag; print a warning.
+  - [x] `--listen` on a non-loopback address requires TLS (user certificate with fingerprint display, per W01) and an explicit acknowledgement flag; print a warning.
   - Assert: non-loopback without TLS fails to start; the documented threat model is reviewed.
 - [ ] W06 Capability honesty in server mode. Browser/API parity verified; alternate account/consent acceptance remains open. [Evidence](docs/verification/specs/W01.md).
   - Spec: [W01-web-server](docs/specs/W01-web-server.md)

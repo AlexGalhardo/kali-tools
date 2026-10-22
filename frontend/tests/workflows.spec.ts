@@ -1,6 +1,50 @@
 import { expect, test, fillDiagnosticTarget, importCapture } from "./support";
 import AxeBuilder from "@axe-core/playwright";
 
+test("HTTP transport bounds tracked jobs and closes its event source @wails-only", async ({page}) => {
+ await page.goto("/");
+ const results = await page.evaluate(async () => {
+  const modulePath = "/src/shared/api/transport.ts";
+  const {HttpTransport} = await import(modulePath);
+  const originalFetch = window.fetch;
+  const OriginalSource = window.EventSource;
+  const results: {count: number; ids: string[]; closed: boolean}[] = [];
+  try {
+   for (const count of [64, 65]) {
+    let source: FixtureSource | undefined;
+    class FixtureSource extends EventTarget {
+     closed = false;
+     constructor() { super(); source = this; }
+     close() { this.closed = true; }
+    }
+    window.EventSource = FixtureSource as unknown as typeof EventSource;
+    let next = 0;
+    const ids: string[] = [];
+    window.fetch = (async (path: string) => {
+     const id = path === "/api/diagnostics" ? String(++next).padStart(32, "0") : path.split("/").at(-1)!;
+     if (path.startsWith("/api/jobs/")) ids.push(id);
+     return Response.json({id, state: "running"});
+    }) as typeof fetch;
+    const transport = new HttpTransport();
+    const unsubscribe = transport.on("job", () => {});
+    for (let i = 0; i < count; i++) await transport.backend.StartDiagnostic({kind: "tcp", target: "127.0.0.1", port: 9, timeout_ms: 100});
+    source!.dispatchEvent(new Event("resync"));
+    for (let attempt = 0; attempt < 100 && ids.length < 64; attempt++) await new Promise(resolve => setTimeout(resolve, 1));
+    unsubscribe();
+    results.push({count, ids, closed: source!.closed});
+   }
+  } finally {
+   window.fetch = originalFetch;
+   window.EventSource = OriginalSource;
+  }
+  return results;
+ });
+ for (const {count, ids, closed} of results) {
+  expect(ids).toEqual(Array.from({length: 64}, (_, i) => String(i + (count === 64 ? 1 : 2)).padStart(32, "0")));
+  expect(closed).toBe(true);
+ }
+});
+
 test("diagnostic job returns real contract result and history",async({page,connect})=>{await connect(page);await page.getByRole("button",{name:"Diagnostics",exact:true}).click();await fillDiagnosticTarget(page);await page.getByRole("button",{name:/Run diagnostic/}).click();await expect(page.locator("pre")).toHaveText("connected");await page.getByRole("button",{name:"History",exact:true}).click();await expect(page.getByRole("cell",{name:"Diagnostic completed",exact:true})).toBeVisible();});
 test("Wi-Fi key clears on navigation and blur",async({page,connect})=>{await connect(page);await page.getByRole("button",{name:"Wi-Fi",exact:true}).click();await page.getByRole("button",{name:"Reveal current network key"}).click();await expect(page.getByText("synthetic-test-key")).toBeVisible();await page.evaluate(()=>window.dispatchEvent(new Event("blur")));await expect(page.getByText("synthetic-test-key")).toHaveCount(0);await page.getByRole("button",{name:"Reveal current network key"}).click();await page.getByRole("button",{name:"Overview",exact:true}).click();await expect(page.getByText("synthetic-test-key")).toHaveCount(0);});
 test("packet import and display filtering",async({page,connect})=>{await connect(page);await page.getByRole("button",{name:"Packet inspector",exact:true}).click();await importCapture(page);await expect(page.getByRole("cell",{name:"DNS",exact:true})).toBeVisible();await page.getByLabel("Display filter (protocol or address)").fill("TCP");await expect(page.getByRole("cell",{name:"DNS",exact:true})).toHaveCount(0);});

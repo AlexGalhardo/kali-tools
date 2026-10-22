@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | W01, W02, W03, W05, W06 |
-| Status | In progress: server/browser implementation and shared HTTP acceptance driver present; boundary and native gates pending |
+| Status | Implementation and non-native acceptance verified 2026-10-22; native acceptance pending |
 | Depends on | H01–H08, C01 (exit codes and `serve` dispatch); W04 is implemented together with step 6 |
 | Risk | High: opens a TCP listener that can start network operations; any gap in W04 is remotely exploitable from a web page |
 

@@ -5,7 +5,51 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
+
+type readDeadlineWriter struct {
+	*httptest.ResponseRecorder
+	deadlines []time.Time
+}
+
+func (w *readDeadlineWriter) SetReadDeadline(deadline time.Time) error {
+	w.deadlines = append(w.deadlines, deadline)
+	return nil
+}
+
+func TestBodyReadDeadlinesAndReset(t *testing.T) {
+	for _, test := range []struct {
+		name  string
+		body  string
+		empty bool
+	}{
+		{name: "JSON success", body: `{}`},
+		{name: "JSON invalid", body: `{`},
+		{name: "empty success", empty: true},
+		{name: "empty invalid", empty: true, body: "x"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			r := httptest.NewRequest("POST", "/", strings.NewReader(test.body))
+			r.Header.Set("Content-Type", "application/json")
+			w := &readDeadlineWriter{ResponseRecorder: httptest.NewRecorder()}
+			before := time.Now()
+			if test.empty {
+				_ = decodeEmpty(w, r)
+			} else {
+				var value struct{}
+				_ = decodeJSON(w, r, &value, maxJSONBody)
+			}
+			after := time.Now()
+			if len(w.deadlines) != 2 || !w.deadlines[1].IsZero() {
+				t.Fatalf("read deadline not reset: %v", w.deadlines)
+			}
+			if w.deadlines[0].Before(before.Add(30*time.Second)) || w.deadlines[0].After(after.Add(30*time.Second)) {
+				t.Fatalf("JSON deadline outside 30-second bound: %v", w.deadlines[0])
+			}
+		})
+	}
+}
 
 func TestJSONDecodeLimits(t *testing.T) {
 	valid := `{"value":"ok"}`

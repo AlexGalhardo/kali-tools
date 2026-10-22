@@ -84,6 +84,33 @@ func TestOversizedBodyRejected(t *testing.T) {
 	}
 }
 
+func TestEveryJSONRouteBodyBoundary(t *testing.T) {
+	s, _ := securedServer(t)
+	for _, route := range []struct{ method, path, body string }{
+		{"POST", "/api/diagnose", `{}`},
+		{"POST", "/api/diagnostics", `{}`},
+		{"POST", "/api/discovery", `{}`},
+		{"POST", "/api/inspect", `{}`},
+		{"POST", "/api/capture/start", `{}`},
+		{"PUT", "/api/settings", `{"language":"en","retention_days":30}`},
+	} {
+		t.Run(route.path, func(t *testing.T) {
+			for _, size := range []int{maxJSONBody, maxJSONBody + 1} {
+				w := serveRequest(s, route.method, route.path, route.body+strings.Repeat(" ", size-len(route.body)), true)
+				if size > maxJSONBody {
+					if w.Code != 413 || !strings.Contains(w.Body.String(), "request body too large") {
+						t.Fatalf("oversized request: %d %s", w.Code, w.Body)
+					}
+				} else if w.Code != 400 && w.Code != 204 {
+					t.Fatalf("at-limit request never reached validation: %d %s", w.Code, w.Body)
+				} else if strings.Contains(w.Body.String(), "request body too large") {
+					t.Fatal("at-limit request rejected for size")
+				}
+			}
+		})
+	}
+}
+
 func TestSessionUsesConstantTimeCompare(t *testing.T) {
 	raw, err := os.ReadFile("session.go")
 	if err != nil {
