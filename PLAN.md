@@ -307,6 +307,7 @@ These are reusable delivery requirements, not a separate completed milestone. De
   - [ ] Handle disconnected devices, VPNs, loopback and multiple default routes.
   - [ ] Passive neighbor inventory from the OS ARP/ND cache (`GetIpNetTable2`), with no raw packets.
     - [x] A01 step 1: pure family validation and normalized, sorted, deduplicated neighbor tables, verified at 4,096 and 4,097 rows. [Evidence](docs/verification/specs/A01.md).
+    - [x] A01 step 2: bounded netlink/procfs parsers, malformed-input tests and 30-second fuzz smoke (791,337 executions). [Evidence](docs/verification/specs/A01.md).
   - Assert: compare against OS data; hot-plug/reconnect does not duplicate stale interfaces.
 - [ ] A02 Passive traffic monitoring.
   - [x] Sample native interface counters with monotonic elapsed time.

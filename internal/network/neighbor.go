@@ -58,7 +58,8 @@ func NormalizeNeighbors(rows []Neighbor, family string) NeighborTable {
 	usable := make([]candidate, 0, min(len(rows), MaxNeighbors))
 	for _, row := range rows {
 		address, err := netip.ParseAddr(row.Address)
-		if err != nil || address.IsUnspecified() || address.IsLoopback() || address.IsMulticast() || address == netip.AddrFrom4([4]byte{255, 255, 255, 255}) {
+		if err != nil || address.IsUnspecified() || address.IsLoopback() || address.IsMulticast() ||
+			address == netip.AddrFrom4([4]byte{255, 255, 255, 255}) {
 			continue
 		}
 		if strings.EqualFold(row.MAC, "ff:ff:ff:ff:ff:ff") || (family != "all" && row.Family != family) {

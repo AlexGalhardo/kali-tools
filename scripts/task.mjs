@@ -12,7 +12,7 @@ if(task==="check"||task==="scripts")run("node",["--test","scripts/lab.test.mjs",
 if(task==="check"||task==="go"){const formatted=spawnSync("gofmt",["-l",...goFiles(root)],{encoding:"utf8"});if(formatted.error)throw formatted.error;if(formatted.status!==0||formatted.stdout.trim()){console.error(formatted.stdout||formatted.stderr);process.exit(1);}run("go",["mod","tidy","-diff"]);run("go",["vet","./..."]);run("go",["test","-timeout","90s","-coverprofile=coverage.out","./..."]);run("golangci-lint",["run","./..."]);run("govulncheck",["./..."]);}
 if(task==="check"||task==="web"){run("npm",["run","lint"],path.join(root,"frontend"));run("npm",["run","build"],path.join(root,"frontend"));run("npm",["test"],path.join(root,"frontend"));}
 if(task==="race")run("go",["test","-race","-timeout","120s","./..."]);
-if(task==="fuzz"){run("go",["test","./internal/capture","-run=^$","-fuzz=FuzzCapture","-fuzztime=10s","-parallel=2"]);run("go",["test","./internal/adapter/tools","-run=^$","-fuzz=FuzzNmap","-fuzztime=10s","-parallel=2"]);}
+if(task==="fuzz"){run("go",["test","./internal/capture","-run=^$","-fuzz=FuzzCapture","-fuzztime=10s","-parallel=2"]);run("go",["test","./internal/adapter/tools","-run=^$","-fuzz=FuzzNmap","-fuzztime=10s","-parallel=2"]);run("go",["test","./internal/adapter/platform","-run=^$","-fuzz=FuzzParseNetlinkNeighbors","-fuzztime=30s","-parallel=2"]);}
 if(task==="build"){run("go",["build","-trimpath","-o",`build/bin/kali-tools${process.platform==="win32"?".exe":""}`,"./cmd/kali-tools"]);run("wails",["build","-tags","desktop"]);}
 if(task==="dev")run("wails",["dev","-tags","desktop"]);
 if(task==="lab")run("node",["scripts/lab.mjs"]);
