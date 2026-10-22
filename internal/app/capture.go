@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
@@ -26,8 +27,16 @@ func (a *Application) StartCapture(ctx context.Context, request capture.LiveRequ
 	if a.closed {
 		return domain.Invalid("application is shutting down")
 	}
-	if a.deps.Capture == nil {
+	backend := request.Backend
+	if backend == "" {
+		backend = capture.BackendRawSocket
+	}
+	provider := a.deps.CaptureBackends[backend]
+	if provider == nil {
 		return domain.Unsupported("live capture provider is not configured")
+	}
+	if status := provider.Status(ctx); status.State != domain.CapabilityAvailable {
+		return &domain.Error{Code: status.State, Message: status.Detail}
 	}
 	a.capMu.Lock()
 	defer a.capMu.Unlock()
@@ -41,7 +50,17 @@ func (a *Application) StartCapture(ctx context.Context, request capture.LiveRequ
 	go func() {
 		defer a.bg.Done()
 		defer cancel()
-		result, artifact, err := a.deps.Capture.Capture(ctx, request)
+		var result capture.LiveResult
+		var artifact *capture.Artifact
+		err := a.runOperation(ctx, "capture "+backend, func(jobCtx context.Context) (string, error) {
+			var err error
+			result, artifact, err = provider.Capture(jobCtx, request)
+			dropped := "unknown"
+			if result.Dropped != nil {
+				dropped = fmt.Sprint(*result.Dropped)
+			}
+			return fmt.Sprintf("%d packets, %s dropped", len(result.Packets), dropped), err
+		})
 		a.capMu.Lock()
 		a.capArtifact = artifact
 		a.capCancel = nil

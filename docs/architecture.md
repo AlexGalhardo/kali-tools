@@ -177,6 +177,8 @@ A05 adds mutex-protected, process-local Wi-Fi observations in `app.Application`:
 
 A06 step 1 adds backend identifiers (`raw_socket`, `pktmon`, `npcap`) and stable loss-limit codes. Validation retains the raw IPv4 restriction, permits local IPv4/IPv6 for Npcap and requires an empty address for Pktmon. Native raw capture rejects requests for another backend. Contract request/result models carry backend/limits fields; selection and optional adapter wiring follow in the next steps. This does not enable a new capture backend by itself.
 
+A06 step 2 replaces the single capture dependency with the consumer-owned `app.CaptureBackend` (Capture plus cheap Status) and a constructor-copied backend registry. Bootstrap currently registers raw sockets; the optional adapters follow in subsequent steps. StartCapture rejects unavailable providers before capture, and runs the selected backend through the existing job manager. History contains backend/state/counts only; the capture stream still carries exactly one terminal capture result alongside job-state events.
+
 ## 5. Runtime flows
 
 ### 5.1 Starting a diagnostic job (current desktop path)

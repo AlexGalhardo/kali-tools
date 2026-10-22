@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | A06 (capture backend spike, Npcap evaluation, Pktmon evaluation, dropped-packet counters) |
-| Status | In progress (2026-10-22): step 1 backend-aware requests and result limits |
+| Status | In progress (2026-10-22): steps 1–2 contracts, backend selection and redacted history |
 | Depends on | H02 (capture session in the job manager), H03 (`capture.LiveProvider` port), H04 (`app.Application`), H05/H06 (adapters, DTOs), W01 + W04 (HTTP route) |
 | Risk | High: driver licensing, process-wide DLL side effects of `gopacket/pcap`, and a system-wide Pktmon session that must always be stopped |
 

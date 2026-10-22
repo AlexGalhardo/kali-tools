@@ -12,11 +12,11 @@ import (
 )
 
 var (
-	_ app.JobStore        = (*storage.Store)(nil)
-	_ app.SettingsStore   = (*storage.Store)(nil)
-	_ app.HostNetwork     = platform.Host{}
-	_ app.ToolRunner      = tools.Runner{}
-	_ app.WiFiProvider    = wifi.Native{}
-	_ app.CaptureProvider = capture.Native{}
-	_ network.Prober      = probe.ICMP{}
+	_ app.JobStore       = (*storage.Store)(nil)
+	_ app.SettingsStore  = (*storage.Store)(nil)
+	_ app.HostNetwork    = platform.Host{}
+	_ app.ToolRunner     = tools.Runner{}
+	_ app.WiFiProvider   = wifi.Native{}
+	_ app.CaptureBackend = capture.Native{}
+	_ network.Prober     = probe.ICMP{}
 )

@@ -45,7 +45,8 @@ func New(ctx context.Context, cfg Config) (*app.Application, func() error, error
 	}
 	application := app.New(app.Deps{
 		Jobs: store, Settings: store, Diagnostics: network.Diagnostics{Prober: probe.ICMP{}},
-		Host: platform.Host{}, Tools: tools.Runner{}, WiFi: wifi.Native{}, Capture: capture.Native{}, Clock: now,
+		Host: platform.Host{}, Tools: tools.Runner{}, WiFi: wifi.Native{}, Clock: now,
+		CaptureBackends: map[string]app.CaptureBackend{capture.BackendRawSocket: capture.Native{}},
 	})
 	var once sync.Once
 	var closeErr error

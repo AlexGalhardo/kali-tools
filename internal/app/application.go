@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"maps"
 	"sync"
 	"time"
 
@@ -37,6 +38,7 @@ func New(deps Deps) *Application {
 	if deps.Settings == nil {
 		panic("app: settings store is required")
 	}
+	deps.CaptureBackends = maps.Clone(deps.CaptureBackends)
 	a := &Application{deps: deps, diagnostics: deps.Diagnostics, jobs: job.NewManager(deps.Clock, job.Limits{}), done: make(chan struct{}), closeDone: make(chan struct{})}
 	a.jobs.Summarize = jobSummary
 	a.jobs.OnChange = func(st job.Status) error {

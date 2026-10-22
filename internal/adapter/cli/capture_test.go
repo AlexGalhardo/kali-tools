@@ -51,7 +51,7 @@ func TestInterruptStopsCaptureWithoutExport(t *testing.T) {
 		return capture.LiveResult{Provider: "synthetic", Packets: []capture.Packet{{Number: 1, Protocol: "TCP"}}}, nil, nil
 	}}
 	store := fake.NewStore()
-	a := app.New(app.Deps{Jobs: store, Settings: store, Capture: provider})
+	a := app.New(app.Deps{Jobs: store, Settings: store, CaptureBackends: map[string]app.CaptureBackend{capture.BackendRawSocket: provider}})
 	t.Cleanup(func() { _ = a.Close() })
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
@@ -175,6 +175,10 @@ func TestAwaitCaptureLegacyErrorAndUnexpectedData(t *testing.T) {
 
 type captureProvider struct{ code string }
 
+func (f captureProvider) Status(context.Context) domain.Capability {
+	return domain.Capability{ID: "capture_live", State: f.code, Detail: "synthetic provider state"}
+}
+
 func (f captureProvider) Capture(context.Context, capture.LiveRequest) (capture.LiveResult, *capture.Artifact, error) {
 	return capture.LiveResult{Packets: []capture.Packet{}, Provider: "synthetic"}, nil, &domain.Error{Code: f.code, Message: "synthetic provider state"}
 }
@@ -204,7 +208,7 @@ func TestCLICaptureReportsProviderState(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		code = "permission_required"
 	}
-	a := app.New(app.Deps{Jobs: store, Settings: store, Capture: captureProvider{code: code}})
+	a := app.New(app.Deps{Jobs: store, Settings: store, CaptureBackends: map[string]app.CaptureBackend{capture.BackendRawSocket: captureProvider{code: code}}})
 	defer func() { _ = a.Close() }()
 	var out, stderr bytes.Buffer
 	start := time.Now()
