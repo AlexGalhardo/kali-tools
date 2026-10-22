@@ -33,6 +33,7 @@ linters:
             - "**/internal/network/**"
             - "**/internal/capture/**"
             - "**/internal/wifi/**"
+            - "**/internal/tlsaudit/**"
             - "!$test"
           deny:
             - pkg: github.com/AlexGalhardo/kali-tools/internal/adapter

@@ -4,6 +4,10 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+### Added
+
+- TLS audit request validation and bounded certificate report primitives, with SCT parsing and built-in findings (B08 steps 2–3). Network probes, zlint and GUI/web/CLI exposure remain pending ([evidence](docs/verification/specs/B08.md)).
+
 ## [0.6.0-dev.1] - 2026-10-22
 
 Unsigned development preview requested by the owner. Native capture, Windows gateway/GUI comparisons and full release qualification remain open.

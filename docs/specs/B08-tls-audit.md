@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | B08 (chain report, protocol matrix, zlint findings; optional zcrypto legacy observation) |
-| Status | Dependency review complete (2026-10-22); implementation pending |
+| Status | In progress (2026-10-22): dependency review and steps 2–3 complete; network probes and integration pending |
 | Depends on | H02 (job manager), H04 (`app.Application`), H05/H06 (adapters, DTOs), W01 + W04 (HTTP route) |
 | Risk | Medium: a new dependency tree (zlint, zcrypto, logrus, publicsuffix-go, go-toml) and probes that intentionally accept untrusted chains for observation |
 
@@ -41,7 +41,7 @@ Re-verify each fact before starting:
     - `zmap/zlint` (Apache-2.0);
     - `zmap/zcrypto` (Apache-2.0, research-grade, no releases);
     - on Windows, `SystemCertPool` delegates to the platform verifier.
-6. `PLAN.md` B08 names the package `internal/tls`. This spec uses `internal/tlsaudit` on purpose and updates PLAN.md.
+6. `PLAN.md` B08 already names `internal/tlsaudit` after the dependency review; retain that name to avoid shadowing stdlib `crypto/tls`.
 7. `go.mod` has none of `github.com/zmap/*`, `github.com/sirupsen/logrus`, `github.com/weppos/publicsuffix-go` or `github.com/pelletier/go-toml`.
 8. Upstream `github.com/zmap/zlint/v3` (latest tag v3.7.2 at research time) requires Go ≥ 1.25.0. It depends on:
     - `github.com/zmap/zcrypto` (pseudo-version);
@@ -328,6 +328,7 @@ Create:
 Modify:
 
 - `go.mod`, `go.sum`: zlint v3 and its transitive modules.
+- `.golangci.yml`: include `internal/tlsaudit` in the existing capability dependency rule when the package is introduced.
 - `internal/app/capabilities.go`: `tls_audit`.
 - Driving adapters and DTOs; `frontend/src/shared/api/bridge.ts`, `frontend/src/app/App.tsx`, `frontend/src/shared/i18n/i18n.ts`, `frontend/tests/workflows.spec.ts`.
 - `docs/dependencies.md`, `docs/architecture.md`, `docs/tools-research.md`, `PLAN.md`, `docs/licenses/` (add the Apache-2.0 text if not present).

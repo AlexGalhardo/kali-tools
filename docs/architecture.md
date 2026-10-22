@@ -51,6 +51,7 @@ kali-tools/
 │   ├── network/                    capability: interfaces, DNS/TCP/HTTP/TLS/ping/trace diagnostics, TCP discovery, counter deltas
 │   ├── capture/                    capability: live capture (Windows raw IPv4), PCAP/PCAPNG import/export, gopacket decoding
 │   ├── wifi/                       capability: current Wi-Fi metadata and explicit key reveal (Windows)
+│   ├── tlsaudit/                   capability: TLS audit request validation and pure certificate reports (B08 in progress)
 │   ├── adapter/                    all adapters, named by technology
 │   │   ├── contract/               shared frontend DTOs, explicit mappers and safe error mapping
 │   │   ├── storage/                driven: SQLite store, migrations, settings, retention
@@ -287,7 +288,9 @@ C01 provides the command tree, strict flags, stable exit codes, human output by 
 
 ## 7. How to extend
 
-### 7.1 Add a new tool or capability (for example TLS audit)
+### 7.1 Add a new tool or capability
+
+[B08 TLS audit](specs/B08-tls-audit.md) introduces `internal/tlsaudit` below the application layer. Steps 2–3 provide request validation, report types and pure bounded certificate/SCT analysis, importing only stdlib, `domain` and the existing `network.ValidateHost`. The capability depguard rule covers the new package. There is no new network operation, application use case, public endpoint or persistent data in this step; those remain pending under B08.
 
 1. Check scope and licenses in [tools research](tools-research.md). Offensive categories are out of scope.
 2. Create `internal/<capability>/` with domain types, validating constructors, limits and pure logic. Import only stdlib, `domain` and pure libraries.
