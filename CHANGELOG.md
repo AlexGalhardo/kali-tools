@@ -8,6 +8,7 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 - Passive-neighbor domain types and deterministic, bounded normalization with broadcast filtering and duplicate removal; A01 adapters and interface exposure are in progress ([evidence](docs/verification/specs/A01.md)).
 - Bounded passive-neighbor netlink/procfs parsers with state mapping, strict framing checks and fuzz verification; OS collection follows in A01.
+- Read-only Windows neighbor-cache collection and Linux netlink/procfs glue, with explicit unsupported fallback elsewhere; public neighbor interfaces follow in A01.
 
 - Backend-aware capture requests and loss-limit result fields, with bounded validation for raw sockets, Npcap and Pktmon; optional backends are being implemented under A06 ([evidence](docs/verification/specs/A06.md)).
 - Capture backend selection checks availability before starting, and capture history stores only backend, state and packet/drop counts (A06).

@@ -191,6 +191,8 @@ A01 step 1 adds passive neighbor value types and pure normalization in network: 
 
 A01 step 2 adds untagged netlink/procfs parsing inside adapter/platform. Length/alignment checks precede slicing, inputs are capped at 4 MiB/1 MiB and raw rows at 65,536, and summaries retain no borrowed input bytes. These parsers are tested on the host independently of Linux OS access; the OS glue follows separately.
 
+A01 steps 3–4 add platform.Host.Neighbors: Windows uses a fixed system GetIpNetTable2 shim with pinned layout, bounded entries and FreeMibTable cleanup; Linux uses RTM_GETNEIGH with a procfs fallback only on call failure. Both normalize and bound returned summaries; other OSes return unsupported. Context checks surround non-interruptible OS calls. A Windows read-only smoke is separate from the still-open gateway/GUI and Linux lab acceptance.
+
 ## 5. Runtime flows
 
 ### 5.1 Starting a diagnostic job (current desktop path)
