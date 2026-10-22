@@ -20,5 +20,6 @@ var (
 	_ app.WiFiProvider   = wifi.Native{}
 	_ app.CaptureBackend = capture.Native{}
 	_ app.CaptureBackend = (*pcap.Npcap)(nil)
+	_ app.CaptureBackend = (*tools.Pktmon)(nil)
 	_ network.Prober     = probe.ICMP{}
 )

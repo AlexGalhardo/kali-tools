@@ -50,6 +50,7 @@ func New(ctx context.Context, cfg Config) (*app.Application, func() error, error
 		CaptureBackends: map[string]app.CaptureBackend{
 			capture.BackendRawSocket: capture.Native{},
 			capture.BackendNpcap:     pcap.NewNpcap(),
+			capture.BackendPktmon:    tools.NewPktmon(),
 		},
 	})
 	var once sync.Once

@@ -181,6 +181,8 @@ A06 step 2 replaces the single capture dependency with the consumer-owned `app.C
 
 A06 steps 3–4 register `adapter/pcap.Npcap`. Default builds inspect fixed System32 paths and read-only registry values without importing gopacket/pcap or loading capture DLLs. Only `windows && pcap` links that package; the tagged adapter bounds device enumeration, packet buffers, read timeouts and retained artifacts. Its process-wide DLL initialization remains an explicit native qualification gate. Depguard treats pcap as a driven adapter; driving adapters must not import it. The untagged stub shares the live-provider contract suite. No driver is redistributed or installed.
 
+A06 step 5 registers `tools.Pktmon`. It uses fixed argv through the shared bounded subprocess runner, with one process-local capture lock. A successful start owns exactly one cancellation-independent stop; start failures never stop foreign sessions. A private temporary directory contains the bounded circular ETL and converted PCAPNG until import, then is removed. Only in-memory artifacts survive. Pktmon reports all-NIC scope, truncation, duplicates, lost component identity and circular overwrite; unavailable or incomplete drop data stays unknown. Native capture acceptance remains pending.
+
 ## 5. Runtime flows
 
 ### 5.1 Starting a diagnostic job (current desktop path)
