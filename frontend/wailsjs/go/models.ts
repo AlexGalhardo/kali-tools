@@ -272,6 +272,7 @@ export namespace contract {
 		}
 	}
 	export class LiveCaptureRequest {
+	    backend?: string;
 	    address: string;
 	    duration_seconds: number;
 	    packet_limit: number;
@@ -282,6 +283,7 @@ export namespace contract {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.backend = source["backend"];
 	        this.address = source["address"];
 	        this.duration_seconds = source["duration_seconds"];
 	        this.packet_limit = source["packet_limit"];

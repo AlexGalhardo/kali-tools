@@ -111,6 +111,7 @@ type Capture struct {
 }
 
 type LiveCaptureRequest struct {
+	Backend         string `json:"backend,omitempty"`
 	Address         string `json:"address"`
 	DurationSeconds int    `json:"duration_seconds"`
 	PacketLimit     int    `json:"packet_limit"`
@@ -121,6 +122,7 @@ type LiveCapture struct {
 	Packets  []Packet  `json:"packets"`
 	Provider string    `json:"provider"`
 	Dropped  *uint64   `json:"dropped"`
+	Limits   []string  `json:"limits"`
 	Started  time.Time `json:"started"`
 	Finished time.Time `json:"finished"`
 }

@@ -44,8 +44,8 @@ test("consent denial during reveal clears an already visible key @wails-only", a
  await expect(page.getByText("synthetic-test-key")).toHaveCount(0);
 });
 
-test("HTTP transport bounds tracked jobs and closes its event source @wails-only", async ({page}) => {
- await page.goto("/");
+test("HTTP transport bounds tracked jobs and closes its event source @wails-only", async ({page,connect}) => {
+ await connect(page);
  const results = await page.evaluate(async () => {
   const modulePath = "/src/shared/api/transport.ts";
   const {HttpTransport} = await import(modulePath);

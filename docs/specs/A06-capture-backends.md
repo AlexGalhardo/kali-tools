@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | A06 (capture backend spike, Npcap evaluation, Pktmon evaluation, dropped-packet counters) |
-| Status | Ready |
+| Status | In progress (2026-10-22): step 1 backend-aware requests and result limits |
 | Depends on | H02 (capture session in the job manager), H03 (`capture.LiveProvider` port), H04 (`app.Application`), H05/H06 (adapters, DTOs), W01 + W04 (HTTP route) |
 | Risk | High: driver licensing, process-wide DLL side effects of `gopacket/pcap`, and a system-wide Pktmon session that must always be stopped |
 
@@ -32,6 +32,8 @@ Both are spikes. They must deliver working, tested adapters plus the decision re
 ## 3. Current state
 
 Re-verify each fact before starting:
+
+Checkout corrections (2026-10-22): H03 already supplies the three-result LiveProvider and Native implementation; app capture lifecycle is in `internal/app/capture.go`; contracts use `LiveCaptureRequest`/`LiveCapture`, and the HTTP start route is `POST /api/capture/start`. Backend/result fields must also update contract mappers, generated models and CLI JSON fixtures. Keep the established CLI permission exit 4. The existing capture provider field is migrated in step 2, not before its selection tests. Native spike measurements and the default-backend decision remain open; do not infer them from headless checks. The renewed owner instruction authorizes continuing implementation while prior platform-specific acceptance remains explicitly pending.
 
 1. `internal/capture/live.go:14-18`: `LiveRequest{Address, DurationSeconds, PacketLimit}`.
 2. `internal/capture/live.go:19-26`: `LiveResult{Limited, Packets, Provider, Dropped *uint64, Started, Finished}`.

@@ -115,6 +115,7 @@ export type Backend = {
   ImportCapture(): Promise<Capture>;
   SaveCapture(format: string): Promise<boolean>;
   StartCapture(r: {
+    backend?: string;
     address: string;
     duration_seconds: number;
     packet_limit: number;

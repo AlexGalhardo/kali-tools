@@ -17,10 +17,22 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 )
 
+func (Native) Status(context.Context) domain.Capability {
+	c := domain.Capability{ID: "capture_live", Provider: "windows", State: domain.CapabilityPermissionRequired,
+		Detail: "Administrator permission; raw IPv4 only, no Ethernet frames or drop counts"}
+	if windows.GetCurrentProcessToken().IsElevated() {
+		c.State = domain.CapabilityAvailable
+	}
+	return c
+}
+
 func live(ctx context.Context, r LiveRequest, artifact *Artifact) (LiveResult, error) {
-	result := LiveResult{Packets: []Packet{}, Provider: "Windows raw IPv4 socket", Started: time.Now().UTC()}
+	result := LiveResult{Packets: []Packet{}, Limits: []string{}, Provider: "Windows raw IPv4 socket", Started: time.Now().UTC()}
 	if e := ctx.Err(); e != nil {
 		return result, e
+	}
+	if r.Backend != "" && r.Backend != BackendRawSocket {
+		return result, domain.Invalid("raw socket provider requires raw_socket backend")
 	}
 	if e := ValidateLiveRequest(r); e != nil {
 		return result, e

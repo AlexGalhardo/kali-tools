@@ -5,6 +5,7 @@ stdout:
     "dropped": null,
     "finished": "0001-01-01T00:00:00Z",
     "limited": false,
+    "limits": null,
     "packets": null,
     "provider": "",
     "started": "0001-01-01T00:00:00Z"

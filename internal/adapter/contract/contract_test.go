@@ -71,7 +71,7 @@ func mappings() []mappingCase {
 		}),
 		mapping(contract.FromDiagnosticResult), mapping(contract.FromStatus), mapping(contract.FromStatuses), mapping(contract.FromSettings), mapping(contract.FromPortResults), mapping(contract.FromImportResult),
 		mapping(func(v capture.LiveRequest) contract.LiveCaptureRequest {
-			return contract.LiveCaptureRequest{Address: v.Address, DurationSeconds: v.DurationSeconds, PacketLimit: v.PacketLimit}
+			return contract.LiveCaptureRequest{Backend: v.Backend, Address: v.Address, DurationSeconds: v.DurationSeconds, PacketLimit: v.PacketLimit}
 		}),
 		mapping(contract.FromLiveResult), mapping(contract.FromMetrics), mapping(contract.FromWiFi), mapping(contract.FromWiFiSecret), mapping(contract.FromTools), mapping(contract.FromServiceInspection),
 	}
