@@ -1,10 +1,11 @@
 import { Button } from "@base-ui/react/button";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DiagnosticsPage } from "../features/diagnostics/DiagnosticsPage";
 import { HistoryPage } from "../features/history/HistoryPage";
 import { InterfacesPage } from "../features/interfaces/InterfacesPage";
 import { OverviewPage } from "../features/overview/OverviewPage";
 import { SettingsPage } from "../features/settings/SettingsPage";
+import { WiFiPage } from "../features/wifi/WiFiPage";
 import {
   backend,
   type Capability,
@@ -17,14 +18,12 @@ import {
   type Packet,
   type Settings,
   type Tool,
-  type WiFi,
 } from "../shared/api/bridge";
 import { en, pt } from "../shared/i18n/i18n";
 import { download } from "../shared/lib/download";
 import { Empty } from "../shared/ui/Empty";
 import { Field } from "../shared/ui/Field";
 import { NavIcon } from "../shared/ui/Icon";
-import { Stat } from "../shared/ui/Stat";
 
 type Page =
   | "dashboard"
@@ -103,10 +102,7 @@ export function App() {
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState("");
-  const [wifi, setWifi] = useState<WiFi>(),
-    [secret, setSecret] = useState(""),
-    [secretState, setSecretState] = useState(""),
-    [packets, setPackets] = useState<Packet[]>([]),
+  const [packets, setPackets] = useState<Packet[]>([]),
     [packetPage, setPacketPage] = useState(0),
     [filter, setFilter] = useState(""),
     [captureAddress, setCaptureAddress] = useState(""),
@@ -129,7 +125,6 @@ export function App() {
       }[]
     >([]),
     [tools, setTools] = useState<Tool[]>([]);
-  const revealEpoch = useRef(0);
   const execute = useCallback(async (fn: () => Promise<void>) => {
     setError("");
     setNotice("");
@@ -199,35 +194,12 @@ export function App() {
     [t.captureMemoryLimited],
   );
   useEffect(() => {
-    revealEpoch.current++;
-    setSecret("");
-    setSecretState("");
     setError("");
     setNotice("");
     if (!connected()) return;
-    if (page === "wifi")
-      execute(async () => setWifi(await backend().CurrentWiFi()));
     if (page === "toolkit")
       execute(async () => setTools(await backend().Tools()));
   }, [page, execute]);
-  useEffect(() => {
-    const clear = () => {
-      revealEpoch.current++;
-      setSecret("");
-    };
-    window.addEventListener("blur", clear);
-    document.addEventListener("visibilitychange", clear);
-    return () => {
-      clear();
-      window.removeEventListener("blur", clear);
-      document.removeEventListener("visibilitychange", clear);
-    };
-  }, []);
-  useEffect(() => {
-    if (!secret) return;
-    const timer = setTimeout(() => setSecret(""), 15000);
-    return () => clearTimeout(timer);
-  }, [secret]);
   const filtered = packets.filter((p) =>
     `${p.protocol} ${p.source} ${p.destination}`
       .toLowerCase()
@@ -352,52 +324,7 @@ export function App() {
           {page === "diagnostics" && (
             <DiagnosticsPage {...pageProps} errorLabels={errorLabels} />
           )}
-          {page === "wifi" && (
-            <section className="card form">
-              <div className="card-title">
-                <h2>{wifi?.ssid ?? t.wifi}</h2>
-                <span className="pill green">
-                  {wifi ? stateText(wifi.state) : t.unsupported}
-                </span>
-              </div>
-              <div className="stats wifi-stats">
-                <Stat label={t.profile} value={wifi?.profile ?? "—"} />
-                <Stat label="BSSID" value={wifi?.bssid ?? "—"} />
-                <Stat label={t.signal} value={wifi ? `${wifi.signal}%` : "—"} />
-              </div>
-              <Field label={t.password}>
-                <output className="secret">{secret || "••••••••••••"}</output>
-              </Field>
-              {secretState && <p role="status">{stateText(secretState)}</p>}
-              <div className="actions">
-                <Button
-                  disabled={!wifi || busy}
-                  onClick={() =>
-                    execute(async () => {
-                      const epoch = ++revealEpoch.current;
-                      const s = await backend().RevealWiFi();
-                      if (epoch === revealEpoch.current) {
-                        setSecret(s.value);
-                        setSecretState(s.state);
-                      }
-                    })
-                  }
-                >
-                  {t.reveal}
-                </Button>
-                <Button
-                  className="secondary"
-                  onClick={() => {
-                    revealEpoch.current++;
-                    setSecret("");
-                    setSecretState("");
-                  }}
-                >
-                  {t.hide}
-                </Button>
-              </div>
-            </section>
-          )}
+          {page === "wifi" && <WiFiPage {...pageProps} />}
           {page === "packets" && (
             <>
               <section className="card form">
