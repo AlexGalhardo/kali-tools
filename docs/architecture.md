@@ -187,6 +187,8 @@ A06 step 6 exposes ordered backend status through Application, Wails and authent
 
 A06's inspector selects an available backend, renders translated stable loss codes and distinguishes unknown drops from zero. Pktmon sends no address; Npcap exposes local IPv4/IPv6 including loopback. ADR 005 remains proposed with native measurements open; the raw_socket default is preserved pending qualification.
 
+A01 step 1 adds passive neighbor value types and pure normalization in network: discard unusable/broadcast rows, deduplicate by interface/address, sort deterministically and return at most 4,096 rows with an explicit Limited flag. This group adds no OS query, port extension or public route.
+
 ## 5. Runtime flows
 
 ### 5.1 Starting a diagnostic job (current desktop path)

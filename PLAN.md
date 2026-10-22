@@ -306,6 +306,7 @@ These are reusable delivery requirements, not a separate completed milestone. De
   - [ ] Native Windows adapter; contracts and explicit unavailable states for other OSes.
   - [ ] Handle disconnected devices, VPNs, loopback and multiple default routes.
   - [ ] Passive neighbor inventory from the OS ARP/ND cache (`GetIpNetTable2`), with no raw packets.
+    - [x] A01 step 1: pure family validation and normalized, sorted, deduplicated neighbor tables, verified at 4,096 and 4,097 rows. [Evidence](docs/verification/specs/A01.md).
   - Assert: compare against OS data; hot-plug/reconnect does not duplicate stale interfaces.
 - [ ] A02 Passive traffic monitoring.
   - [x] Sample native interface counters with monotonic elapsed time.

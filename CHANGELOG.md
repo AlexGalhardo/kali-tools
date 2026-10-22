@@ -6,6 +6,8 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ### Added
 
+- Passive-neighbor domain types and deterministic, bounded normalization with broadcast filtering and duplicate removal; A01 adapters and interface exposure are in progress ([evidence](docs/verification/specs/A01.md)).
+
 - Backend-aware capture requests and loss-limit result fields, with bounded validation for raw sockets, Npcap and Pktmon; optional backends are being implemented under A06 ([evidence](docs/verification/specs/A06.md)).
 - Capture backend selection checks availability before starting, and capture history stores only backend, state and packet/drop counts (A06).
 - Read-only Npcap detection and an opt-in Windows `pcap` capture adapter, with bounded configuration and no driver redistribution; native qualification remains pending (A06).
