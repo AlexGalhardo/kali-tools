@@ -1,5 +1,6 @@
 import { Button } from "@base-ui/react/button";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { HistoryPage } from "../features/history/HistoryPage";
 import { SettingsPage } from "../features/settings/SettingsPage";
 import {
   backend,
@@ -106,7 +107,6 @@ export function App() {
     [port, setPort] = useState(443),
     [timeout, setTimeoutMS] = useState(3000),
     [diagnostic, setDiagnostic] = useState<DiagnosticResult>(),
-    [jobs, setJobs] = useState<Job[]>([]),
     [activeJob, setActiveJob] = useState("");
   const [wifi, setWifi] = useState<WiFi>(),
     [secret, setSecret] = useState(""),
@@ -184,9 +184,6 @@ export function App() {
   useEffect(() => {
     if (!connected()) return;
     return onEvent<{ job: Job }>("job", (e) => {
-      setJobs((v) =>
-        [e.job, ...v.filter((j) => j.id !== e.job.id)].slice(0, 200),
-      );
       if (e.job.kind === "discovery" || e.job.kind === "nmap") {
         setDiscoveryJob(e.job.state === "running" ? e.job.id : "");
       }
@@ -217,8 +214,6 @@ export function App() {
     if (!connected()) return;
     if (page === "wifi")
       execute(async () => setWifi(await backend().CurrentWiFi()));
-    if (page === "history")
-      execute(async () => setJobs(await backend().History()));
     if (page === "toolkit")
       execute(async () => setTools(await backend().Tools()));
   }, [page, execute]);
@@ -259,7 +254,6 @@ export function App() {
       };
       const j = await backend().StartDiagnostic(request);
       setActiveJob(j.id);
-      setJobs((v) => [j, ...v.filter((v) => v.id !== j.id)]);
     });
   // Result events stay in memory; history stores only redacted state.
   useEffect(
@@ -1112,51 +1106,7 @@ export function App() {
             </>
           )}
           {page === "history" && (
-            <section className="card">
-              <div className="card-title">
-                <h2>{t.history}</h2>
-                <Button
-                  className="secondary"
-                  disabled={!connected() || busy}
-                  onClick={() =>
-                    execute(async () => {
-                      await backend().ClearHistory();
-                      setJobs(await backend().History());
-                    })
-                  }
-                >
-                  {t.clear}
-                </Button>
-              </div>
-              <div className="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      {[t.time, t.kind, t.state, t.info].map((v) => (
-                        <th key={v}>{v}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {jobs.map((j) => (
-                      <tr key={j.id}>
-                        <td>
-                          {new Date(j.created).toLocaleString(
-                            settings.language,
-                          )}
-                        </td>
-                        <td>{j.kind}</td>
-                        <td>
-                          <span className="pill">{stateText(j.state)}</span>
-                        </td>
-                        <td>{j.summary}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {jobs.length === 0 && <Empty text={t.empty} />}
-            </section>
+            <HistoryPage {...pageProps} settings={settings} />
           )}
           {page === "settings" && (
             <SettingsPage
