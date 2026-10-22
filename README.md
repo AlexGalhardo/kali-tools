@@ -201,6 +201,7 @@ Docker builds Linux CLI images. It does not create native Windows/macOS desktop 
 go run ./cmd/kali-tools version
 go run ./cmd/kali-tools doctor
 go run ./cmd/kali-tools --json interfaces
+go run ./cmd/kali-tools neighbors --family all --format json
 go run ./cmd/kali-tools diagnose dns --target example.com --record MX
 go run ./cmd/kali-tools diagnose tcp --target localhost --port 8080
 go run ./cmd/kali-tools diagnose http --target http://localhost:8080/health

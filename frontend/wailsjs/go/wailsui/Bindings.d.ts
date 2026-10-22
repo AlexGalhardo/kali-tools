@@ -26,6 +26,8 @@ export function Interfaces():Promise<Array<contract.Interface>>;
 
 export function Inventory():Promise<contract.Inventory>;
 
+export function Neighbors(arg1:string):Promise<contract.NeighborTable>;
+
 export function OpenLocationSettings():Promise<void>;
 
 export function OpenNpcapDownload():Promise<void>;

@@ -98,6 +98,15 @@ func fail(err error) error {
 	return contract.FromError(err)
 }
 func (b *Bindings) Version() string { return domain.Version }
+
+func (b *Bindings) Neighbors(family string) (contract.NeighborTable, error) {
+	ctx, err := b.ready()
+	if err != nil {
+		return contract.NeighborTable{}, fail(err)
+	}
+	value, err := b.app.Neighbors(ctx, family)
+	return contract.FromNeighborTable(value), fail(err)
+}
 func (b *Bindings) Capabilities() []contract.Capability {
 	ctx, e := b.ready()
 	if e != nil {

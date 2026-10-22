@@ -65,6 +65,7 @@ func mapping[S, D any](f func(S) D) mappingCase {
 }
 func mappings() []mappingCase {
 	return []mappingCase{
+		mapping(contract.FromNeighborTable),
 		mapping(contract.FromCapabilities), mapping(contract.FromInterfaces), mapping(contract.FromInventory),
 		mapping(func(v network.Request) contract.DiagnosticRequest {
 			return contract.DiagnosticRequest{RecordType: v.RecordType, Kind: v.Kind, Target: v.Target, Port: v.Port, TimeoutMS: v.TimeoutMS}

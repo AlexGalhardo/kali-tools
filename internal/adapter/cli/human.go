@@ -138,6 +138,15 @@ func renderHuman(out io.Writer, call invocation, data any) error {
 		for _, item := range v.Counters {
 			line("%s\t%d\t%d", item.ID, item.Received, item.Sent)
 		}
+	case contract.NeighborTable:
+		line("%d %s (%s)", len(v.Neighbors), l("neighbors"), v.Provider)
+		if v.Limited {
+			line("%s", l("limited"))
+		}
+		header("INTERFACE FAMILY ADDRESS MAC STATE ROUTER")
+		for _, row := range v.Neighbors {
+			line("%s\t%s\t%s\t%s\t%s\t%t", row.InterfaceName, row.Family, row.Address, row.MAC, state(row.State), row.Router)
+		}
 	case contract.DiagnosticResult:
 		line("%s %s: %s (%g ms, %s)", v.Kind, v.Target, state(v.Status), v.ElapsedMS, v.Provider)
 		for _, value := range v.Values {

@@ -5,6 +5,7 @@ import "strings"
 type messages map[string]string
 
 var portuguese = messages{
+	"neighbors": "vizinhos", "INTERFACE": "INTERFACE", "FAMILY": "FAMÍLIA", "ADDRESS": "ENDEREÇO", "ROUTER": "ROTEADOR",
 	"CAPABILITY": "CAPACIDADE", "STATE": "ESTADO", "PROVIDER": "PROVEDOR", "DETAIL": "DETALHE",
 	"NAME": "NOME", "INDEX": "ÍNDICE", "UP": "ATIVA", "MTU": "MTU", "MAC": "MAC", "ADDRESSES": "ENDEREÇOS",
 	"ADAPTER": "ADAPTADOR", "GATEWAYS": "GATEWAYS", "DNS": "DNS", "COUNTER": "CONTADOR", "RECEIVED": "RECEBIDO", "SENT": "ENVIADO",

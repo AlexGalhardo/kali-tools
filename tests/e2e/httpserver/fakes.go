@@ -133,6 +133,15 @@ type Host struct {
 	InventoryFunc func(context.Context) (app.HostSnapshot, error)
 }
 
+func (h Host) Neighbors(ctx context.Context) (network.NeighborTable, error) {
+	if err := ctx.Err(); err != nil {
+		return network.NeighborTable{}, fmt.Errorf("fake neighbors: %w", err)
+	}
+	return network.NeighborTable{Neighbors: []network.Neighbor{
+		{Address: "192.0.2.1", MAC: "02:00:00:00:00:01", Family: "ipv4", InterfaceIndex: 1, InterfaceName: "Fixture Ethernet", State: "reachable", Router: true},
+	}, Provider: "synthetic passive cache"}, nil
+}
+
 func (h Host) Inventory(ctx context.Context) (app.HostSnapshot, error) {
 	if err := ctx.Err(); err != nil {
 		return app.HostSnapshot{}, fmt.Errorf("fake host: %w", err)

@@ -15,6 +15,20 @@ export type Capability = {
   provider: string;
 };
 export type Counter = { id: string; received: number; sent: number };
+export type Neighbor = {
+  address: string;
+  mac: string;
+  family: string;
+  interface_index: number;
+  interface_name: string;
+  state: string;
+  router: boolean;
+};
+export type NeighborTable = {
+  neighbors: Neighbor[];
+  limited: boolean;
+  provider: string;
+};
 export type Inventory = {
   adapters: {
     index: number;
@@ -97,6 +111,7 @@ export type Backend = {
   CaptureBackends(): Promise<Capability[]>;
   OpenNpcapDownload(): Promise<void>;
   Interfaces(): Promise<Interface[]>;
+  Neighbors(family: string): Promise<NeighborTable>;
   Inventory(): Promise<Inventory>;
   Diagnose(r: DiagnosticRequest): Promise<DiagnosticResult>;
   StartDiagnostic(r: DiagnosticRequest): Promise<Job>;

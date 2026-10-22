@@ -334,9 +334,6 @@ func TestJSONModeAlwaysEnvelope(t *testing.T) {
 				t.Fatal(err)
 			}
 			want := 0
-			if args[0] == "neighbors" {
-				want = 3
-			}
 			if got != want || response.SchemaVersion != 1 || strings.Contains(stderr.String(), "schema_version") {
 				t.Fatalf("exit=%d, stdout=%s, stderr=%s", got, out.String(), stderr.String())
 			}

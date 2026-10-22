@@ -2,8 +2,16 @@
   "schema_version": 1,
   "command": "neighbors",
   "paths": {
-    "error.code": "string",
-    "error.message": "string",
+    "data.limited": "boolean",
+    "data.neighbors": "array",
+    "data.neighbors[].address": "string",
+    "data.neighbors[].family": "string",
+    "data.neighbors[].interface_index": "number",
+    "data.neighbors[].interface_name": "string",
+    "data.neighbors[].mac": "string",
+    "data.neighbors[].router": "boolean",
+    "data.neighbors[].state": "string",
+    "data.provider": "string",
     "schema_version": "number",
     "version": "string"
   }

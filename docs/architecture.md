@@ -139,7 +139,7 @@ A port is a small Go interface declared **in the package that consumes it**. Ada
 | --- | --- | --- |
 | `app.Application` | `JobStore`, `SettingsStore` | `*storage.Store`, hand-written in-memory test fakes |
 | `app.Application` | `job.Manager` with injected clock function | `internal/job`; `bootstrap.Config.Now` or UTC system clock |
-| `app.Application` | `HostNetwork` | `platform.Host` |
+| `app.Application` | `HostNetwork` (Inventory and passive Neighbors) | `platform.Host` |
 | `app.Application` | `ToolRunner` (including service inspection) | `tools.Runner` |
 | `app.Application` | `WiFiProvider` | `wifi.Native` |
 | `app.Application` | `CaptureBackend` (LiveProvider plus Status), keyed registry | `capture.Native`, `adapter/pcap.Npcap` (optional tagged implementation) |
@@ -192,6 +192,8 @@ A01 step 1 adds passive neighbor value types and pure normalization in network: 
 A01 step 2 adds untagged netlink/procfs parsing inside adapter/platform. Length/alignment checks precede slicing, inputs are capped at 4 MiB/1 MiB and raw rows at 65,536, and summaries retain no borrowed input bytes. These parsers are tested on the host independently of Linux OS access; the OS glue follows separately.
 
 A01 steps 3–4 add platform.Host.Neighbors: Windows uses a fixed system GetIpNetTable2 shim with pinned layout, bounded entries and FreeMibTable cleanup; Linux uses RTM_GETNEIGH with a procfs fallback only on call failure. Both normalize and bound returned summaries; other OSes return unsupported. Context checks surround non-interruptible OS calls. A Windows read-only smoke is separate from the still-open gateway/GUI and Linux lab acceptance.
+
+A01 steps 5–6 extend the consumer-owned HostNetwork port and its real/shared/e2e implementations. Application.Neighbors validates family, bounds its context to five seconds, normalizes results and writes no job/history. Wails, authenticated GET /api/neighbors and CLI JSON/CSV call that same use case. Explicit DTO mapping preserves owned slices, and generated bindings and both frontend transports expose the method. Passive neighbor cache availability is reported separately from active discovery.
 
 ## 5. Runtime flows
 

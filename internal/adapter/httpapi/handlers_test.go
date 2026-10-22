@@ -45,6 +45,25 @@ func TestCaptureBackendRouteMatchesApplication(t *testing.T) {
 	}
 }
 
+func TestNeighborsRouteRejectsBadFamily(t *testing.T) {
+	mux := testMux(t, testApp(t))
+	for _, test := range []struct {
+		query string
+		want  int
+	}{{"", 200}, {"?family=all", 200}, {"?family=ipv4", 200}, {"?family=ipv6", 200}, {"?family=bogus", 400}, {"?family=IPv4", 400}} {
+		t.Run(test.query, func(t *testing.T) {
+			response := httptest.NewRecorder()
+			mux.ServeHTTP(response, httptest.NewRequest("GET", "/api/neighbors"+test.query, nil))
+			if response.Code != test.want {
+				t.Fatal(response.Code, response.Body)
+			}
+			if test.want == 400 && !strings.Contains(response.Body.String(), "invalid_input") {
+				t.Fatal(response.Body)
+			}
+		})
+	}
+}
+
 func TestWriteRoutes(t *testing.T) {
 	a := testApp(t)
 	mux := testMux(t, a)
@@ -204,7 +223,7 @@ func TestReadRouteErrors(t *testing.T) {
 func TestRoutesMatchApplication(t *testing.T) {
 	// Lifecycle and preflight helpers are not remotely callable operations.
 	excluded := map[string]bool{"Close": true, "StartMetrics": true, "CanImportCapture": true, "CanExportCapture": true, "RunMetricsForTest": true, "PublishForTest": true, "WaitForTest": true}
-	operations := map[string]string{"Capabilities": "GET /api/capabilities", "CaptureBackendStatus": "GET /api/capture/backends", "Interfaces": "GET /api/interfaces", "Inventory": "GET /api/inventory", "Tools": "GET /api/tools", "Diagnose": "POST /api/diagnose", "StartDiagnostic": "POST /api/diagnostics", "CancelJob": "POST /api/jobs/{id}/cancel", "JobSnapshot": "GET /api/jobs/{id}", "Subscribe": "GET /api/events", "History": "GET /api/history", "ClearHistory": "DELETE /api/history", "Settings": "GET /api/settings", "SaveSettings": "PUT /api/settings", "CurrentWiFi": "GET /api/wifi", "RevealWiFi": "POST /api/wifi/reveal", "Discover": "POST /api/discovery", "InspectServices": "POST /api/inspect", "StartCapture": "POST /api/capture/start", "StopCapture": "POST /api/capture/stop", "ImportCapture": "POST /api/capture/import", "ExportCapture": "GET /api/capture/export"}
+	operations := map[string]string{"Capabilities": "GET /api/capabilities", "CaptureBackendStatus": "GET /api/capture/backends", "Interfaces": "GET /api/interfaces", "Neighbors": "GET /api/neighbors", "Inventory": "GET /api/inventory", "Tools": "GET /api/tools", "Diagnose": "POST /api/diagnose", "StartDiagnostic": "POST /api/diagnostics", "CancelJob": "POST /api/jobs/{id}/cancel", "JobSnapshot": "GET /api/jobs/{id}", "Subscribe": "GET /api/events", "History": "GET /api/history", "ClearHistory": "DELETE /api/history", "Settings": "GET /api/settings", "SaveSettings": "PUT /api/settings", "CurrentWiFi": "GET /api/wifi", "RevealWiFi": "POST /api/wifi/reveal", "Discover": "POST /api/discovery", "InspectServices": "POST /api/inspect", "StartCapture": "POST /api/capture/start", "StopCapture": "POST /api/capture/stop", "ImportCapture": "POST /api/capture/import", "ExportCapture": "GET /api/capture/export"}
 	file, err := parser.ParseFile(token.NewFileSet(), "routes.go", nil, 0)
 	if err != nil {
 		t.Fatal(err)

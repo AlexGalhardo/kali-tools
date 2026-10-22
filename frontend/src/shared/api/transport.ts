@@ -47,6 +47,10 @@ export class HttpTransport implements Transport {
       );
     },
     Interfaces: () => this.request<Result<"Interfaces">>("/api/interfaces"),
+    Neighbors: (family) =>
+      this.request<Result<"Neighbors">>(
+        `/api/neighbors?family=${encodeURIComponent(family)}`,
+      ),
     Inventory: () => this.request<Result<"Inventory">>("/api/inventory"),
     Tools: () => this.request<Result<"Tools">>("/api/tools"),
     Diagnose: (request) => this.json("POST", "/api/diagnose", request),

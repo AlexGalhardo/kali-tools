@@ -145,7 +145,7 @@ In the architecture, each category maps to one module under `internal/modules/` 
 - `mdlayher/arp` (MIT): ARP on the local L2 segment. Linux `AF_PACKET`, needs `CAP_NET_RAW`.
 - `mdlayher/ndp` (MIT): IPv6 neighbor discovery. Upstream is less active; consider the `antrea.io/ndp` fork.
 - `mdlayher/netlink` (MIT): Linux neighbor and route tables.
-- Windows `GetIpNetTable2` (iphlpapi): lists the OS ARP/ND cache without raw packets. This is the least-privilege answer to "what is on my LAN". Check whether the `x/sys/windows` binding exists, or add a tiny syscall shim **(verify)**.
+- Windows `GetIpNetTable2` (iphlpapi): lists the OS ARP/ND cache without raw packets. This is the least-privilege answer to "what is on my LAN". x/sys v0.49.0 has no binding; kali-tools uses a read-only LazyProc shim with pinned layout tests (A01). Gateway/GUI native acceptance remains pending.
 - `hashicorp/mdns` (MIT): mDNS/DNS-SD. `grandcat/zeroconf` is stale (last release about 6 years ago).
 - `gosnmp` (BSD-2 **(verify)**): read-only system and interface MIB queries against owned devices.
 - SSDP/UPnP: an M-SEARCH listener on `net.ListenMulticastUDP`, with no dependency.

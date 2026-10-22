@@ -79,6 +79,7 @@ func runLegacy(ctx context.Context, application *app.Application, call invocatio
 	duration := flags.Int("duration", 5, "capture duration seconds")
 	limit := flags.Int("limit", 1000, "capture packet limit")
 	backend := flags.String("backend", "raw_socket", "capture backend: raw_socket, pktmon or npcap")
+	family := flags.String("family", "all", "neighbor family: all, ipv4 or ipv6")
 	if e := flags.Parse(args[1:]); e != nil {
 		return exitInvalid
 	}
@@ -97,6 +98,34 @@ func runLegacy(ctx context.Context, application *app.Application, call invocatio
 		case "inventory":
 			value, e := application.Inventory(ctx)
 			data, err = contract.FromInventory(value), e
+		case "neighbors":
+			if *format != "json" && *format != "csv" {
+				err = domain.Invalid("format must be json or csv")
+				break
+			}
+			value, e := application.Neighbors(ctx, *family)
+			data, err = contract.FromNeighborTable(value), e
+			if err == nil && *format == "csv" {
+				writer := csv.NewWriter(out)
+				if e := writer.Write([]string{
+					"schema_version", "interface_index", "interface_name", "family", "address", "mac", "state", "router",
+				}); e != nil {
+					return exitFailure
+				}
+				for _, row := range value.Neighbors {
+					if e := writer.Write([]string{
+						strconv.Itoa(domain.SchemaVersion), strconv.FormatUint(uint64(row.InterfaceIndex), 10),
+						row.InterfaceName, row.Family, row.Address, row.MAC, row.State, strconv.FormatBool(row.Router),
+					}); e != nil {
+						return exitFailure
+					}
+				}
+				writer.Flush()
+				if writer.Error() != nil {
+					return exitFailure
+				}
+				return exitOK
+			}
 		case "diagnose":
 			value, e := runDiagnostic(ctx, application, network.Request{Kind: *kind, Target: *target, Port: *port, TimeoutMS: *timeout, RecordType: *recordType})
 			data, err = contract.FromDiagnosticResult(value), e

@@ -23,7 +23,7 @@ var commands = []command{
 	{path: "doctor", synopsis: "Show capabilities and optional dependencies", needsApp: true},
 	{path: "capabilities", synopsis: "List capabilities and availability states", needsApp: true},
 	{path: "tools", synopsis: "List separately installed optional tools", needsApp: true},
-	{path: "neighbors", synopsis: "Neighbor inventory (not implemented)"},
+	{path: "neighbors", synopsis: "Read the passive OS ARP/ND cache", needsApp: true, flags: []string{"family", "format"}},
 	{path: "interfaces", synopsis: "List local network interfaces", needsApp: true},
 	{path: "inventory", synopsis: "Show routes, DNS and traffic counters", needsApp: true},
 	{path: "diagnose", synopsis: "diagnose [dns|tcp|http|tls|ping|trace] [flags]", needsApp: true, flags: []string{"target", "kind", "port", "record"}},
@@ -56,8 +56,6 @@ func runAdditional(ctx context.Context, a *app.Application, call invocation, std
 	case "tools":
 		value, err := a.Tools(ctx)
 		return contract.FromTools(value), err, true
-	case "neighbors":
-		return nil, domain.Unsupported("neighbor inventory is not implemented yet"), true
 	case "wifi show":
 		value, err := a.CurrentWiFi(ctx)
 		return contract.FromWiFi(value), err, true

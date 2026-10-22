@@ -1,4 +1,6 @@
-exit=3
+exit=0
 stdout:
+1 neighbors (synthetic cache)
+INTERFACE         FAMILY  ADDRESS    MAC                STATE      ROUTER
+Fixture Ethernet  ipv4    192.0.2.1  02:00:00:00:00:01  reachable  true
 stderr:
-error: unsupported: neighbor inventory is not implemented yet

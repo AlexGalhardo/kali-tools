@@ -75,6 +75,21 @@ func TestNpcapActionsUseFixedURLAndBackendStatus(t *testing.T) {
 	}
 }
 
+func TestNeighborsBindingValidatesFamilyAndLifecycle(t *testing.T) {
+	b := wailsui.NewWithRuntime(newApplication(t), quietRuntime())
+	if _, err := b.Neighbors("all"); err == nil {
+		t.Fatal("query before startup")
+	}
+	b.Startup(t.Context())
+	t.Cleanup(func() { b.Shutdown(t.Context()) })
+	if _, err := b.Neighbors("bogus"); err == nil || contract.FromError(err).Code != "invalid_input" {
+		t.Fatal(err)
+	}
+	if value, err := b.Neighbors("all"); runtime.GOOS == "windows" && (err != nil || value.Neighbors == nil) {
+		t.Fatal(err)
+	}
+}
+
 func newApplication(t *testing.T) *app.Application {
 	t.Helper()
 	a, cleanup, err := bootstrap.New(t.Context(), bootstrap.Config{DataPath: ":memory:"})
@@ -471,7 +486,7 @@ func TestBindingMethodSetMatchesBackend(t *testing.T) {
 			names = append(names, name)
 		}
 	}
-	want := []string{"CancelJob", "Capabilities", "CaptureBackends", "ClearHistory", "CurrentWiFi", "Diagnose", "Discover", "History", "ImportCapture", "InspectServices", "Interfaces", "Inventory", "OpenLocationSettings", "OpenNpcapDownload", "RevealWiFi", "SaveCapture", "SaveSettings", "Settings", "StartCapture", "StartDiagnostic", "StopCapture", "Tools", "Version"}
+	want := []string{"CancelJob", "Capabilities", "CaptureBackends", "ClearHistory", "CurrentWiFi", "Diagnose", "Discover", "History", "ImportCapture", "InspectServices", "Interfaces", "Inventory", "Neighbors", "OpenLocationSettings", "OpenNpcapDownload", "RevealWiFi", "SaveCapture", "SaveSettings", "Settings", "StartCapture", "StartDiagnostic", "StopCapture", "Tools", "Version"}
 	if !slices.Equal(names, want) {
 		t.Fatalf("methods=%v, want=%v", names, want)
 	}

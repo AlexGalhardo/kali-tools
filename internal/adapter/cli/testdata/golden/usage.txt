@@ -4,7 +4,7 @@ Commands:
   doctor           Show capabilities and optional dependencies
   capabilities     List capabilities and availability states
   tools            List separately installed optional tools
-  neighbors        Neighbor inventory (not implemented)
+  neighbors        Read the passive OS ARP/ND cache
   interfaces       List local network interfaces
   inventory        Show routes, DNS and traffic counters
   diagnose         diagnose [dns|tcp|http|tls|ping|trace] [flags]

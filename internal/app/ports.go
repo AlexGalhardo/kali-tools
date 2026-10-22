@@ -25,6 +25,7 @@ type SettingsStore interface {
 
 type HostNetwork interface {
 	Inventory(context.Context) (HostSnapshot, error)
+	Neighbors(context.Context) (network.NeighborTable, error)
 }
 
 type ToolRunner interface {

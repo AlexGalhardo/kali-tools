@@ -19,6 +19,7 @@ func addRoutes(mux *http.ServeMux, a *app.Application, s *Server) {
 	mux.Handle("GET /api/capabilities", emptyRequest(handleCapabilities(a)))
 	mux.Handle("GET /api/capture/backends", emptyRequest(handleCaptureBackends(a)))
 	mux.Handle("GET /api/interfaces", emptyRequest(handleInterfaces(a)))
+	mux.Handle("GET /api/neighbors", emptyRequest(handleNeighbors(a)))
 	mux.Handle("GET /api/inventory", emptyRequest(handleInventory(a)))
 	mux.Handle("GET /api/tools", emptyRequest(handleTools(a)))
 	mux.Handle("GET /api/jobs/{id}", emptyRequest(handleJob(a)))

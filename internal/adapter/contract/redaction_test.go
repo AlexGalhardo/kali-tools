@@ -20,7 +20,7 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
 )
 
-var allDTOs = []any{contract.Error{}, contract.Capability{}, contract.Interface{}, contract.Counter{}, contract.Adapter{}, contract.Inventory{}, contract.DiagnosticRequest{}, contract.DiagnosticResult{}, contract.Job{}, contract.JobEvent{}, contract.Settings{}, contract.PortResult{}, contract.Packet{}, contract.Capture{}, contract.LiveCaptureRequest{}, contract.LiveCapture{}, contract.CaptureEvent{}, contract.Rate{}, contract.Metrics{}, contract.WiFi{}, contract.WiFiSecret{}, contract.Tool{}, contract.ServiceInspection{}, contract.NmapFinished{}, contract.NmapState{}, contract.NmapAddress{}, contract.NmapService{}, contract.NmapPort{}, contract.NmapHost{}}
+var allDTOs = []any{contract.Neighbor{}, contract.NeighborTable{}, contract.Error{}, contract.Capability{}, contract.Interface{}, contract.Counter{}, contract.Adapter{}, contract.Inventory{}, contract.DiagnosticRequest{}, contract.DiagnosticResult{}, contract.Job{}, contract.JobEvent{}, contract.Settings{}, contract.PortResult{}, contract.Packet{}, contract.Capture{}, contract.LiveCaptureRequest{}, contract.LiveCapture{}, contract.CaptureEvent{}, contract.Rate{}, contract.Metrics{}, contract.WiFi{}, contract.WiFiSecret{}, contract.Tool{}, contract.ServiceInspection{}, contract.NmapFinished{}, contract.NmapState{}, contract.NmapAddress{}, contract.NmapService{}, contract.NmapPort{}, contract.NmapHost{}}
 
 func TestEveryDTOIsRedactionSafe(t *testing.T) {
 	entries, err := os.ReadDir(".")

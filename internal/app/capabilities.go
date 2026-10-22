@@ -35,5 +35,13 @@ func capabilities() []domain.Capability {
 		}
 		all = append(all, c)
 	}
+	c := domain.Capability{ID: "neighbors", State: domain.CapabilityUnsupported, Provider: runtime.GOOS, Detail: "Provider is not implemented"}
+	if runtime.GOOS == "windows" {
+		c.State, c.Detail = domain.CapabilityAvailable, "OS ARP/ND cache via GetIpNetTable2; no packets sent"
+	}
+	if runtime.GOOS == "linux" {
+		c.State, c.Detail = domain.CapabilityAvailable, "netlink neighbor table (procfs IPv4 fallback); no packets sent"
+	}
+	all = append(all, c)
 	return all
 }

@@ -50,6 +50,10 @@ export function Inventory() {
   return window['go']['wailsui']['Bindings']['Inventory']();
 }
 
+export function Neighbors(arg1) {
+  return window['go']['wailsui']['Bindings']['Neighbors'](arg1);
+}
+
 export function OpenLocationSettings() {
   return window['go']['wailsui']['Bindings']['OpenLocationSettings']();
 }

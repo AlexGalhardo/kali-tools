@@ -33,6 +33,13 @@ func FromCapabilities(v []domain.Capability) []Capability {
 		return Capability{ID: c.ID, State: c.State, Detail: c.Detail, Provider: c.Provider}
 	})
 }
+
+func FromNeighborTable(v network.NeighborTable) NeighborTable {
+	return NeighborTable{Neighbors: mapSlice(v.Neighbors, func(row network.Neighbor) Neighbor {
+		return Neighbor{Address: row.Address, MAC: row.MAC, Family: row.Family,
+			InterfaceIndex: row.InterfaceIndex, InterfaceName: row.InterfaceName, State: row.State, Router: row.Router}
+	}), Limited: v.Limited, Provider: v.Provider}
+}
 func FromInterfaces(v []network.InterfaceInfo) []Interface {
 	return mapSlice(v, func(i network.InterfaceInfo) Interface {
 		return Interface{Index: i.Index, Name: i.Name, MAC: i.MAC, MTU: i.MTU, Up: i.Up, Loopback: i.Loopback, Addresses: slices.Clone(i.Addresses)}

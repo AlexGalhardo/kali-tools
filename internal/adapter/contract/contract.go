@@ -19,6 +19,22 @@ type Capability struct {
 	Provider string `json:"provider"`
 }
 
+type Neighbor struct {
+	Address        string `json:"address"`
+	MAC            string `json:"mac"`
+	Family         string `json:"family"`
+	InterfaceIndex uint32 `json:"interface_index"`
+	InterfaceName  string `json:"interface_name"`
+	State          string `json:"state"`
+	Router         bool   `json:"router"`
+}
+
+type NeighborTable struct {
+	Neighbors []Neighbor `json:"neighbors"`
+	Limited   bool       `json:"limited"`
+	Provider  string     `json:"provider"`
+}
+
 type Interface struct {
 	Index     int      `json:"index"`
 	Name      string   `json:"name"`
