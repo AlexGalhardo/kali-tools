@@ -448,7 +448,7 @@ These start after H04 and can run in parallel with late alpha work. Parity is de
   - [ ] Feature code never imports `wailsjs` directly.
   - [ ] Split `app/App.tsx` into `features/<capability>/` modules (D7).
   - Assert: Playwright runs the same workflows against the Wails-fake transport and against a real `httpapi` test server.
-- [ ] W03 HTTP adapter (`internal/adapter/httpapi`). Implemented and tested; shared acceptance driver and complete boundary-gate matrix remain open. [Evidence](docs/verification/specs/W01.md).
+- [ ] W03 HTTP adapter (`internal/adapter/httpapi`). Implemented and tested; shared HTTP acceptance driver passes diagnostics, discovery and history. Complete boundary-gate matrix remains open. [Evidence](docs/verification/specs/W01.md).
   - Spec: [W01-web-server](docs/specs/W01-web-server.md)
   - [ ] REST routes mirroring every application operation. `GET /api/events` Server-Sent Events carry the job, metrics and capture streams. Also `/healthz`.
   - [ ] Go 1.22+ `ServeMux` patterns in one `routes.go`. Per-route request limits. One error-mapping function.

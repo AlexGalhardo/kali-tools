@@ -169,7 +169,7 @@ H07 suite wiring:
 | `ProberContract` | `probe.ICMP` | `fake.Prober` |
 | `LiveProviderContract` | `capture.Native` | `fake.LiveCapture` |
 
-Only test files outside `internal/porttest` import the suites or fakes. `tests/acceptance` creates a fresh application per scenario; diagnostics, discovery and history run through direct, CLI and Wails drivers after C01 step 4. Bootstrap still wires real SQLite in memory for interface acceptance; persistence remains covered by real-file storage/bootstrap tests. The HTTP driver remains W01. No Wails runtime or native dialogs are launched by these drivers.
+Only test files outside `internal/porttest` import the suites or fakes. `tests/acceptance` creates a fresh application per scenario; diagnostics, discovery and history run through direct, CLI, Wails and HTTP drivers. The HTTP driver starts the production server on loopback, exchanges the launch token for a cookie and verifies shutdown. Bootstrap wires real SQLite in memory for interface acceptance; persistence remains covered by real-file storage/bootstrap tests. No Wails runtime or native dialogs are launched by these drivers.
 
 H07 native OS-port suites passed on Windows build 26300 with active Wi-Fi and administrator capture on 2026-10-21. The capture suite selects an active non-loopback interface; disconnected interfaces may retain addresses that Windows cannot bind. This qualifies H07 OS-port data branches only, not desktop IPC or other platform acceptance.
 

@@ -6,7 +6,7 @@ func TestAcceptance(t *testing.T) {
 	drivers := []struct {
 		name    string
 		factory driverFactory
-	}{{"cli", newCLI}, {"direct", newDirect}, {"wails", newWails}}
+	}{{"cli", newCLI}, {"direct", newDirect}, {"wails", newWails}, {"http", newHTTP}}
 	specs := []struct {
 		name string
 		run  func(*testing.T, scenarioDriver)

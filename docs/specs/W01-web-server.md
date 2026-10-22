@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | W01, W02, W03, W05, W06 |
-| Status | In progress: shared assets step 1 implemented 2026-10-21 |
+| Status | In progress: server/browser implementation and shared HTTP acceptance driver present; boundary and native gates pending |
 | Depends on | H01–H08, C01 (exit codes and `serve` dispatch); W04 is implemented together with step 6 |
 | Risk | High: opens a TCP listener that can start network operations; any gap in W04 is remotely exploitable from a web page |
 
@@ -27,6 +27,8 @@
 Re-verify every fact. Facts marked (H) are expected outputs of H01–H08 and C01; if one is false, STOP and report.
 
 Checkout corrections (2026-10-21): H05 moved dialogs to adapter/wailsui and bindings to wailsui/Bindings; the frontend baseline has 19 workflows. C01 reserves serve without a listener; the actual runServe dispatch is added by this spec step 6, as its Files/Steps require. The shared asset function uses fs.Sub with the constant valid path dist (its error is impossible), preserving 100% reachable statement coverage without a panic-only test seam.
+
+Continuation correction (2026-10-22): steps 1–9 are implemented. The shared acceptance harness still lacked its planned HTTP driver. Complete it with the production server, cookie authentication and unchanged shared scenarios, using the two acceptance test files listed below. Boundary and native gates remain separately tracked.
 
 ### 3.1 Assets and desktop root
 
@@ -400,12 +402,14 @@ Create:
 - `frontend/tests/support.ts`, `frontend/tests/http-server.setup.ts`, `frontend/tests/http.spec.ts` (`@http-only` tests).
 - `internal/adapter/httpapi/{server,routes,handlers,events,files,encode}.go` and tests (security files in W04).
 - `internal/app/limits.go`.
+- `tests/acceptance/http_driver_test.go`: HTTP driver for the existing diagnostics, discovery and history scenarios.
 - `cmd/kali-tools/serve.go`, `cmd/kali-tools/serve_test.go`.
 - `tests/e2e/httpserver/main.go`, `tests/e2e/httpserver/fakes.go` (with `fakes_test.go` contract verification).
 
 Modify:
 
 - `main.go`, `bridge_smoke_test.go`: `frontend.Dist()`.
+- `tests/acceptance/acceptance_test.go`: register the HTTP driver alongside CLI, direct and Wails.
 - `internal/bootstrap/roots_test.go`: permit the pure shared frontend asset package only in desktop composition (checkout correction discovered by the full suite).
 - `frontend/src/shared/api/bridge.ts`, `frontend/src/main.tsx`, `frontend/src/app/App.tsx`, `frontend/src/shared/i18n/i18n.ts` (`native`, `serverMode`, session strings).
 - `frontend/package.json` (`lint` script), `frontend/playwright.config.ts`, `frontend/tests/workflows.spec.ts` (imports `test` from `support.ts`; tags).
