@@ -6,7 +6,7 @@
 kali-tools [global flags] <command> [<subcommand>] [<positional>] [flags]
 ```
 
-Human output is the default. Scripts must pass `--json`. Positional kinds and job IDs precede flags. Help is English and exits 0; no command exits 2. `serve` is reserved for W01/W04 and opens no listener at this checkpoint.
+Human output is the default. Scripts must pass `--json`. Positional kinds and job IDs precede flags. Help is English and exits 0; no command exits 2. The binary implements `serve` through the secure HTTP composition described below.
 
 ## Global flags
 
@@ -418,19 +418,13 @@ tshark  dependency_missing
 
 ## serve
 
-[JSON paths and types](../internal/adapter/cli/testdata/contract/serve.json).
+`kali-tools serve [--listen 127.0.0.1:0] [--json]`
 
-`kali-tools serve [flags]`
+The binary root starts the HTTP/SSE server with the shared persistent application and embedded frontend. Open the printed URL, which contains a secret per-launch fragment; never share it. Ctrl-C stops the server cleanly. Remote mode requires a specific address plus `--allow-remote --tls-cert file --tls-key file`. Wildcard binds are rejected. TLS prints its SHA-256 certificate fingerprint. `--timeout` and `--detach` are rejected; `--lang` and `--no-color` are accepted.
 
-Flags / positional: see W01 §4.6.
+Human output prints the address, token URL and shutdown instruction. JSON prints one versioned startup envelope with `data.url`, `data.address`, `data.tls`, `data.remote` and `data.certificate_sha256`. The URL is printed only on stdout. API requests thereafter use separate contract DTOs, not CLI envelopes.
 
-JSON `data`: see W01. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
-
-Human example (stderr for errors):
-
-```text
-error: invalid_input: serve is handled by the kali-tools binary
-```
+The adapter-only [reserved-command fixture](../internal/adapter/cli/testdata/contract/serve.json) verifies that `cli.Run` delegates listener ownership to the binary; it is not the binary's startup contract. See [web server specification](specs/W01-web-server.md) and [security](../SECURITY.md).
 
 ## help
 
