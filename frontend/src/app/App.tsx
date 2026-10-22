@@ -1,5 +1,6 @@
 import { Button } from "@base-ui/react/button";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { DiagnosticsPage } from "../features/diagnostics/DiagnosticsPage";
 import { HistoryPage } from "../features/history/HistoryPage";
 import { InterfacesPage } from "../features/interfaces/InterfacesPage";
 import { OverviewPage } from "../features/overview/OverviewPage";
@@ -9,7 +10,6 @@ import {
   type Capability,
   type Capture,
   connected,
-  type DiagnosticResult,
   type Interface,
   type Inventory,
   type Job,
@@ -103,13 +103,6 @@ export function App() {
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState("");
-  const [kind, setKind] = useState("tcp"),
-    [recordType, setRecordType] = useState(""),
-    [target, setTarget] = useState("localhost"),
-    [port, setPort] = useState(443),
-    [timeout, setTimeoutMS] = useState(3000),
-    [diagnostic, setDiagnostic] = useState<DiagnosticResult>(),
-    [activeJob, setActiveJob] = useState("");
   const [wifi, setWifi] = useState<WiFi>(),
     [secret, setSecret] = useState(""),
     [secretState, setSecretState] = useState(""),
@@ -189,8 +182,6 @@ export function App() {
       if (e.job.kind === "discovery" || e.job.kind === "nmap") {
         setDiscoveryJob(e.job.state === "running" ? e.job.id : "");
       }
-      if (["completed", "failed", "cancelled"].includes(e.job.state))
-        setActiveJob((v) => (v === e.job.id ? "" : v));
     });
   }, []);
   useEffect(
@@ -243,26 +234,6 @@ export function App() {
       .includes(filter.toLowerCase()),
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / 100));
-  const diagnosticRun = () =>
-    execute(async () => {
-      const request = {
-        kind,
-        target,
-        port,
-        timeout_ms: timeout,
-        record_type: kind === "dns" ? recordType : "",
-      };
-      const j = await backend().StartDiagnostic(request);
-      setActiveJob(j.id);
-    });
-  // Result events stay in memory; history stores only redacted state.
-  useEffect(
-    () =>
-      onEvent<{ job: Job; result?: DiagnosticResult }>("job", (e) => {
-        if (e.result) setDiagnostic(e.result);
-      }),
-    [],
-  );
   const pageProps = { t, busy, execute, stateText, setError, setNotice };
   const nav = (p: Page) => setPage(p);
   return (
@@ -379,109 +350,7 @@ export function App() {
             />
           )}
           {page === "diagnostics" && (
-            <>
-              <section className="card form">
-                <div className="form-grid">
-                  <Field label={t.kind}>
-                    <select
-                      value={kind}
-                      onChange={(e) => setKind(e.target.value)}
-                    >
-                      {["tcp", "dns", "http", "tls", "ping", "traceroute"].map(
-                        (k) => (
-                          <option key={k}>{k}</option>
-                        ),
-                      )}
-                    </select>
-                  </Field>
-                  {kind === "dns" && (
-                    <Field label={t.dnsRecordType}>
-                      <select
-                        value={recordType}
-                        onChange={(e) => setRecordType(e.target.value)}
-                      >
-                        <option value="">{t.dnsAddresses}</option>
-                        {["A", "AAAA", "CNAME", "MX", "NS", "TXT", "PTR"].map(
-                          (r) => (
-                            <option key={r}>{r}</option>
-                          ),
-                        )}
-                      </select>
-                    </Field>
-                  )}
-                  <Field label={t.target}>
-                    <input
-                      value={target}
-                      onChange={(e) => setTarget(e.target.value)}
-                      placeholder={
-                        kind === "http" ? "https://example.com" : "example.com"
-                      }
-                    />
-                  </Field>
-                  <Field label={t.port}>
-                    <input
-                      type="number"
-                      min="1"
-                      max="65535"
-                      value={port}
-                      onChange={(e) => setPort(Number(e.target.value))}
-                    />
-                  </Field>
-                  <Field label={t.timeout}>
-                    <input
-                      type="number"
-                      min="100"
-                      max="30000"
-                      value={timeout}
-                      onChange={(e) => setTimeoutMS(Number(e.target.value))}
-                    />
-                  </Field>
-                </div>
-                <div className="actions">
-                  <Button
-                    disabled={busy || !connected() || Boolean(activeJob)}
-                    onClick={diagnosticRun}
-                  >
-                    {busy ? t.loading : t.run} <NavIcon page="forward" />
-                  </Button>
-                  {activeJob && (
-                    <Button
-                      className="secondary"
-                      onClick={() =>
-                        execute(async () => {
-                          await backend().CancelJob(activeJob);
-                        })
-                      }
-                    >
-                      {t.cancel}
-                    </Button>
-                  )}
-                </div>
-              </section>
-              <section className="card">
-                <div className="card-title">
-                  <h2>{t.results}</h2>
-                </div>
-                {diagnostic ? (
-                  <div className="result">
-                    <span
-                      className={`pill ${diagnostic.status === "completed" ? "green" : ""}`}
-                    >
-                      {stateText(diagnostic.status)}
-                    </span>{" "}
-                    <span>{diagnostic.elapsed_ms.toFixed(2)} ms</span>
-                    <pre>{diagnostic.values.join("\n")}</pre>
-                    {diagnostic.error_code && (
-                      <p role="alert">
-                        {errorLabels[diagnostic.error_code] ?? t.error}
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <Empty text={activeJob ? t.loading : t.empty} />
-                )}
-              </section>
-            </>
+            <DiagnosticsPage {...pageProps} errorLabels={errorLabels} />
           )}
           {page === "wifi" && (
             <section className="card form">
