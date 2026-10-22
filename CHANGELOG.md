@@ -10,6 +10,7 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 - Bounded passive-neighbor netlink/procfs parsers with state mapping, strict framing checks and fuzz verification; OS collection follows in A01.
 - Read-only Windows neighbor-cache collection and Linux netlink/procfs glue, with explicit unsupported fallback elsewhere; public neighbor interfaces follow in A01.
 - Passive neighbor inventory through Wails, authenticated HTTP and CLI JSON/CSV, using one bounded family-filtered use case without history persistence (A01).
+- English/PT-BR neighbor tables on Interfaces with explicit refresh, family filtering, paging and accessible horizontal scrolling; Linux lab coverage is implemented but Docker/native qualification remains pending (A01).
 
 - Backend-aware capture requests and loss-limit result fields, with bounded validation for raw sockets, Npcap and Pktmon; optional backends are being implemented under A06 ([evidence](docs/verification/specs/A06.md)).
 - Capture backend selection checks availability before starting, and capture history stores only backend, state and packet/drop counts (A06).

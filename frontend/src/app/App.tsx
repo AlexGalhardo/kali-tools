@@ -5,6 +5,7 @@ import { DiagnosticsPage } from "../features/diagnostics/DiagnosticsPage";
 import { DiscoveryPage } from "../features/discovery/DiscoveryPage";
 import { HistoryPage } from "../features/history/HistoryPage";
 import { InterfacesPage } from "../features/interfaces/InterfacesPage";
+import { NeighborsTable } from "../features/neighbors/NeighborsTable";
 import { OverviewPage } from "../features/overview/OverviewPage";
 import { SettingsPage } from "../features/settings/SettingsPage";
 import { WiFiPage } from "../features/wifi/WiFiPage";
@@ -245,11 +246,14 @@ export function App() {
             />
           )}
           {page === "interfaces" && (
-            <InterfacesPage
-              {...pageProps}
-              interfaces={interfaces}
-              inventory={inventory}
-            />
+            <>
+              <InterfacesPage
+                {...pageProps}
+                interfaces={interfaces}
+                inventory={inventory}
+              />
+              <NeighborsTable {...pageProps} />
+            </>
           )}
           {page === "diagnostics" && (
             <DiagnosticsPage {...pageProps} errorLabels={errorLabels} />

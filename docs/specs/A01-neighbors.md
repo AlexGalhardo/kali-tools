@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | A01 (passive neighbor inventory from the OS ARP/ND cache) |
-| Status | In progress (2026-10-22): steps 1–6 adapters, use case and interfaces verified; UI/native/Docker qualification pending |
+| Status | Implementation complete (2026-10-22); native/Docker acceptance pending |
 | Depends on | H03 (`app.HostNetwork` port), H04 (`app.Application`), H05/H06 (adapters, DTOs), W01 + W04 (HTTP route) |
 | Risk | Medium: a hand-written Win32 struct layout (`MIB_IPNET_ROW2`) and a hand-written netlink parser read OS memory and kernel messages |
 

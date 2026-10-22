@@ -1,4 +1,20 @@
 export const en = {
+  neighbors: "Neighbors",
+  neighborsIntro:
+    "Devices your computer recently exchanged traffic with, read from the operating system cache. No packets are sent.",
+  noNeighbors: "No neighbors are in the operating system cache.",
+  neighborsLimited: "Only the first 4,096 usable neighbors are shown.",
+  family: "Address family",
+  familyAll: "All",
+  router: "Router",
+  state_reachable: "Reachable",
+  state_stale: "Stale",
+  state_delay: "Delay",
+  state_probe: "Probe",
+  state_incomplete: "Incomplete",
+  state_unreachable: "Unreachable",
+  state_permanent: "Permanent",
+  state_unknown: "Unknown",
   serverMode:
     "Served by kali-tools serve. Capability states are those of the server process.",
   locationConsent: "Location consent required",
@@ -157,6 +173,22 @@ export const en = {
     "TCP connect discovery stays inside the selected CIDR. A failed connection is reported as unreachable; it does not prove a closed port.",
 };
 export const pt: typeof en = {
+  neighbors: "Vizinhos",
+  neighborsIntro:
+    "Dispositivos com que seu computador trocou tráfego recentemente, lidos da cache do sistema operacional. Nenhum pacote é enviado.",
+  noNeighbors: "Nenhum vizinho na cache do sistema operacional.",
+  neighborsLimited: "Somente os primeiros 4.096 vizinhos válidos são exibidos.",
+  family: "Família de endereços",
+  familyAll: "Todas",
+  router: "Roteador",
+  state_reachable: "Alcançável",
+  state_stale: "Antigo",
+  state_delay: "Aguardando",
+  state_probe: "Verificando",
+  state_incomplete: "Incompleto",
+  state_unreachable: "Inalcançável",
+  state_permanent: "Permanente",
+  state_unknown: "Desconhecido",
   serverMode:
     "Interface servida por kali-tools serve. Os estados das capacidades pertencem ao processo servidor.",
   viewInterfaces: "Ver interfaces",

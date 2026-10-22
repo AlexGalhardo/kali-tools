@@ -4,7 +4,8 @@ import type { Interface, Inventory } from "../../shared/api/bridge";
 type Props = PageProps & { interfaces: Interface[]; inventory: Inventory };
 export function InterfacesPage({ t, interfaces, inventory }: Props) {
   return (
-    <section className="card table-wrap">
+    // biome-ignore lint/a11y/noNoninteractiveTabindex: Keyboard users must be able to scroll the interface table.
+    <section className="card table-wrap" aria-label={t.interfaces} tabIndex={0}>
       <table>
         <thead>
           <tr>

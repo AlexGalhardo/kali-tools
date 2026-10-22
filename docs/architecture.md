@@ -195,6 +195,8 @@ A01 steps 3–4 add platform.Host.Neighbors: Windows uses a fixed system GetIpNe
 
 A01 steps 5–6 extend the consumer-owned HostNetwork port and its real/shared/e2e implementations. Application.Neighbors validates family, bounds its context to five seconds, normalizes results and writes no job/history. Wails, authenticated GET /api/neighbors and CLI JSON/CSV call that same use case. Explicit DTO mapping preserves owned slices, and generated bindings and both frontend transports expose the method. Passive neighbor cache availability is reported separately from active discovery.
 
+A01's Interfaces page includes NeighborsTable with explicit refresh/family queries and 100-row pages, translated states and bounded-result notices. It never polls or persists neighbor addresses. Shared browser workflows exercise both transports. The private Linux lab test is present but Docker execution and Windows gateway/GUI comparisons remain qualification gates.
+
 ## 5. Runtime flows
 
 ### 5.1 Starting a diagnostic job (current desktop path)
