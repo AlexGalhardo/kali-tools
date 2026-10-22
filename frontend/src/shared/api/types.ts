@@ -94,6 +94,8 @@ export type ServiceInspection = {
 export type Backend = {
   Version(): Promise<string>;
   Capabilities(): Promise<Capability[]>;
+  CaptureBackends(): Promise<Capability[]>;
+  OpenNpcapDownload(): Promise<void>;
   Interfaces(): Promise<Interface[]>;
   Inventory(): Promise<Inventory>;
   Diagnose(r: DiagnosticRequest): Promise<DiagnosticResult>;

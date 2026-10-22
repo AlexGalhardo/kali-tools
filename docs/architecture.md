@@ -183,6 +183,8 @@ A06 steps 3–4 register `adapter/pcap.Npcap`. Default builds inspect fixed Syst
 
 A06 step 5 registers `tools.Pktmon`. It uses fixed argv through the shared bounded subprocess runner, with one process-local capture lock. A successful start owns exactly one cancellation-independent stop; start failures never stop foreign sessions. A private temporary directory contains the bounded circular ETL and converted PCAPNG until import, then is removed. Only in-memory artifacts survive. Pktmon reports all-NIC scope, truncation, duplicates, lost component identity and circular overwrite; unavailable or incomplete drop data stays unknown. Native capture acceptance remains pending.
 
+A06 step 6 exposes ordered backend status through Application, Wails and authenticated HTTP. CLI capture routes `--backend` through the same use case. The fixed Npcap download URL belongs to domain; Wails opens it through its injected runtime and never imports the driven pcap adapter. Browser transport reports that opening action unsupported. Generated bindings include the new methods.
+
 ## 5. Runtime flows
 
 ### 5.1 Starting a diagnostic job (current desktop path)

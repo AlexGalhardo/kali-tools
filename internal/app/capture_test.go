@@ -22,6 +22,30 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/porttest/fake"
 )
 
+func TestCaptureBackendStatusIsOrderedAndDoesNotCapture(t *testing.T) {
+	deps := fakeDeps()
+	deps.CaptureBackends = map[string]app.CaptureBackend{
+		capture.BackendPktmon: fake.LiveCapture{Capability: domain.Capability{ID: "capture_pktmon", State: "permission_required", Detail: "needs administrator"}, CaptureFunc: func(context.Context, capture.LiveRequest) (capture.LiveResult, *capture.Artifact, error) {
+			t.Fatal("status started capture")
+			return capture.LiveResult{}, nil, nil
+		}},
+	}
+	a := serviceWithDeps(t, deps)
+	got := a.CaptureBackendStatus(t.Context())
+	if len(got) != 3 || got[0].ID != "capture_live" || got[1].ID != "capture_pktmon" || got[2].ID != "capture_npcap" || got[0].State != "unsupported" || got[1].State != "permission_required" {
+		t.Fatal(got)
+	}
+	count := 0
+	for _, c := range a.Capabilities(t.Context()) {
+		if c.ID == "capture_live" || c.ID == "capture_pktmon" || c.ID == "capture_npcap" {
+			count++
+		}
+	}
+	if count != 3 {
+		t.Fatal("missing or duplicate capabilities", count)
+	}
+}
+
 func TestStartCaptureSelectsBackendAndRefusesUnavailable(t *testing.T) {
 	for _, state := range []string{"available", "permission_required", "dependency_missing", "unsupported"} {
 		t.Run(state, func(t *testing.T) {

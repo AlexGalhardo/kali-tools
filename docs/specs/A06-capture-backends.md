@@ -3,11 +3,13 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | A06 (capture backend spike, Npcap evaluation, Pktmon evaluation, dropped-packet counters) |
-| Status | In progress (2026-10-22): steps 1–5 contracts, selection, history, Npcap and Pktmon adapters |
+| Status | In progress (2026-10-22): steps 1–6 adapters and interface exposure; UI/native acceptance pending |
 | Depends on | H02 (capture session in the job manager), H03 (`capture.LiveProvider` port), H04 (`app.Application`), H05/H06 (adapters, DTOs), W01 + W04 (HTTP route) |
 | Risk | High: driver licensing, process-wide DLL side effects of `gopacket/pcap`, and a system-wide Pktmon session that must always be stopped |
 
 ## 1. Goal
+
+Architecture correction during step 6: the fixed Npcap URL is declared in domain and aliased by adapter/pcap. Wails uses domain.NpcapDownloadURL, because importing the driven adapter would violate docs/architecture.md and depguard. The URL and behavior are unchanged.
 
 Give kali-tools two optional Windows capture backends besides the existing raw IPv4 socket, without bundling any driver and without making the default build depend on cgo:
 

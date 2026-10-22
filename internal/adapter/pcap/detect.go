@@ -10,7 +10,7 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 )
 
-const NpcapDownloadURL = "https://npcap.com/#download"
+const NpcapDownloadURL = domain.NpcapDownloadURL
 const maxVersionInfoBytes = 64 << 10
 
 const (

@@ -51,9 +51,21 @@ stdout:
         "id": "capture_live",
         "provider": "\u003cnative\u003e",
         "state": "\u003cnative\u003e"
+      },
+      {
+        "detail": "\u003cnative\u003e",
+        "id": "capture_pktmon",
+        "provider": "\u003cnative\u003e",
+        "state": "\u003cnative\u003e"
+      },
+      {
+        "detail": "\u003cnative\u003e",
+        "id": "capture_npcap",
+        "provider": "\u003cnative\u003e",
+        "state": "\u003cnative\u003e"
       }
     ],
-    "capture": "Windows raw IPv4 requires administrator authorization; no external driver. Other platforms unavailable.",
+    "capture": "Raw IPv4 and Pktmon require administrator authorization. Optional Npcap is user-installed from https://npcap.com/#download and requires a pcap-tagged build; it is never bundled or installed. See capture backend capabilities.",
     "os": "OS",
     "tools": [
       {

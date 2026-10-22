@@ -39,6 +39,13 @@ export class HttpTransport implements Transport {
       (await this.request<{ version: string }>("/api/version")).version,
     Capabilities: () =>
       this.request<Result<"Capabilities">>("/api/capabilities"),
+    CaptureBackends: () =>
+      this.request<Result<"CaptureBackends">>("/api/capture/backends"),
+    OpenNpcapDownload: async () => {
+      throw new Error(
+        "unsupported: open https://npcap.com/#download in your browser",
+      );
+    },
     Interfaces: () => this.request<Result<"Interfaces">>("/api/interfaces"),
     Inventory: () => this.request<Result<"Inventory">>("/api/inventory"),
     Tools: () => this.request<Result<"Tools">>("/api/tools"),

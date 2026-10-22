@@ -51,7 +51,7 @@ func New(deps Deps) *Application {
 
 func (a *Application) Capabilities(ctx context.Context) []domain.Capability {
 	state, detail := a.wifiObserved.snapshot()
-	return WithObserved(capabilities(), "wifi", state, detail)
+	return append(WithObserved(capabilities(), "wifi", state, detail), a.CaptureBackendStatus(ctx)...)
 }
 func (a *Application) Interfaces(ctx context.Context) ([]network.InterfaceInfo, error) {
 	return network.Interfaces()

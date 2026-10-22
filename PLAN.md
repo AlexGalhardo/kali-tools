@@ -341,7 +341,7 @@ These are reusable delivery requirements, not a separate completed milestone. De
   - Assert: native Windows acceptance verifies reveal, denial and consent-denied states with the owner's test network; automated tests use synthetic secrets and check redaction.
 - [ ] A06 Live packet capture and offline import.
   - Spec: [A06-capture-backends](docs/specs/A06-capture-backends.md)
-  - Headless continuation: A06 steps 1–5 implement backend contracts, selection, count-only history, optional Npcap and bounded Pktmon adapters; interface exposure and native acceptance remain open. [Evidence](docs/verification/specs/A06.md).
+  - Headless continuation: A06 steps 1–6 implement backend contracts, history, Npcap/Pktmon adapters and shared interface exposure; selector UI and native acceptance remain open. [Evidence](docs/verification/specs/A06.md).
   - [ ] Spike an eligible open-source Windows capture backend; document driver/license/performance tradeoffs.
     - [ ] Evaluate user-installed Npcap through gopacket/pcap (detection plus download link only; never bundled or silently installed).
     - [ ] Evaluate built-in Pktmon → pcapng (`etl2pcap`) as an elevated optional adapter; record the privilege and data-loss limits.

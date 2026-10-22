@@ -89,6 +89,27 @@ func TestInterruptStopsCaptureWithoutExport(t *testing.T) {
 	assertGoroutinesReturn(t, before)
 }
 
+func TestCaptureBackendFlagRoutesPktmon(t *testing.T) {
+	for _, command := range [][]string{{"capture", "live"}, {"capture"}} {
+		store := fake.NewStore()
+		var calls atomic.Int32
+		p := fake.LiveCapture{CaptureFunc: func(_ context.Context, request capture.LiveRequest) (capture.LiveResult, *capture.Artifact, error) {
+			if request.Backend != capture.BackendPktmon || request.Address != "" {
+				t.Fatal(request)
+			}
+			calls.Add(1)
+			return capture.LiveResult{Packets: []capture.Packet{}, Limits: []string{capture.LimitAllNICs}}, nil, nil
+		}}
+		a := app.New(app.Deps{Jobs: store, Settings: store, CaptureBackends: map[string]app.CaptureBackend{capture.BackendPktmon: p}})
+		t.Cleanup(func() { _ = a.Close() })
+		var out, stderr bytes.Buffer
+		args := append(append([]string{}, command...), "--backend", "pktmon", "--duration", "1", "--limit", "1", "--json")
+		if code := cli.Run(t.Context(), a, args, &out, &stderr); code != cli.ExitOK || calls.Load() != 1 {
+			t.Fatal(code, calls.Load(), out.String(), stderr.String())
+		}
+	}
+}
+
 func TestAwaitCapturePreservesTypedError(t *testing.T) {
 	events := make(chan job.Event, 2)
 	events <- job.Event{Topic: job.TopicMetrics}

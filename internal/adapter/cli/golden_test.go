@@ -121,7 +121,7 @@ func normalizeOutput(t *testing.T, test goldenCase, output string, jsonMode bool
 		normalize = func(node any) {
 			switch v := node.(type) {
 			case map[string]any:
-				if id, ok := v["id"].(string); ok && slices.Contains([]string{"routes_counters", "icmp", "wifi", "capture_live"}, id) {
+				if id, ok := v["id"].(string); ok && slices.Contains([]string{"routes_counters", "icmp", "wifi", "capture_live", "capture_pktmon", "capture_npcap"}, id) {
 					v["state"], v["detail"], v["provider"] = "<native>", "<native>", "<native>"
 				}
 				if _, ok := v["elapsed_ms"]; ok {
@@ -160,7 +160,7 @@ func normalizeOutput(t *testing.T, test goldenCase, output string, jsonMode bool
 	filtered := lines[:0]
 	for _, line := range lines {
 		fields := strings.Fields(line)
-		if len(fields) > 0 && slices.Contains([]string{"routes_counters", "icmp", "wifi", "capture_live"}, fields[0]) {
+		if len(fields) > 0 && slices.Contains([]string{"routes_counters", "icmp", "wifi", "capture_live", "capture_pktmon", "capture_npcap"}, fields[0]) {
 			continue
 		}
 		if len(fields) > 0 && slices.Contains([]string{"CAPABILITY", "CAPACIDADE", "interfaces", "diagnostics", "discovery", "capture_import"}, fields[0]) {

@@ -192,6 +192,26 @@ func (b *Bindings) OpenLocationSettings() error {
 	b.openURL(ctx, domain.LocationSettingsURI)
 	return nil
 }
+
+func (b *Bindings) CaptureBackends() ([]contract.Capability, error) {
+	ctx, err := b.ready()
+	if err != nil {
+		return nil, fail(err)
+	}
+	return contract.FromCapabilities(b.app.CaptureBackendStatus(ctx)), nil
+}
+
+func (b *Bindings) OpenNpcapDownload() error {
+	ctx, err := b.ready()
+	if err != nil {
+		return fail(err)
+	}
+	if b.openURL == nil {
+		return fail(domain.Unsupported("browser opener is unavailable"))
+	}
+	b.openURL(ctx, domain.NpcapDownloadURL)
+	return nil
+}
 func (b *Bindings) Discover(cidr string, ports []int) ([]contract.PortResult, error) {
 	ctx, e := b.ready()
 	if e != nil {

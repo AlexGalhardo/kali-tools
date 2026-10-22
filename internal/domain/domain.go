@@ -11,6 +11,8 @@ const Version = "0.5.0"
 // LocationSettingsURI is the only URI opened for Wi-Fi consent.
 const LocationSettingsURI = "ms-settings:privacy-location"
 
+const NpcapDownloadURL = "https://npcap.com/#download"
+
 // Capability states (Capability.State).
 const (
 	CapabilityAvailable               = "available"

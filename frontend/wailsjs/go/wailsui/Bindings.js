@@ -10,6 +10,10 @@ export function Capabilities() {
   return window['go']['wailsui']['Bindings']['Capabilities']();
 }
 
+export function CaptureBackends() {
+  return window['go']['wailsui']['Bindings']['CaptureBackends']();
+}
+
 export function ClearHistory() {
   return window['go']['wailsui']['Bindings']['ClearHistory']();
 }
@@ -48,6 +52,10 @@ export function Inventory() {
 
 export function OpenLocationSettings() {
   return window['go']['wailsui']['Bindings']['OpenLocationSettings']();
+}
+
+export function OpenNpcapDownload() {
+  return window['go']['wailsui']['Bindings']['OpenNpcapDownload']();
 }
 
 export function RevealWiFi() {

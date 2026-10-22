@@ -39,11 +39,11 @@ var commands = []command{
 	{path: "history clear", synopsis: "Clear terminal history; keep active jobs", needsApp: true},
 	{path: "settings get", synopsis: "Show language and retention settings", needsApp: true},
 	{path: "settings set", synopsis: "Update language or retention settings", needsApp: true, flags: []string{"language", "retention-days"}},
-	{path: "capture live", synopsis: "Capture bounded local IPv4 traffic", needsApp: true, flags: []string{"target", "duration", "limit", "output", "format"}},
+	{path: "capture live", synopsis: "Capture bounded traffic with an optional backend", needsApp: true, flags: []string{"backend", "target", "duration", "limit", "output", "format"}},
 	{path: "capture import", synopsis: "Import a PCAP or PCAPNG file", needsApp: true, flags: []string{"file", "output", "format"}},
 	{path: "capture export", synopsis: "Convert a packet file to an explicit destination", needsApp: true, flags: []string{"file", "output", "format"}},
 	{path: "serve", synopsis: "Serve the shared UI (implemented by W01/W04)"},
-	{path: "capture", synopsis: "Capture bounded local IPv4 traffic", needsApp: true, flags: []string{"target", "duration", "limit", "output", "format"}},
+	{path: "capture", synopsis: "Capture bounded traffic with an optional backend", needsApp: true, flags: []string{"backend", "target", "duration", "limit", "output", "format"}},
 	{path: "import", synopsis: "Import a PCAP or PCAPNG file", needsApp: true, flags: []string{"file", "output", "format"}},
 }
 

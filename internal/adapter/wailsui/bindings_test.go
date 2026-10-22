@@ -47,6 +47,34 @@ func TestOpenLocationSettingsUsesConstantURI(t *testing.T) {
 	}
 }
 
+func TestNpcapActionsUseFixedURLAndBackendStatus(t *testing.T) {
+	var opened string
+	rt := quietRuntime()
+	rt.OpenURL = func(_ context.Context, uri string) { opened = uri }
+	b := wailsui.NewWithRuntime(newApplication(t), rt)
+	if b.OpenNpcapDownload() == nil {
+		t.Fatal("opener before startup")
+	}
+	if _, err := b.CaptureBackends(); err == nil {
+		t.Fatal("status before startup")
+	}
+	b.Startup(t.Context())
+	t.Cleanup(func() { b.Shutdown(t.Context()) })
+	if err := b.OpenNpcapDownload(); err != nil || opened != "https://npcap.com/#download" {
+		t.Fatal(opened, err)
+	}
+	if got, err := b.CaptureBackends(); err != nil || len(got) != 3 {
+		t.Fatal(got, err)
+	}
+	rt.OpenURL = nil
+	withoutOpener := wailsui.NewWithRuntime(newApplication(t), rt)
+	withoutOpener.Startup(t.Context())
+	t.Cleanup(func() { withoutOpener.Shutdown(t.Context()) })
+	if err := withoutOpener.OpenNpcapDownload(); err == nil || contract.FromError(err).Code != "unsupported" {
+		t.Fatal(err)
+	}
+}
+
 func newApplication(t *testing.T) *app.Application {
 	t.Helper()
 	a, cleanup, err := bootstrap.New(t.Context(), bootstrap.Config{DataPath: ":memory:"})
@@ -443,7 +471,7 @@ func TestBindingMethodSetMatchesBackend(t *testing.T) {
 			names = append(names, name)
 		}
 	}
-	want := []string{"CancelJob", "Capabilities", "ClearHistory", "CurrentWiFi", "Diagnose", "Discover", "History", "ImportCapture", "InspectServices", "Interfaces", "Inventory", "OpenLocationSettings", "RevealWiFi", "SaveCapture", "SaveSettings", "Settings", "StartCapture", "StartDiagnostic", "StopCapture", "Tools", "Version"}
+	want := []string{"CancelJob", "Capabilities", "CaptureBackends", "ClearHistory", "CurrentWiFi", "Diagnose", "Discover", "History", "ImportCapture", "InspectServices", "Interfaces", "Inventory", "OpenLocationSettings", "OpenNpcapDownload", "RevealWiFi", "SaveCapture", "SaveSettings", "Settings", "StartCapture", "StartDiagnostic", "StopCapture", "Tools", "Version"}
 	if !slices.Equal(names, want) {
 		t.Fatalf("methods=%v, want=%v", names, want)
 	}
