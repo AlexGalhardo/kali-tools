@@ -8,6 +8,7 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 - Backend-aware capture requests and loss-limit result fields, with bounded validation for raw sockets, Npcap and Pktmon; optional backends are being implemented under A06 ([evidence](docs/verification/specs/A06.md)).
 - Capture backend selection checks availability before starting, and capture history stores only backend, state and packet/drop counts (A06).
+- Read-only Npcap detection and an opt-in Windows `pcap` capture adapter, with bounded configuration and no driver redistribution; native qualification remains pending (A06).
 
 - Run the unchanged diagnostic, discovery and history acceptance scenarios through the authenticated production HTTP server alongside CLI, Wails and direct application drivers (W01; [evidence](docs/verification/specs/W01.md), [commit](https://github.com/AlexGalhardo/kali-tools/commit/e0fce6f)).
 - Verify web concurrency caps, HTTP header/body boundaries, deadline reset, SSE timing, forced shutdown and the browser's 64-job recovery bound (W01/W04; [evidence](docs/verification/specs/W04.md), [commit](https://github.com/AlexGalhardo/kali-tools/commit/19bf576)).

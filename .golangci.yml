@@ -73,6 +73,7 @@ linters:
             - "**/internal/adapter/tools/**"
             - "**/internal/adapter/probe/**"
             - "**/internal/adapter/platform/**"
+            - "**/internal/adapter/pcap/**"
             - "!$test"
           deny:
             - pkg: github.com/AlexGalhardo/kali-tools/internal/adapter/wailsui
@@ -103,6 +104,8 @@ linters:
             - pkg: github.com/AlexGalhardo/kali-tools/internal/adapter/probe
               desc: "driving adapters go through app.Application"
             - pkg: github.com/AlexGalhardo/kali-tools/internal/adapter/platform
+              desc: "driving adapters go through app.Application"
+            - pkg: github.com/AlexGalhardo/kali-tools/internal/adapter/pcap
               desc: "driving adapters go through app.Application"
             - pkg: github.com/AlexGalhardo/kali-tools/internal/bootstrap
               desc: "only composition roots wire"

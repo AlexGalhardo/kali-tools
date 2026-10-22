@@ -142,7 +142,7 @@ A port is a small Go interface declared **in the package that consumes it**. Ada
 | `app.Application` | `HostNetwork` | `platform.Host` |
 | `app.Application` | `ToolRunner` (including service inspection) | `tools.Runner` |
 | `app.Application` | `WiFiProvider` | `wifi.Native` |
-| `app.Application` | `CaptureProvider` alias of `capture.LiveProvider` | `capture.Native` selected by build constraints |
+| `app.Application` | `CaptureBackend` (LiveProvider plus Status), keyed registry | `capture.Native`, `adapter/pcap.Npcap` (optional tagged implementation) |
 | `network.Diagnostics` | `network.Prober` interface (injected by `bootstrap.New` for both roots) | `probe.ICMP` in `adapter/probe` |
 
 ### 4.3 Implemented driven ports (H03)
@@ -178,6 +178,8 @@ A05 adds mutex-protected, process-local Wi-Fi observations in `app.Application`:
 A06 step 1 adds backend identifiers (`raw_socket`, `pktmon`, `npcap`) and stable loss-limit codes. Validation retains the raw IPv4 restriction, permits local IPv4/IPv6 for Npcap and requires an empty address for Pktmon. Native raw capture rejects requests for another backend. Contract request/result models carry backend/limits fields; selection and optional adapter wiring follow in the next steps. This does not enable a new capture backend by itself.
 
 A06 step 2 replaces the single capture dependency with the consumer-owned `app.CaptureBackend` (Capture plus cheap Status) and a constructor-copied backend registry. Bootstrap currently registers raw sockets; the optional adapters follow in subsequent steps. StartCapture rejects unavailable providers before capture, and runs the selected backend through the existing job manager. History contains backend/state/counts only; the capture stream still carries exactly one terminal capture result alongside job-state events.
+
+A06 steps 3–4 register `adapter/pcap.Npcap`. Default builds inspect fixed System32 paths and read-only registry values without importing gopacket/pcap or loading capture DLLs. Only `windows && pcap` links that package; the tagged adapter bounds device enumeration, packet buffers, read timeouts and retained artifacts. Its process-wide DLL initialization remains an explicit native qualification gate. Depguard treats pcap as a driven adapter; driving adapters must not import it. The untagged stub shares the live-provider contract suite. No driver is redistributed or installed.
 
 ## 5. Runtime flows
 
