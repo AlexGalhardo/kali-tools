@@ -4,28 +4,26 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [0.6.0-dev.1] - 2026-10-22
+
+Unsigned development preview requested by the owner. Native capture, Windows gateway/GUI comparisons and full release qualification remain open.
+
 ### Added
 
-- Passive-neighbor domain types and deterministic, bounded normalization with broadcast filtering and duplicate removal; A01 adapters and interface exposure are in progress ([evidence](docs/verification/specs/A01.md)).
-- Bounded passive-neighbor netlink/procfs parsers with state mapping, strict framing checks and fuzz verification; OS collection follows in A01.
-- Read-only Windows neighbor-cache collection and Linux netlink/procfs glue, with explicit unsupported fallback elsewhere; public neighbor interfaces follow in A01.
-- Passive neighbor inventory through Wails, authenticated HTTP and CLI JSON/CSV, using one bounded family-filtered use case without history persistence (A01).
-- English/PT-BR neighbor tables on Interfaces with explicit refresh, family filtering, paging and accessible horizontal scrolling; Linux lab coverage is implemented but Docker/native qualification remains pending (A01).
-
-- Backend-aware capture requests and loss-limit result fields, with bounded validation for raw sockets, Npcap and Pktmon; optional backends are being implemented under A06 ([evidence](docs/verification/specs/A06.md)).
-- Capture backend selection checks availability before starting, and capture history stores only backend, state and packet/drop counts (A06).
-- Read-only Npcap detection and an opt-in Windows `pcap` capture adapter, with bounded configuration and no driver redistribution; native qualification remains pending (A06).
-- Optional Pktmon backend with bounded circular capture, cancellation-safe session cleanup, transient conversion files and explicit capture/loss limits (A06; native qualification pending).
-- Capture backend status in Wails and authenticated HTTP, `--backend` selection in the CLI and a fixed-address Npcap download action in desktop builds (A06).
-- Packet-inspector backend selection, English/PT-BR loss disclosures and drop counts, with accessible keyboard scrolling for the packet table; ADR 005 records pending native capture measurements (A06).
-
-- Run the unchanged diagnostic, discovery and history acceptance scenarios through the authenticated production HTTP server alongside CLI, Wails and direct application drivers (W01; [evidence](docs/verification/specs/W01.md), [commit](https://github.com/AlexGalhardo/kali-tools/commit/e0fce6f)).
-- Verify web concurrency caps, HTTP header/body boundaries, deadline reset, SSE timing, forced shutdown and the browser's 64-job recovery bound (W01/W04; [evidence](docs/verification/specs/W04.md), [commit](https://github.com/AlexGalhardo/kali-tools/commit/19bf576)).
-- Wi-Fi consent guidance for Windows 11 24H2+, observed capability states, a fixed-URI desktop settings action and English/PT-BR explicit-retry notices in desktop/browser modes (A05; [evidence](docs/verification/specs/A05.md), [commit](https://github.com/AlexGalhardo/kali-tools/commit/b7d6aa1)).
+- Passive neighbor inventory through Wails, authenticated HTTP and CLI JSON/CSV, with bounded OS parsing, family filtering, refresh, pagination and English/PT-BR tables ([A01 evidence](docs/verification/specs/A01.md)).
+- Optional Npcap and Pktmon capture backends, read-only availability detection, backend selection in all interfaces and explicit packet-loss disclosures. Native backend qualification remains pending ([A06 evidence](docs/verification/specs/A06.md)).
+- Wi-Fi consent guidance, fixed-address Windows settings action and retry notices for desktop/browser modes ([A05 evidence](docs/verification/specs/A05.md)).
+- Shared HTTP acceptance scenarios and additional web concurrency, deadline, SSE and shutdown boundary coverage ([W01](docs/verification/specs/W01.md), [W04](docs/verification/specs/W04.md)).
 
 ### Fixed
 
-- Discard Wi-Fi metadata and saved keys when a provider returns an error, preventing their inclusion in failed CLI responses (A05; synthetic regression tests, [commit](https://github.com/AlexGalhardo/kali-tools/commit/b7d6aa1)).
+- Discard Wi-Fi metadata and saved keys when the provider returns an error, preventing failed responses from exposing partial data (A05).
+- Synchronize application, frontend and Wails versions for this preview, resolving the previous development metadata mismatch.
+
+### Changed
+
+- Linux Docker lab now verifies passive netlink neighbors through the production CLI, running the full Go and integration suite as non-root with all capabilities dropped and the race detector enabled.
+- B08 dependency authorization and license review are recorded; TLS audit implementation remains pending and zlint is not included in this preview.
 
 ## [0.5.1] - 2026-10-21
 

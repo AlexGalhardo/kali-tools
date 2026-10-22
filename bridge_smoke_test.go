@@ -76,7 +76,7 @@ func TestNativeBridge(t *testing.T) {
 		smoke.ctx = ctx
 		timer = time.AfterFunc(20*time.Second, func() { smoke.Complete(false) })
 		close(smoke.ready)
-		wruntime.WindowExecJS(ctx, `Promise.all([window.go.wailsui.Bindings.Interfaces(),window.go.wailsui.Bindings.Settings(),window.go.wailsui.Bindings.Version(),window.go.wailsui.Bindings.CancelJob("missing"),window.go.wailsui.Bindings.SaveCapture("invalid").then(()=>false,()=>true),window.go.wailsui.Bindings.InspectServices("0.0.0.0/0",[80]).then(()=>false,()=>true)]).then(([interfaces,settings,version,cancelled,invalidSave,invalidScope])=>window.go.main.SmokeBridge.Complete(interfaces.length>0&&settings.language==='en'&&version==='0.5.0'&&cancelled===false&&invalidSave===true&&invalidScope===true)).catch(()=>window.go.main.SmokeBridge.Complete(false));`)
+		wruntime.WindowExecJS(ctx, `Promise.all([window.go.wailsui.Bindings.Interfaces(),window.go.wailsui.Bindings.Settings(),window.go.wailsui.Bindings.Version(),window.go.wailsui.Bindings.CancelJob("missing"),window.go.wailsui.Bindings.SaveCapture("invalid").then(()=>false,()=>true),window.go.wailsui.Bindings.InspectServices("0.0.0.0/0",[80]).then(()=>false,()=>true)]).then(([interfaces,settings,version,cancelled,invalidSave,invalidScope])=>window.go.main.SmokeBridge.Complete(interfaces.length>0&&settings.language==='en'&&version==='0.6.0-dev.1'&&cancelled===false&&invalidSave===true&&invalidScope===true)).catch(()=>window.go.main.SmokeBridge.Complete(false));`)
 	}, OnShutdown: b.Shutdown})
 	if e != nil {
 		t.Fatal(e)
