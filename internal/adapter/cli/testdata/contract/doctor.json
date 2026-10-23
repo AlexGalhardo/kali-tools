@@ -9,6 +9,7 @@
     "data.capabilities[].provider": "string",
     "data.capabilities[].state": "string",
     "data.capture": "string",
+    "data.baseline": "string",
     "data.os": "string",
     "data.tools": "array",
     "data.tools[].name": "string",

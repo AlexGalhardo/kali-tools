@@ -46,12 +46,13 @@ kali-tools 0.4.0 (goX OS/ARCH)
 
 Flags / positional: none.
 
-JSON `data`: `{"os","arch","capabilities","tools","capture","wifi"}` (unchanged keys; `wifi` text updated, see §4.9). The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+JSON `data`: `{"os","arch","baseline","capabilities","tools","capture","wifi"}`. `baseline` states that Ubuntu 24.04 LTS is the documented baseline and that Debian 13 and Kali are best-effort with no guarantee. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
 
 Human example (fixture values):
 
 ```text
 System: OS/ARCH
+Ubuntu 24.04 LTS is the documented Linux baseline. Debian 13 and Kali are best-effort and come with no guarantee.
 
 CAPABILITY STATE PROVIDER DETAIL
 interfaces available go/net Go interface inventory

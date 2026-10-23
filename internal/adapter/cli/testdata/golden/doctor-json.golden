@@ -3,6 +3,7 @@ stdout:
 {
   "data": {
     "arch": "ARCH",
+    "baseline": "Ubuntu 24.04 LTS is the documented Linux baseline. Debian 13 and Kali are best-effort and come with no guarantee.",
     "capabilities": [
       {
         "detail": "Go interface inventory",

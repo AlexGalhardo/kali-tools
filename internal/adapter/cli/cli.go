@@ -18,6 +18,8 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/network"
 )
 
+const linuxBaseline = "Ubuntu 24.04 LTS is the documented Linux baseline. Debian 13 and Kali are best-effort and come with no guarantee."
+
 type envelope struct {
 	SchemaVersion int             `json:"schema_version"`
 	Version       string          `json:"version"`
@@ -92,7 +94,7 @@ func runLegacy(ctx context.Context, application *app.Application, call invocatio
 			data = map[string]string{"version": domain.Version, "go": runtime.Version(), "os": runtime.GOOS, "arch": runtime.GOARCH}
 		case "doctor":
 			inventory, _ := application.Tools(ctx)
-			data = map[string]any{"os": runtime.GOOS, "arch": runtime.GOARCH, "capabilities": contract.FromCapabilities(application.Capabilities(ctx)), "tools": contract.FromTools(inventory), "capture": "Raw IPv4 and Pktmon require administrator authorization. Optional Npcap is user-installed from https://npcap.com/#download and requires a pcap-tagged build; it is never bundled or installed. See capture backend capabilities.", "wifi": "Windows WLAN API; key reveal requires wifi reveal --confirm or the desktop reveal action"}
+			data = map[string]any{"os": runtime.GOOS, "arch": runtime.GOARCH, "baseline": linuxBaseline, "capabilities": contract.FromCapabilities(application.Capabilities(ctx)), "tools": contract.FromTools(inventory), "capture": "Raw IPv4 and Pktmon require administrator authorization. Optional Npcap is user-installed from https://npcap.com/#download and requires a pcap-tagged build; it is never bundled or installed. See capture backend capabilities.", "wifi": "Windows WLAN API; key reveal requires wifi reveal --confirm or the desktop reveal action"}
 		case "interfaces":
 			value, e := application.Interfaces(ctx)
 			data, err = contract.FromInterfaces(value), e
