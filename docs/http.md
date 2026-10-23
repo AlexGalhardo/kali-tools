@@ -1,6 +1,6 @@
 # HTTP contract
 
-`kali-tools serve` exposes this API and the embedded frontend. The CLI startup flags are in the [CLI contract](cli.md). Threat boundaries are in [SECURITY.md](../SECURITY.md). Response JSON uses the types in `internal/adapter/contract`. This document freezes routes, authentication, body limits, error statuses and capability honesty. It does not freeze a platform matrix.
+`kali-tools serve` exposes this API and the embedded frontend. The CLI startup flags are in the [CLI contract](cli.md). Threat boundaries are in [SECURITY.md](../SECURITY.md). Response JSON uses the types in `internal/adapter/contract`. This document freezes routes, authentication, body limits, error statuses and capability honesty. The platform matrix is frozen in [packaging](packaging.md). An operating system that is not in that table is not supported.
 
 ## Authentication
 
@@ -111,7 +111,7 @@ An unknown code is `500`. Messages are bounded and do not include secrets or rej
 
 `GET /api/capabilities` and `GET /api/capture/backends` describe the server process. A desktop build on the same machine can differ when the server account lacks location consent or capture permission. The UI shows these states. It does not replace them with the desktop's.
 
-`unsupported` means that operating system has no provider. `permission_required` means the provider exists and the process was denied. Linux and macOS Wi-Fi and live capture stay `unsupported` until their native providers exist. That is an honest state, not a missing route.
+`unsupported` means this build has no provider for that operating system. `permission_required` means a provider exists and this process was denied. The row is that process's state. kali-tools does not promise every Kali tool or every protocol payload.
 
 ## Compatibility
 

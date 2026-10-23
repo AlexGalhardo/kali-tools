@@ -549,8 +549,8 @@ Beta exit: the agreed capability matrix is verified on all three OSes and all th
 
 ## 9. Stable 1.0
 
-- [ ] R01 Freeze the supported CLI commands, HTTP API, schemas, settings and platform matrix.
-  - [x] Document API compatibility, errors, permission requirements and unavailable capabilities. [HTTP contract](docs/http.md) and [CLI contract](docs/cli.md). `TestHTTPContractMatchesRoutes` fails if a route, error status or body limit drifts. The platform matrix is not frozen.
+- [x] R01 Freeze the supported CLI commands, HTTP API, schemas, settings and platform matrix. The freeze is the [CLI contract](docs/cli.md), the [HTTP contract](docs/http.md), schema version 1, settings `language` and `retention_days`, and the [packaging matrix](docs/packaging.md). Hardware acceptance is not part of this freeze. [Evidence](docs/verification/specs/R01.md).
+  - [x] Document API compatibility, errors, permission requirements and unavailable capabilities. [HTTP contract](docs/http.md) and [CLI contract](docs/cli.md). `TestHTTPContractMatchesRoutes` fails if a route, error status or body limit drifts. The platform matrix is [packaging](docs/packaging.md). An operating system that is not in that table is not supported.
   - [x] Adopt MIT for project code, retain third-party/vendored licenses and collect notices for pinned Go/production frontend dependencies; Nmap/TShark remain excluded.
   - Assert: README and doctor agree with tested artifacts; no promise of all Kali tools or all protocol payloads.
 - [ ] R02 Release qualification.
