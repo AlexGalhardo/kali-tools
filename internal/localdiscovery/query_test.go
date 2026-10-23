@@ -20,6 +20,7 @@ import (
 
 	"github.com/gosnmp/gosnmp"
 	"github.com/hashicorp/mdns"
+	"github.com/miekg/dns"
 
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/localdiscovery/snmpfake"
@@ -332,10 +333,33 @@ func splitHostPort(t *testing.T, addr string) (string, int) {
 	return host, n
 }
 
+func ipv4LoopbackName(t *testing.T) string {
+	t.Helper()
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, ifi := range ifaces {
+		addrs, err := ifi.Addrs()
+		if err != nil {
+			continue
+		}
+		for _, addr := range addrs {
+			ipnet, ok := addr.(*net.IPNet)
+			if ok && ipnet.IP.To4() != nil && ipnet.IP.IsLoopback() {
+				return ifi.Name
+			}
+		}
+	}
+	t.Fatal("no IPv4 loopback interface")
+	return ""
+}
+
 func TestDiscoverOnLoopback(t *testing.T) {
+	name := ipv4LoopbackName(t)
 	previous := validateInterfaces
 	validateInterfaces = func() []network.InterfaceInfo {
-		return []network.InterfaceInfo{{Name: "lo", Up: true, Addresses: []string{"127.0.0.1/8"}}}
+		return []network.InterfaceInfo{{Name: name, Up: true, Addresses: []string{"127.0.0.1/8"}}}
 	}
 	t.Cleanup(func() { validateInterfaces = previous })
 	socket, err := net.ListenUDP("udp4", &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 0})
@@ -375,7 +399,7 @@ func TestDiscoverOnLoopback(t *testing.T) {
 	}
 	t.Cleanup(func() { mdnsQuery = query })
 	result, err := Discover(t.Context(), Request{
-		Scope: Scope{Interface: "lo", CIDR: "127.0.0.1/32"}, Protocols: []string{"mdns", "ssdp"}, DurationSeconds: 1, SSDPTarget: "ssdp:all",
+		Scope: Scope{Interface: name, CIDR: "127.0.0.1/32"}, Protocols: []string{"mdns", "ssdp"}, DurationSeconds: 1, SSDPTarget: "ssdp:all",
 	})
 	if err != nil || !hasName(result, "printer") || !hasName(result, "uuid:lab") || result.OutOfScope == 0 || !slices.Contains(result.Errors, "mdns_bind_failed") {
 		t.Fatalf("%v %+v", err, result)
@@ -392,8 +416,77 @@ func TestDiscoverOnLoopback(t *testing.T) {
 	if !bytes.Contains(ssdpRequest(Request{DurationSeconds: 10, SSDPTarget: "upnp:rootdevice"}), []byte("MX: 5\r\n")) || itoa(0) != "0" {
 		t.Fatal("ssdp request")
 	}
-	if _, err := sourceIPv4(Scope{Interface: "lo", CIDR: "192.0.2.0/24"}); err == nil {
+	if _, err := sourceIPv4(Scope{Interface: name, CIDR: "192.0.2.0/24"}); err == nil {
 		t.Fatal("accepted an address outside the scope")
+	}
+}
+
+func TestMDNSUnicastFallback(t *testing.T) {
+	ifi, err := net.InterfaceByName(ipv4LoopbackName(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	socket, err := net.ListenUDP("udp4", &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 0})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = socket.Close() })
+	previousDest := mdnsDest
+	mdnsDest = socket.LocalAddr().(*net.UDPAddr)
+	t.Cleanup(func() { mdnsDest = previousDest })
+	go func() {
+		buf := make([]byte, 1500)
+		n, addr, err := socket.ReadFromUDP(buf)
+		if err != nil {
+			return
+		}
+		req := new(dns.Msg)
+		if req.Unpack(buf[:n]) != nil || len(req.Question) != 1 {
+			return
+		}
+		resp := new(dns.Msg)
+		resp.SetReply(req)
+		resp.Authoritative = true
+		resp.Answer = []dns.RR{
+			&dns.PTR{Hdr: dns.RR_Header{Name: req.Question[0].Name, Rrtype: dns.TypePTR, Class: dns.ClassINET, Ttl: 120}, Ptr: "fixture._kali-lab._tcp.local."},
+			&dns.SRV{Hdr: dns.RR_Header{Name: "fixture._kali-lab._tcp.local.", Rrtype: dns.TypeSRV, Class: dns.ClassINET, Ttl: 120}, Priority: 0, Weight: 0, Port: 8080, Target: "fixture.local."},
+			&dns.A{Hdr: dns.RR_Header{Name: "fixture.local.", Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: 120}, A: net.IPv4(127, 0, 0, 1)},
+			&dns.TXT{Hdr: dns.RR_Header{Name: "fixture._kali-lab._tcp.local.", Rrtype: dns.TypeTXT, Class: dns.ClassINET, Ttl: 120}, Txt: []string{"ty=lab"}},
+		}
+		raw, err := resp.Pack()
+		if err == nil {
+			_, _ = socket.WriteToUDP(raw, addr)
+		}
+	}()
+	previous := mdnsLibrary
+	mdnsLibrary = func(context.Context, *mdns.QueryParam) error {
+		return errors.New("failed to bind to any multicast udp port")
+	}
+	t.Cleanup(func() { mdnsLibrary = previous })
+	entries := make(chan *mdns.ServiceEntry, 4)
+	if err := queryLibrary(t.Context(), &mdns.QueryParam{
+		Service: "_kali-lab._tcp", Domain: "local", Timeout: time.Second,
+		Interface: ifi, Entries: entries, WantUnicastResponse: true, DisableIPv6: true,
+		Logger: nil,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case entry := <-entries:
+		if entry.Name != "fixture._kali-lab._tcp.local." || entry.Port != 8080 || !entry.AddrV4.Equal(net.IPv4(127, 0, 0, 1)) || len(entry.InfoFields) != 1 {
+			t.Fatalf("%+v", entry)
+		}
+	default:
+		t.Fatal("no entry")
+	}
+	if serviceEntry(&dns.Msg{}) != nil {
+		t.Fatal("empty response")
+	}
+	if err := queryLibrary(t.Context(), &mdns.QueryParam{
+		Service: "_kali-lab._tcp", Domain: "local", Timeout: time.Millisecond,
+		Interface: &net.Interface{}, Entries: entries,
+	}); err == nil {
+		t.Fatal("expected the library error")
 	}
 }
 
