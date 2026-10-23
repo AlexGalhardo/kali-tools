@@ -321,6 +321,8 @@ C01 provides the command tree, strict flags, stable exit codes, human output by 
 
 Add `<name>_<goos>.go` beside the existing files, keeping the same constructor and method set. Keep the `_other.go` fallback returning an explicit unsupported error. Run `GOOS=windows|linux|darwin go vet ./...`. Never mark native acceptance from cross-compilation.
 
+B03 ships no privileged helper and no helper IPC ([ADR 011](adr/011-no-privileged-helper.md)). Linux capture privilege is `sudo setcap cap_net_raw+eip` on the binary. macOS `capture_live` reports whether this user can open `/dev/bpf` and never changes device permissions. Windows detects a user-installed Npcap and never redistributes it. A missing permission is a capability state plus the fix. The UI and the web server stay unprivileged. Native acceptance remains open.
+
 ### 7.3 Moving or renaming packages
 
 Use `git mv`, then rewrite import paths and run `gofmt`. Run `go vet ./...` for all three GOOS targets plus `go vet -tags desktop .`, then `go test ./...`. Update `.golangci.yml`, `scripts/task.mjs`, `docker/Dockerfile` and the docs that mention the old path. Historical evidence in `docs/verification/` is a record and keeps its original paths.
