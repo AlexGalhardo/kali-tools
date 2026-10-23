@@ -4,8 +4,9 @@ package wifi
 
 /*
 #cgo CFLAGS: -x objective-c -fobjc-arc
-#cgo LDFLAGS: -framework CoreWLAN -framework Foundation -framework Security
+#cgo LDFLAGS: -framework CoreWLAN -framework Foundation -framework Security -framework LocalAuthentication
 #import <CoreWLAN/CoreWLAN.h>
+#import <LocalAuthentication/LocalAuthentication.h>
 #import <Security/Security.h>
 #import <stdlib.h>
 
@@ -42,13 +43,15 @@ static int ktReveal(const char *account, char **secret, int *status) {
 		*secret = NULL;
 		*status = 0;
 		NSString *name = account == NULL ? @"" : [NSString stringWithUTF8String:account];
+		LAContext *context = [[LAContext alloc] init];
+		context.interactionNotAllowed = YES;
 		NSDictionary *query = @{
 			(id)kSecClass : (id)kSecClassGenericPassword,
 			(id)kSecAttrService : @"AirPort",
 			(id)kSecAttrAccount : name,
 			(id)kSecReturnData : @YES,
 			(id)kSecMatchLimit : (id)kSecMatchLimitOne,
-			(id)kSecUseAuthenticationUI : (id)kSecUseAuthenticationUIFail
+			(id)kSecUseAuthenticationContext : context
 		};
 		CFTypeRef item = NULL;
 		OSStatus result = SecItemCopyMatching((__bridge CFDictionaryRef)query, &item);
