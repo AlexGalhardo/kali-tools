@@ -4,7 +4,7 @@ Use this on a real Windows 11 machine. Install the latest unsigned CI artifact f
 
 Record `winver` once. Save screenshots and command output under a folder you keep with the verification notes. Redact SSIDs, BSSIDs, keys and packet payloads. Do not tick PLAN boxes from this file; tick a box only after the captured evidence is written into `docs/verification`.
 
-H07's Windows neighbor, ICMP, inventory and elevated-capture data branches already have evidence from 2026-10-21. This list does not repeat them. B10 is not in this build. B09 has no separate Windows gate; step 12 only confirms the panel is present.
+H07's Windows neighbor, ICMP, inventory and elevated-capture data branches already have evidence from 2026-10-21. This list does not repeat them. B09 has no separate Windows gate; step 12 only confirms the panel is present. Step 13 is the B10 native check.
 
 1. **Record the host.** Run `winver`. Expected: Windows 11, build 26100 or newer for the location-consent steps. Evidence: `01-winver.png`. Supports every step below.
 
@@ -28,4 +28,18 @@ H07's Windows neighbor, ICMP, inventory and elevated-capture data branches alrea
 
 11. **Server account and consent.** As your normal user, run `.\kali-tools.exe serve` and open the URL. Record the Wi-Fi and capture rows on Overview. Stop it. Start it again with `runas /user:<other-account>`. Open that server's URL in the browser. Expected: the capability rows are the other account's states, and the page says they come from the server process. If location consent or capture permission differs, the UI shows `location_consent_required` or `permission_required` rather than the desktop's state. Evidence: `11-serve-user.png`, `11-serve-other.png`. Closes W01 AC-16 and W06.
 
-12. **DNS panel smoke.** Open Diagnostics, then the **DNS inspection** tab. Expected: the form is in English, the intro says observed validation is not a trust decision, and switching the app language to PT-BR translates the labels. Do not send a query unless you intend to. This does not close a PLAN box. B09's remaining lab check is the Docker job in the evidence record, not this machine. B10 is not in this artifact.
+12. **DNS panel smoke.** Open Diagnostics, then the **DNS inspection** tab. Expected: the form is in English, the intro says observed validation is not a trust decision, and switching the app language to PT-BR translates the labels. Do not send a query unless you intend to. This does not close a PLAN box. B09's lab check is the Docker job in the evidence record, not this machine.
+
+13. **Local discovery and SNMP.** On your own LAN, open Discovery & tools. Pick the Wi-Fi or Ethernet adapter, set the scope to that adapter's IPv4 /24, and run local discovery for a few seconds. Expected: responders stay inside that prefix, and a LOCATION value is text, not a fetched page. Then run `.\kali-tools.exe local-discover --interface <name> --scope <cidr> --json`. For SNMP, tick **I own or administer this device** and query one device you administer, using `--secret-file` (a mode-600 file). Expected: system and interface rows appear, and the command line, history and logs do not contain the community or passphrase. Evidence: `13-local-discover.json`, `13-snmp.json` with the secret redacted. Closes B10 AC-11 and AC-12. Skip SNMP if you have no device you administer, and say so.
+
+## Paste-back template
+
+```text
+Host:
+OS build:
+Artifact:
+Steps run:
+Steps skipped and why:
+PLAN items this evidence can close:
+Problems:
+```

@@ -12,6 +12,8 @@ Commands:
   discover         Discover a bounded IPv4 scope
   inspect          Inspect services on an explicit IPv4 scope
   dns-inspect      Compare resolvers and check SOA, NS, DNSSEC, DoH and DoT
+  local-discover   Discover mDNS and SSDP responders on one IPv4 link
+  snmp             Query SNMP system and interface data on an owned device
   wifi             Show current Wi-Fi metadata
   wifi show        Show current Wi-Fi metadata
   wifi reveal      Print the saved key only with --confirm

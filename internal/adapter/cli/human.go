@@ -100,6 +100,23 @@ func renderHuman(out io.Writer, call invocation, data any) error {
 		}
 	}
 	switch v := data.(type) {
+	case contract.LocalDiscoveryResult:
+		line("%d %s", len(v.Responders), l("responders"))
+		line("%s %d", l("out of scope"), v.OutOfScope)
+		line("%s %d", l("malformed"), v.Malformed)
+		header("PROTOCOL ADDRESS NAME TYPE")
+		for _, item := range v.Responders {
+			line("%s\t%s\t%s\t%s", item.Protocol, item.Address, item.Name, item.ServiceType)
+		}
+	case contract.SNMPResult:
+		field("SNMP", v.Target)
+		for _, key := range []string{"sysDescr", "sysObjectID", "sysUpTime", "sysContact", "sysName", "sysLocation"} {
+			line("%s\t%s", key, v.System[key])
+		}
+		header("INDEX DESCR STATUS MAC")
+		for _, row := range v.Interfaces {
+			line("%d\t%s\t%s\t%s", row.Index, row.Descr, row.OperStatus, row.MAC)
+		}
 	case contract.DNSInspectReport:
 		field("DNS inspection", v.Name+" "+v.Type)
 		line("%d %s", v.Queries, l("queries"))

@@ -34,13 +34,13 @@ func main() {
 		}
 		conn.Close()
 		resolver := &net.Resolver{PreferGo: true, Dial: func(ctx context.Context, _, _ string) (net.Conn, error) {
-			return (&net.Dialer{}).DialContext(ctx, "udp", "127.0.0.1:5353")
+			return (&net.Dialer{}).DialContext(ctx, "udp", "127.0.0.1:5300")
 		}}
 		addresses, e := resolver.LookupHost(ctx, "fixture.test")
 		if e != nil || len(addresses) != 1 || addresses[0] != "192.0.2.42" {
 			os.Exit(1)
 		}
-		if !probeLabDNS() {
+		if !probeLabDNS() || !probeSNMP() {
 			os.Exit(1)
 		}
 		return
@@ -71,11 +71,12 @@ func main() {
 		}
 	}()
 	go serveDNS()
+	startDiscovery(fixtureIPv4())
 	server := &http.Server{Addr: ":8080", Handler: mux, ReadHeaderTimeout: time.Second, ReadTimeout: 2 * time.Second, WriteTimeout: 2 * time.Second, IdleTimeout: 2 * time.Second}
 	log.Fatal(server.ListenAndServe())
 }
 func serveDNS() {
-	socket, e := net.ListenPacket("udp", ":5353")
+	socket, e := net.ListenPacket("udp", ":5300")
 	if e != nil {
 		log.Fatal(e)
 	}

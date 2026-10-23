@@ -100,7 +100,7 @@ func TestPrivateLab(t *testing.T) {
 	}
 	original := net.DefaultResolver
 	net.DefaultResolver = &net.Resolver{PreferGo: true, Dial: func(ctx context.Context, _, _ string) (net.Conn, error) {
-		return (&net.Dialer{}).DialContext(ctx, "udp", net.JoinHostPort(address, "5353"))
+		return (&net.Dialer{}).DialContext(ctx, "udp", net.JoinHostPort(address, "5300"))
 	}}
 	defer func() { net.DefaultResolver = original }()
 	result, e := (network.Diagnostics{}).Diagnose(ctx, network.Request{Kind: "dns", Target: "fixture.test", TimeoutMS: 1000})

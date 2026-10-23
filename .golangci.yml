@@ -35,6 +35,7 @@ linters:
             - "**/internal/wifi/**"
             - "**/internal/tlsaudit/**"
             - "**/internal/dnsinspect/**"
+            - "**/internal/localdiscovery/**"
             - "!$test"
           deny:
             - pkg: github.com/AlexGalhardo/kali-tools/internal/adapter

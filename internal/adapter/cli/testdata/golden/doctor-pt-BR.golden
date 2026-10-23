@@ -9,6 +9,8 @@ discovery disponível go/net IPv4 TCP connect, /24 or narrower, at most 32 ports
 capture_import disponível gopacket PCAP and PCAPNG, 64 MiB and 10000 decoded packets
 tls_audit        disponível     go/crypto+zlint  Chain, protocol matrix (TLS 1.0–1.3) and zlint; no exploit checks
 dns_inspect      disponível     miekg/dns        Resolver comparison, SOA/NS, DNSSEC chain, DoH/DoT; read-only
+local_discovery  disponível     mdns+ssdp        mDNS and SSDP on one interface, IPv4 /24 or narrower; read-only
+snmp             disponível     gosnmp           SNMP v2c/v3 GET/GETBULK of system and interface MIBs on owned devices
 
 NOME    ESTADO               VERSÃO  CAMINHO
 tshark  dependência ausente          

@@ -138,9 +138,67 @@ export type ServiceInspection = {
     }[];
   }[];
 };
+export type LocalScope = { interface: string; cidr: string };
+export type LocalDiscoveryRequest = {
+  scope: LocalScope;
+  protocols: string[];
+  duration_seconds: number;
+  service_types?: string[];
+  ssdp_target?: string;
+};
+export type LocalResponder = {
+  protocol: string;
+  address: string;
+  port?: number;
+  name: string;
+  host?: string;
+  service_type?: string;
+  txt?: string[];
+  server?: string;
+  location?: string;
+};
+export type LocalDiscoveryResult = {
+  responders: LocalResponder[];
+  limited: boolean;
+  out_of_scope: number;
+  malformed: number;
+  errors: string[];
+};
+export type SNMPRequest = {
+  scope: LocalScope;
+  target: string;
+  port: number;
+  owned: boolean;
+  version: string;
+  community?: string;
+  v3?: {
+    user: string;
+    auth_protocol: string;
+    auth_pass?: string;
+    priv_protocol?: string;
+    priv_pass?: string;
+  };
+  timeout_ms: number;
+  interfaces: boolean;
+};
+export type SNMPInterface = {
+  index: number;
+  descr: string;
+  oper_status: string;
+  speed_bps: number;
+  mac: string;
+};
+export type SNMPResult = {
+  target: string;
+  system: Record<string, string> | null;
+  interfaces: SNMPInterface[] | null;
+  limited: boolean;
+};
 export type Backend = {
   AuditTLS(r: TLSAuditRequest): Promise<TLSAuditReport>;
   InspectDNS(r: DNSInspectRequest): Promise<DNSInspectReport>;
+  DiscoverLocal(r: LocalDiscoveryRequest): Promise<LocalDiscoveryResult>;
+  QuerySNMP(r: SNMPRequest): Promise<SNMPResult>;
   Version(): Promise<string>;
   Capabilities(): Promise<Capability[]>;
   CaptureBackends(): Promise<Capability[]>;

@@ -34,7 +34,9 @@ await page.addInitScript(()=>{
       }
       return [{host:"192.0.2.1",port:80,state:"open"}];
     },
-    SaveCapture:async(format:string)=>{document.documentElement.dataset.savedCapture=format;return true;},ImportCapture:async()=>({packets:[{number:1,timestamp:"2026-10-19T12:00:00Z",length:64,source:"192.0.2.1",destination:"192.0.2.2",protocol:"DNS",info:"example.test"}],limited:false,format:"pcap"}),StartCapture:async()=>{},StopCapture:async()=>{}
+    SaveCapture:async(format:string)=>{document.documentElement.dataset.savedCapture=format;return true;},ImportCapture:async()=>({packets:[{number:1,timestamp:"2026-10-19T12:00:00Z",length:64,source:"192.0.2.1",destination:"192.0.2.2",protocol:"DNS",info:"example.test"}],limited:false,format:"pcap"}),StartCapture:async()=>{},StopCapture:async()=>{},
+    DiscoverLocal:async()=>({responders:[],limited:false,out_of_scope:0,malformed:0,errors:[]}),
+    QuerySNMP:async()=>({target:"192.0.2.1",system:{sysName:"kali-tools-lab"},interfaces:[],limited:false})
   };
   window.addEventListener("fixture-capture", event=>handlers.capture?.forEach(fn=>fn((event as CustomEvent).detail)));
   Object.assign(window,{go:{wailsui:{Bindings:api}},runtime:{EventsOn:(name:string,fn:(v:unknown)=>void)=>{handlers[name]??=[];handlers[name].push(fn);return()=>{handlers[name]=handlers[name].filter(f=>f!==fn);};}}});

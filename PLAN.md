@@ -536,9 +536,9 @@ Interfaces exit: a parity matrix (capability × desktop/CLI/web) is recorded in 
   - [x] System vs explicit resolver comparison, SOA/NS consistency, read-only DNSSEC chain and DoH/DoT reachability. Unit checks, adapters, the Diagnostics panel and Docker AC-10 passed. [Evidence](docs/verification/specs/B09.md). GitHub run [39970855209](https://github.com/AlexGalhardo/kali-tools/actions/runs/39970855209).
   - [x] Decide `miekg/dns`: `github.com/miekg/dns` v1 (BSD-3-Clause), latest v1.1.x at decision time v1.1.73, not `codeberg.org/miekg/dns`. `go.mod` requires v1.1.73 for DS parsing. [dependencies](docs/dependencies.md).
   - Assert: Docker lab DNS fixtures cover each check; blocked port-53 egress is a distinct result.
-- [ ] B10 Local service discovery (read-only).
+- [x] B10 Local service discovery (read-only).
   - Spec: [B10-local-discovery](docs/specs/B10-local-discovery.md)
-  - [ ] mDNS/DNS-SD (hashicorp/mdns), SSDP M-SEARCH listener and SNMP read-only queries against user-declared owned devices.
+  - [x] mDNS/DNS-SD (hashicorp/mdns), SSDP M-SEARCH listener and SNMP read-only queries against user-declared owned devices. Docker AC-9 passed on GitHub run [39981075045](https://github.com/AlexGalhardo/kali-tools/actions/runs/39981075045). Native AC-11 and AC-12 were not run. [Evidence](docs/verification/specs/B10.md).
   - Assert: lab fixtures announce known services; scope rules match A04.
 - [x] B11 HTTP metadata.
   - Spec: [B11-http-metadata](docs/specs/B11-http-metadata.md)
@@ -690,7 +690,7 @@ The plan does not claim feature parity with every Kali package.
 1. A05 implementation is verified on Windows. Linux-host pure-function coverage meets the spec gate; manual consent/reveal acceptance remains open. W01/W04 implementation and non-native acceptance are verified; native account/browser/desktop gates remain open.
 2. H09 is accepted: ADR 004 keeps stdlib `flag` (owner, 2026-10-23). H08 mechanical enforcement and hosted positive/negative proofs pass.
 3. Retain the W01/W04 native gates; the server's shared acceptance driver, bounds and shutdown verification are recorded.
-4. B11 HTTP metadata is implemented and its non-native checks pass. A05, A06, A01 and B08 remain open on native acceptance. B09 is done, including Docker AC-10 on GitHub run 39970855209. B10 is not started. B02's macOS baseline, A08's pagination decision and R03's vendor-unsigned provenance are recorded. The A07 NPSL decision is closed by ADR 006. The service-inspection result type is `ServiceInspection` (nested `Inspection*`); JSON field names are unchanged, so R01 does not freeze an Nmap type name. Keep H01–H07 native checks visible; do not treat them as headless passes. The Windows checklist is [native-acceptance-windows.md](docs/verification/native-acceptance-windows.md).
+4. B11 HTTP metadata is implemented and its non-native checks pass. A05, A06, A01 and B08 remain open on native acceptance. B09 is done, including Docker AC-10 on GitHub run 39970855209. B10 is done, including Docker AC-9 on GitHub run 39981075045. Its native AC-11 and AC-12 stay open. B02's macOS baseline, A08's pagination decision and R03's vendor-unsigned provenance are recorded. The A07 NPSL decision is closed by ADR 006. The service-inspection result type is `ServiceInspection` (nested `Inspection*`); JSON field names are unchanged, so R01 does not freeze an Nmap type name. Keep H01–H07 native checks visible; do not treat them as headless passes. The Windows checklist is [native-acceptance-windows.md](docs/verification/native-acceptance-windows.md).
 
 **Constraints.**
 

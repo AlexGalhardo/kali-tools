@@ -63,6 +63,18 @@ stdout:
       "state": "available"
     },
     {
+      "detail": "mDNS and SSDP on one interface, IPv4 /24 or narrower; read-only",
+      "id": "local_discovery",
+      "provider": "mdns+ssdp",
+      "state": "available"
+    },
+    {
+      "detail": "SNMP v2c/v3 GET/GETBULK of system and interface MIBs on owned devices",
+      "id": "snmp",
+      "provider": "gosnmp",
+      "state": "available"
+    },
+    {
       "detail": "\u003cnative\u003e",
       "id": "capture_live",
       "provider": "\u003cnative\u003e",

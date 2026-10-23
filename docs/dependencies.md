@@ -6,6 +6,8 @@ Development baseline: 2026-10-19. Exact Go dependencies are in go.mod/go.sum; fr
 | --- | --- | --- |
 | Go standard library | Portable diagnostics and networking | BSD-3-Clause |
 | github.com/miekg/dns v1.1.73 | DNS wire format, DNSSEC verification and lab DNS fixtures | BSD-3-Clause |
+| github.com/hashicorp/mdns v1.0.7 | mDNS queries and the lab responder | MIT |
+| github.com/gosnmp/gosnmp v1.46.0 | Read-only SNMP v2c/v3 on owned devices | BSD-2-Clause AND BSD-3-Clause |
 | github.com/zmap/zlint/v3 v3.7.2 | Certificate linting in `internal/tlsaudit` | Apache-2.0 |
 | github.com/zmap/zcrypto v0.0.0-20260906180147-3ed30b1e9340 | zlint certificate parser only; no legacy handshake client | Apache-2.0 AND ISC AND MIT |
 | github.com/sirupsen/logrus v1.10.2 | zlint transitive logger; process-global output silenced before linting | MIT |
@@ -30,7 +32,7 @@ This table summarizes direct dependencies. Release packaging also generates a tr
 
 Nmap is not executed, parsed or redistributed. TShark is neither installed nor redistributed. Optional inventory probes use fixed argument arrays, deadlines and bounded output. TShark 4.2+ within major 4 remains inventory-only. Service inspection is implemented in Go (ADR 006) and adds no module. No mandatory paid runtime service is required.
 
-The module requires Go 1.27.3 and pins x/net 0.60.0, x/crypto 0.57.0 and x/text 0.42.0. The 2026-10-19 security scan used Go 1.27.2; the module directive has since moved to 1.27.3. Core and desktop-tagged govulncheck runs returned no findings; see the verification record for scope and commands. Both frontend lockfiles are retained for the verified Bun and npm installation paths.
+The module requires Go 1.27.3 and pins x/net 0.60.0, x/crypto 0.57.0 and x/text 0.42.0. `hashicorp/mdns` v1.0.7 does not require the x/net 0.61.0 bump predicted when B10 was drafted, so the pin stays at 0.60.0. The 2026-10-19 security scan used Go 1.27.2; the module directive has since moved to 1.27.3. Core and desktop-tagged govulncheck runs returned no findings; see the verification record for scope and commands. Both frontend lockfiles are retained for the verified Bun and npm installation paths.
 
 ## DNS library (B09), decided 2026-10-23
 

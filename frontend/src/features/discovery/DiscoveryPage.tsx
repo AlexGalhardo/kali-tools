@@ -11,6 +11,8 @@ import {
 import { download } from "../../shared/lib/download";
 import { Empty } from "../../shared/ui/Empty";
 import { Field } from "../../shared/ui/Field";
+import { LocalDiscoveryPanel } from "../localdiscovery/LocalDiscoveryPanel";
+import { SNMPPanel } from "../localdiscovery/SNMPPanel";
 export function DiscoveryPage({
   t,
   busy,
@@ -192,6 +194,8 @@ export function DiscoveryPage({
           </Button>
         </div>
       </section>
+      <LocalDiscoveryPanel t={t} busy={busy} execute={execute} />
+      <SNMPPanel t={t} busy={busy} execute={execute} />
       <section className="card">
         <div className="card-title">
           <h2>{t.capabilities}</h2>

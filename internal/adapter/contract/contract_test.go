@@ -12,6 +12,7 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/dnsinspect"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/job"
+	"github.com/AlexGalhardo/kali-tools/internal/localdiscovery"
 	"github.com/AlexGalhardo/kali-tools/internal/network"
 	"github.com/AlexGalhardo/kali-tools/internal/tlsaudit"
 )
@@ -69,6 +70,16 @@ func mappings() []mappingCase {
 	return []mappingCase{
 		mapping(contract.FromDNSInspect),
 		mapping(func(v contract.DNSInspectRequest) dnsinspect.Request { return v.Request() }),
+		mapping(contract.FromLocalDiscovery),
+		mapping(func(v contract.LocalDiscoveryRequest) localdiscovery.Request { return v.Request() }),
+		mapping(contract.FromSNMP),
+		mapping(func(v contract.SNMPRequest) localdiscovery.SNMPRequest {
+			out, err := v.Request()
+			if err != nil {
+				panic(err)
+			}
+			return out
+		}),
 		mapping(contract.FromTLSAudit),
 		mapping(func(v contract.TLSAuditRequest) tlsaudit.Request { return v.Request() }),
 		mapping(contract.FromNeighborTable),

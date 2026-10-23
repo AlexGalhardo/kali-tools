@@ -36,7 +36,7 @@ func TestPrivateLabDNSInspection(t *testing.T) {
 
 	compared, err := dnsinspect.Inspect(ctx, dnsinspect.Request{
 		Name: "differs.test", Type: "A", Checks: []string{"compare"}, TimeoutMS: 1000,
-		Resolvers: []string{net.JoinHostPort(ip, "5356"), net.JoinHostPort(ip, "5353")},
+		Resolvers: []string{net.JoinHostPort(ip, "5356"), net.JoinHostPort(ip, "5300")},
 	}, nil)
 	if err != nil || compared.Compare == nil || compared.Compare.Agree || len(compared.Compare.Groups) != 2 {
 		t.Fatalf("differs.test compare: %v %+v", err, compared.Compare)

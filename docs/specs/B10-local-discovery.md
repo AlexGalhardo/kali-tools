@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | B10 (mDNS/DNS-SD, SSDP M-SEARCH, SNMP read-only against user-declared owned devices) |
-| Status | Ready |
+| Status | Done (2026-10-23). AC-9 passed in GitHub run 39981075045. AC-11 and AC-12 were not run. |
 | Depends on | B09 (`miekg/dns` v1 decision; `hashicorp/mdns` depends on it), H02, H04, H05/H06, W01 + W04 |
 | Risk | Medium: multicast behavior differs per OS and Docker network; SNMP credentials are secrets that must never leak |
 
