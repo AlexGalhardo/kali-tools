@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/AlexGalhardo/kali-tools/internal/app"
-	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/network"
 )
 
@@ -23,17 +22,12 @@ func (f Tools) Inventory(ctx context.Context) []app.Tool {
 	}
 	return slices.Clone(f.Tools)
 }
-func (f Tools) RunNmap(ctx context.Context, cidr string, ports []int) (app.Nmap, error) {
+func (f Tools) InspectServices(ctx context.Context, cidr string, ports []int) (app.Nmap, error) {
 	if err := ctx.Err(); err != nil {
 		return app.Nmap{}, fmt.Errorf("fake tools: %w", err)
 	}
 	if err := network.ValidateDiscovery(cidr, ports, time.Second); err != nil {
 		return app.Nmap{}, err
-	}
-	for _, tool := range f.Tools {
-		if tool.Name == "nmap" && tool.State != "available" {
-			return app.Nmap{}, &domain.Error{Code: tool.State, Message: "synthetic tool unavailable"}
-		}
 	}
 	v := f.Result
 	v.Hosts = slices.Clone(v.Hosts)

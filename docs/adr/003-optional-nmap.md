@@ -1,6 +1,6 @@
 # ADR 003: optional Nmap service inspection
 
-Status: implemented; real-tool/native network qualification remains open.
+Status: superseded by [ADR 006](006-native-service-inspection.md) on 2026-10-23. The text below is the historical design and is not the current implementation.
 
 Native TCP discovery stays the default. An explicit service inspection uses a separately installed Nmap because its maintained service-probe/signature database supplies protocol identification that a TCP connection alone cannot provide. The application does not recreate that database or claim a port number identifies a service.
 

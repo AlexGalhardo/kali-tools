@@ -4,6 +4,10 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+### Changed
+
+- Service inspection no longer runs Nmap. Explicit TCP scopes are identified with built-in banner, TLS and HTTP checks. TShark remains inventory-only. ADR 006 supersedes ADR 003.
+
 ## [0.6.0-dev.2] - 2026-10-22
 
 Unsigned development preview; hardware qualification remains open. Not a release-qualified build.

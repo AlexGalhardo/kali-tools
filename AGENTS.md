@@ -110,7 +110,7 @@ Install Lefthook once per clone after frontend dependencies exist: `frontend/nod
 
 ## Adding an optional external program
 
-Copy the Nmap path. Do not interpolate a shell command.
+Follow the TShark inventory path and `runCommand`. Do not interpolate a shell command. Do not execute Nmap or read Nmap data files (`docs/adr/006-native-service-inspection.md` supersedes ADR 003).
 
 1. Add the smallest method on the consumer port (`app.ToolRunner` in `internal/app/ports.go`).
 2. Implement it in `internal/adapter/tools` through `runCommand`: a fixed argument array, a context deadline, stdout and stderr caps, and process-group or Windows Job Object cancellation.
@@ -119,7 +119,7 @@ Copy the Nmap path. Do not interpolate a shell command.
 5. Expose the operation on `app.Application`, then through Wails, HTTP, and the CLI using `internal/adapter/contract`. Add the same strings to `en` and `pt`.
 6. Extend `internal/porttest` and `internal/porttest/fake`.
 
-Nmap itself is 7.80 or newer within major 7, TCP connect plus light version detection only, an explicit IPv4 /24 or narrower, at most 32 ports, a two-minute deadline, and 4 MiB of stdout. There is no script, OS detection, UDP scan, or caller-supplied argument. See `docs/adr/003-optional-nmap.md`. TShark is inventory-only.
+Service inspection is native TCP, banner, TLS and one HTTP request: an explicit IPv4 /24 or narrower, at most 32 ports, and a two-minute deadline. TShark 4.2 or newer within major 4 is inventory-only.
 
 ## Safety and other gotchas
 

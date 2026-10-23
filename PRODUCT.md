@@ -26,7 +26,7 @@ Inspect interfaces; start a diagnostic and cancel it; discover a bounded network
 
 ## Constraints
 
-No mandatory cloud account or paid runtime. Secrets are ephemeral and excluded from ordinary history and logs. Capture files are opt-in. Operating system permissions remain visible. Optional Nmap/TShark are separately installed. GitHub workflows remain inactive until explicit activation.
+No mandatory cloud account or paid runtime. Secrets are ephemeral and excluded from ordinary history and logs. Capture files are opt-in. Operating system permissions remain visible. Service inspection is built in and does not run Nmap. Optional TShark is separately installed and inventory-only. GitHub workflows remain inactive until explicit activation.
 
 ## Open Decisions
 

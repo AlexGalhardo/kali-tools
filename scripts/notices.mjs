@@ -39,6 +39,6 @@ const fontLicense=path.join(root,"docs/licenses/jetbrains-mono.txt");
 sections.push("\nBundled font: JetBrains Mono 2.304 (OFL-1.1)\n"+readFileSync(fontLicense,"utf8"));
 inventory.vendored.push({name:"JetBrains Mono",version:"2.304",license:"OFL-1.1",source:"https://github.com/JetBrains/JetBrainsMono/tree/v2.304"});
 if(existsSync(karpathy)){sections.push("\nVendored development skill: karpathy-guidelines\n"+readFileSync(karpathy,"utf8"));inventory.vendored.push({name:"karpathy-guidelines",source:".agents/skills/sources.json"});}
-writeFileSync(path.join(output,"THIRD_PARTY_NOTICES.txt"),"kali-tools third-party notices\n\nProject code is MIT licensed. Dependencies retain their own licenses.\nNmap and TShark are not included.\n"+sections.join("\n"));
+writeFileSync(path.join(output,"THIRD_PARTY_NOTICES.txt"),"kali-tools third-party notices\n\nProject code is MIT licensed. Dependencies retain their own licenses.\nNmap is not used. TShark is not included.\n"+sections.join("\n"));
 writeFileSync(path.join(output,"dependencies.json"),JSON.stringify(inventory,null,2)+"\n");
 console.log(`Collected notices: ${inventory.go.length} Go modules, ${inventory.frontend.length} frontend packages, ${inventory.vendored.length} vendored skills`);

@@ -10,6 +10,5 @@ capture_import available gopacket PCAP and PCAPNG, 64 MiB and 10000 decoded pack
 tls_audit        available    go/crypto+zlint  Chain, protocol matrix (TLS 1.0–1.3) and zlint; no exploit checks
 
 NAME    STATE               VERSION  PATH
-nmap    available           fixture  /fixture/nmap
 tshark  dependency_missing           
 stderr:

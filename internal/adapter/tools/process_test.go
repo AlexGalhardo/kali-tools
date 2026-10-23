@@ -76,19 +76,3 @@ func TestCommandBoundsAndErrors(t *testing.T) {
 		t.Fatalf("deadline: %v", err)
 	}
 }
-
-func TestMain(m *testing.M) {
-	if fixture := os.Getenv("KALI_TOOLS_NMAP_FIXTURE"); fixture != "" {
-		if len(os.Args) > 1 && os.Args[1] == "--version" {
-			fmt.Print("Nmap version 7.98 ( https://nmap.org )\n")
-			os.Exit(0)
-		}
-		raw, err := os.ReadFile(fixture)
-		if err != nil {
-			os.Exit(9)
-		}
-		_, _ = os.Stdout.Write(raw)
-		os.Exit(0)
-	}
-	os.Exit(m.Run())
-}

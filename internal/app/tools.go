@@ -1,7 +1,5 @@
 package app
 
-import "encoding/xml"
-
 type Tool struct {
 	Name    string `json:"name"`
 	State   string `json:"state"`
@@ -9,37 +7,38 @@ type Tool struct {
 	Path    string `json:"path"`
 }
 
+// Nmap is the service-inspection result. The name matches the generated Wails models.
+// Scanner is "native". This value is not an Nmap document.
 type Nmap struct {
-	XMLName  xml.Name     `xml:"nmaprun" json:"-"`
-	Scanner  string       `xml:"scanner,attr" json:"scanner"`
-	Version  string       `xml:"version,attr" json:"version"`
-	Finished NmapFinished `xml:"runstats>finished" json:"finished"`
-	Hosts    []NmapHost   `xml:"host" json:"hosts"`
+	Scanner  string       `json:"scanner"`
+	Version  string       `json:"version"`
+	Finished NmapFinished `json:"finished"`
+	Hosts    []NmapHost   `json:"hosts"`
 }
 type NmapFinished struct {
-	Exit string `xml:"exit,attr" json:"exit"`
+	Exit string `json:"exit"`
 }
 type NmapState struct {
-	State string `xml:"state,attr" json:"state"`
+	State string `json:"state"`
 }
 type NmapAddress struct {
-	Address string `xml:"addr,attr" json:"address"`
-	Type    string `xml:"addrtype,attr" json:"type"`
+	Address string `json:"address"`
+	Type    string `json:"type"`
 }
 type NmapService struct {
-	Name    string `xml:"name,attr" json:"name"`
-	Product string `xml:"product,attr" json:"product"`
-	Version string `xml:"version,attr" json:"version"`
-	Method  string `xml:"method,attr" json:"method"`
+	Name    string `json:"name"`
+	Product string `json:"product"`
+	Version string `json:"version"`
+	Method  string `json:"method"`
 }
 type NmapPort struct {
-	Service  NmapService `xml:"service" json:"service"`
-	Port     int         `xml:"portid,attr" json:"port"`
-	Protocol string      `xml:"protocol,attr" json:"protocol"`
-	State    NmapState   `xml:"state" json:"state"`
+	Service  NmapService `json:"service"`
+	Port     int         `json:"port"`
+	Protocol string      `json:"protocol"`
+	State    NmapState   `json:"state"`
 }
 type NmapHost struct {
-	Status    NmapState     `xml:"status" json:"status"`
-	Addresses []NmapAddress `xml:"address" json:"addresses"`
-	Ports     []NmapPort    `xml:"ports>port" json:"ports"`
+	Status    NmapState     `json:"status"`
+	Addresses []NmapAddress `json:"addresses"`
+	Ports     []NmapPort    `json:"ports"`
 }

@@ -26,7 +26,7 @@ await page.addInitScript(()=>{
     Settings:async()=>settings,SaveSettings:async(v:typeof settings)=>{settings=v;},
     StartDiagnostic:async(r:{record_type?:string})=>{document.documentElement.dataset.dnsRecord=r.record_type;const failure=document.documentElement.dataset.diagnosticFailure;setTimeout(()=>handlers.job?.forEach(fn=>fn({schema_version:1,job:{...job,state:failure?"failed":"completed"},result:{kind:"tcp",target:"localhost",status:failure?"failed":"completed",error_code:failure,elapsed_ms:1,values:failure?[]:["connected"],provider:"fixture"}})),100);return {...job,state:"queued"};},CancelJob:async(id:string)=>{if(id==="fixture-discovery")cancelDiscovery?.();return true;},
     History:async()=>[job],ClearHistory:async()=>{},CurrentWiFi:async()=>({profile:"Fixture",ssid:"Fixture Network",bssid:"02:00:00:00:00:02",signal:80,authentication:7,state:"connected"}),RevealWiFi:async()=>({state:"available",value:"synthetic-test-key"}),
-    Tools:async()=>[{name:"nmap",state:"dependency_missing",version:"",path:""}],Discover:async()=>{
+    Tools:async()=>[{name:"tshark",state:"dependency_missing",version:"",path:""}],Discover:async()=>{
       if(document.documentElement.dataset.cancelDiscovery){
         const running={...job,id:"fixture-discovery",kind:"discovery",state:"running"};
         handlers.job?.forEach(fn=>fn({schema_version:1,job:running}));

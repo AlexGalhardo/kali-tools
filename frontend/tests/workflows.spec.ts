@@ -217,21 +217,18 @@ test("DNS record selection reaches the diagnostic service @wails-only", async({p
  await expect.poll(()=>page.evaluate(()=>document.documentElement.dataset.dnsRecord)).toBe("MX");
 });
 
-test("Nmap is optional and service inspection preserves observed provider data @wails-only", async({page,connect}) => {
+test("service inspection stays available without optional tools @wails-only", async({page,connect}) => {
  await connect(page);
  await page.getByRole("button",{name:"Discovery & tools",exact:true}).click();
- await expect(page.getByRole("button",{name:"Inspect services with Nmap",exact:true})).toBeDisabled();
- await page.getByRole("button",{name:"Overview",exact:true}).click();
+ await expect(page.getByRole("button",{name:"Inspect services",exact:true})).toBeEnabled();
  await page.evaluate(()=>{
   if(!window.go)return;
-  window.go.wailsui!.Bindings!.Tools=async()=>[{name:"nmap",state:"available",version:"Nmap version 7.98",path:"fixture"}];
-  window.go.wailsui!.Bindings!.InspectServices=async()=>({scanner:"nmap",version:"7.98",hosts:[{addresses:[{address:"192.0.2.1",type:"ipv4"}],ports:[{port:80,state:{state:"open"},service:{name:"http",product:"Synthetic HTTP",version:"1",method:"probed"}}]}]});
+  window.go.wailsui!.Bindings!.InspectServices=async()=>({scanner:"native",version:"1",hosts:[{addresses:[{address:"192.0.2.1",type:"ipv4"}],ports:[{port:80,state:{state:"open"},service:{name:"http",product:"Synthetic HTTP",version:"1",method:"banner"}}]}]});
  });
- await page.getByRole("button",{name:"Discovery & tools",exact:true}).click();
- await page.getByRole("button",{name:"Inspect services with Nmap",exact:true}).click();
+ await page.getByRole("button",{name:"Inspect services",exact:true}).click();
  await expect(page.getByRole("cell",{name:"http Synthetic HTTP 1",exact:true})).toBeVisible();
- await expect(page.getByRole("cell",{name:"probed",exact:true})).toBeVisible();
- await expect(page.getByText("nmap 7.98",{exact:true})).toBeVisible();
+ await expect(page.getByRole("cell",{name:"banner",exact:true})).toBeVisible();
+ await expect(page.getByText("native 1",{exact:true})).toBeVisible();
 });
 
 test("capture selection handles immediate start failure without getting stuck @wails-only", async({page,connect}) => {
