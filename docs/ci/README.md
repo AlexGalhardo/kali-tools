@@ -4,11 +4,11 @@ The owner explicitly authorized GitHub Actions activation on 2026-10-19. The act
 
 Pushes to main, pull requests and manual dispatch run formatting, Go unit/race/vet/lint/vulnerability checks, parser fuzz smoke, frontend typecheck/lint/build, Playwright accessibility/workflows, Markdown, actionlint, npm audit and the private Docker CLI lab.
 
-Native jobs build Windows x64, Linux x64 on Ubuntu 24.04, macOS Intel and macOS Apple Silicon with platform prerequisites. Each archive includes the desktop, CLI, MIT license, third-party notices, dependency inventory and source/version/platform metadata. These builds verify compilation and automated contracts, not Wi-Fi/capture hardware acceptance.
+Native jobs build Windows x64, Linux x64 on Ubuntu 24.04 and macOS Apple Silicon (`macos-15`, `darwin/arm64`) with platform prerequisites. macOS 13 or later on Apple Silicon is the 1.0 macOS baseline. There is no Intel or universal macOS job. Each archive includes the desktop, CLI, MIT license, third-party notices, dependency inventory and source/version/platform metadata. These builds verify compilation and automated contracts, not Wi-Fi/capture hardware acceptance.
 
-Only the final main-branch release job has contents-write permission. It waits for every check, downloads that run's native archives, generates a source archive and SHA-256 checksums, and assembles an unsigned development release draft. It refuses to replace a published release. Pull requests cannot create releases. Git tags and publication remain gated by PLAN.md acceptance.
+Only the final main-branch release job has contents-write permission, plus the identity-token and attestation permissions that `actions/attest-build-provenance` needs. It waits for every check, downloads that run's native archives, generates a source archive and SHA-256 checksums, attests those files, and assembles a vendor-unsigned development release draft. It refuses to replace a published release. Pull requests cannot create releases. Git tags and publication remain gated by PLAN.md acceptance. Provenance is the checksum file plus the Sigstore attestation ([ADR 009](../adr/009-signing-and-provenance.md)).
 
-Actions are pinned to immutable upstream release revisions. No PAT, signing certificate or deployment credential is stored in the repository. The release job uses the short-lived GitHub token.
+Actions are pinned to immutable upstream release revisions. No PAT, Apple certificate, Microsoft certificate or deployment credential is stored in the repository. The release job uses the short-lived GitHub token.
 
 ## Serve test isolation
 

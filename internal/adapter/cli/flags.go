@@ -165,6 +165,8 @@ func parseInvocation(args []string) (invocation, error) {
 			fs.Bool(name, false, "include completed jobs")
 		case "port":
 			fs.Int(name, 443, "TCP port")
+		case "redirects":
+			fs.Int(name, 0, "HTTP redirect hops to trace, 0..5")
 		case "duration":
 			fs.Int(name, 5, "capture seconds")
 		case "limit":

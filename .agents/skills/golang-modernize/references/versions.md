@@ -1,6 +1,6 @@
 # Go Version Modernizations
 
-kali-tools targets Go 1.27.2, so every API below is available. Examples that show third-party libraries (zap, logrus, gorilla/mux, chi) are "before" code from other projects, not kali-tools dependencies. Confirm Go 1.27 claims with `go doc` or the release notes before relying on them.
+kali-tools targets Go 1.27.3, so every API below is available. Examples that show third-party libraries (zap, logrus, gorilla/mux, chi) are "before" code from other projects, not kali-tools dependencies. Confirm Go 1.27 claims with `go doc` or the release notes before relying on them.
 
 ## Table of Contents
 

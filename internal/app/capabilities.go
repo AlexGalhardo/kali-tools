@@ -23,7 +23,7 @@ func WithObserved(all []domain.Capability, id, state, detail string) []domain.Ca
 }
 
 func capabilities() []domain.Capability {
-	all := []domain.Capability{{ID: "interfaces", State: domain.CapabilityAvailable, Detail: "Go interface inventory", Provider: "go/net"}, {ID: "diagnostics", State: domain.CapabilityAvailable, Detail: "DNS, bounded TCP, HTTP and TLS; redirects are not followed", Provider: "go/net"}, {ID: "discovery", State: domain.CapabilityAvailable, Detail: "IPv4 TCP connect, /24 or narrower, at most 32 ports", Provider: "go/net"}, {ID: "capture_import", State: domain.CapabilityAvailable, Detail: "PCAP and PCAPNG, 64 MiB and 10000 decoded packets", Provider: "gopacket"}}
+	all := []domain.Capability{{ID: "interfaces", State: domain.CapabilityAvailable, Detail: "Go interface inventory", Provider: "go/net"}, {ID: "diagnostics", State: domain.CapabilityAvailable, Detail: "DNS, bounded TCP, HTTP (phase timings, security headers, redirect target; explicit hop trace at most 5) and TLS; redirects are never followed automatically", Provider: "go/net"}, {ID: "discovery", State: domain.CapabilityAvailable, Detail: "IPv4 TCP connect, /24 or narrower, at most 32 ports", Provider: "go/net"}, {ID: "capture_import", State: domain.CapabilityAvailable, Detail: "PCAP and PCAPNG, 64 MiB and 10000 decoded packets", Provider: "gopacket"}}
 	for _, id := range []string{"routes_counters", "icmp", "wifi"} {
 		c := domain.Capability{ID: id, State: domain.CapabilityUnsupported, Provider: runtime.GOOS, Detail: "Provider is not implemented"}
 		if runtime.GOOS == "windows" {

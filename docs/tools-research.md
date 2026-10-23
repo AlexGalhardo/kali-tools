@@ -267,7 +267,7 @@ Prefer `ek` or `fields` for bounded streaming. Source: https://www.wireshark.org
 **(b) Go building blocks.**
 
 - Stdlib `net.Resolver`, already used, gives the OS-resolver view.
-- `miekg/dns` (BSD-3) has moved to `codeberg.org/miekg/dns` (new API, pre-1.0). Pending decision: pin GitHub v1.1.x short-term or adopt Codeberg. Record the choice in `docs/dependencies.md`.
+- `github.com/miekg/dns` v1 (BSD-3-Clause). Owner decision 2026-10-23: use the latest v1.1.x (v1.1.73 at decision time), not `codeberg.org/miekg/dns`. The module is not a dependency until B09 is implemented. See `docs/dependencies.md`.
 - DoH: `net/http` plus the wire format. DoT: `crypto/tls` plus `miekg/dns`.
 
 **(c) Recommendation.**
@@ -380,11 +380,11 @@ Prefer `ek` or `fields` for bounded streaming. Source: https://www.wireshark.org
 
 - **Windows:** wlanapi, subject to the 24H2 location gate (§3.3).
 - **Linux:** `mdlayher/wifi` (MIT, nl80211). Triggering a scan likely needs `CAP_NET_ADMIN`; cached BSS reads likely do not **(verify)**.
-- **macOS:** CoreWLAN through cgo.
+- **macOS:** CoreWLAN through cgo and a thin Objective-C layer. The 1.0 baseline is macOS 13 or later on Apple Silicon only ([ADR 007](adr/007-macos-baseline.md)). The `.app` keeps the linker's ad-hoc signature ([ADR 009](adr/009-signing-and-provenance.md)).
   - Since Sonoma, SSID/BSSID are nil without Location Services authorization.
   - CLI binaries and LaunchAgents struggle to get that authorization.
   - Some 15.1 reports show empty values even when authorized.
-  - Only a signed `.app` with a usage string is realistic.
+  - B02 still has to verify, on real hardware, whether an ad-hoc-signed `.app` receives the Location Services prompt and can read SSID/BSSID. If it cannot, report an explicit capability state.
   - Source: https://developer.apple.com/forums/thread/732431
 
 **(c) Recommendation.**
@@ -418,11 +418,10 @@ Prefer `ek` or `fields` for bounded streaming. Source: https://www.wireshark.org
 
 **(c) Recommendation.**
 
-- **Native Go:**
-  - the existing HTTP diagnostic, extended with `httptrace` timings;
-  - a security-header presence report (HSTS, CSP, and others);
-  - the redirect chain, reported without following it;
-  - hand-off to the TLS module.
+- **Native Go:** implemented by [B11](specs/B11-http-metadata.md).
+  - `httptrace` timings, an allowlisted security-header report and the redirect target;
+  - an explicit hop trace of at most five, never an automatic follow;
+  - hand-off of certificate detail to the TLS module.
 - **Out of scope:** Nuclei templates, fuzzing and directory brute force.
 
 ## 5. Native Go versus external adapters (summary)
@@ -506,7 +505,7 @@ Keep the UI and ordinary diagnostics unprivileged. If a privileged helper become
 | Dependency | Status |
 | --- | --- |
 | gopacket/gopacket | Active fork, BSD-3 |
-| miekg/dns | Codeberg migration pending |
+| miekg/dns | Decided: `github.com/miekg/dns` v1.1.73 (BSD-3-Clause). Not in go.mod until B09. Revisit if Codeberg tags v1.0.0 or GitHub v1 stops receiving fixes |
 | zcrypto | Research-grade, no releases |
 | zlint | Active, Apache-2.0 |
 | certificate-transparency-go | v1, Apache-2.0 |
@@ -574,11 +573,11 @@ Repository: https://github.com/AlexGalhardo/vukem-marketplace-reactjs (snapshot 
 ## 11. Open decisions and native verification items
 
 - NPSL position for the Nmap adapter: decided on 2026-10-23. Nmap service inspection is cancelled (ADR 006).
-- `miekg/dns`: GitHub v1 vs the Codeberg module.
+- `miekg/dns`: decided 2026-10-23. Use `github.com/miekg/dns` v1.1.x. See `docs/dependencies.md`.
 - JA4+ (FoxIO License) implementation.
 - Whether `IcmpSendEcho2` and pro-bing work unelevated on Windows 10/11 targets.
 - Pktmon privilege requirement and ETL→pcapng behavior.
 - Windows 24H2 location-consent behavior: Wails process vs web-server mode.
 - WinRT consent pre-check (`AppCapability.CheckAccess`) for unpackaged Wails apps: only needed if native 24H2 acceptance shows that opcode-7 `ERROR_ACCESS_DENIED` plus build >= 26100 is ambiguous. A05 implements the error/build mapping; native denied/granted/account comparisons remain unverified.
-- macOS CoreWLAN under a signed `.app` bundle.
+- macOS CoreWLAN on an ad-hoc-signed Apple Silicon `.app`: Location Services prompt and SSID/BSSID still need real-hardware verification ([ADR 007](adr/007-macos-baseline.md)).
 - Licenses marked **(verify)**: arp-scan, netdiscover, mtr, sslscan, Suricata, gosnmp, pro-bing.

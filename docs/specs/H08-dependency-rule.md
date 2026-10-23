@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | H08, H09 |
-| Status | Verified 2026-10-21; positive run 39669810016 and negative quality proof 39669870071; H09 ADR remains proposed |
+| Status | Verified 2026-10-21; positive run 39669810016 and negative quality proof 39669870071. H09 ADR accepted by the owner on 2026-10-23 |
 | Depends on | H03, H05, H06, H07 |
 | Risk | Low for builds (lint configuration only); Medium for correctness: a wrong glob silently matches no file, so a deliberate-violation check is mandatory |
 

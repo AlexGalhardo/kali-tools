@@ -1,6 +1,6 @@
 # ADR 004: CLI argument parser
 
-Status: proposed; follows the specified stdlib decision rule, pending owner ADR approval.
+Status: accepted on 2026-10-23 by the repository owner (Alex Galhardo). Stdlib `flag` stays the CLI parser. Cobra is not adopted.
 
 Context: the H05 parser uses stdlib `flag`, dispatches on `args[0]`, and creates one `FlagSet` per invocation (`internal/adapter/cli/cli.go:32-40`). PLAN §7.1 requires 16 top-level commands: version, doctor, capabilities, interfaces, inventory, neighbors, diagnose, discover, inspect, wifi, capture, jobs, history, settings, tools and serve. Diagnose has 6 leaf commands, Wi-Fi 2, capture 3, jobs 3, history 2 and settings 2; maximum depth is 2. Global flags are `--json`, `--timeout`, `--no-color` and `--lang`. `rg -n -i 'completion' PLAN.md docs/brainstorming.md` returns no matches; shell completion is not a requirement. Architecture research §7.2 asks for re-evaluation beyond about six subcommands or when completion is required; this ADR performs that review.
 

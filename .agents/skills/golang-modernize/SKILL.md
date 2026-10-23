@@ -1,6 +1,6 @@
 ---
 name: golang-modernize
-description: "Modernize kali-tools Go code within its go 1.27.2 target — newer language features, standard library replacements, testing helpers (t.Context, b.Loop, synctest), deprecated APIs and Go 1.27 GODEBUG checks. Use when reviewing old-style Go, handling a deprecation, or planning a toolchain or tool-pin upgrade. Suggest changes outside the current task; do not sweep unrelated code."
+description: "Modernize kali-tools Go code within its go 1.27.3 target — newer language features, standard library replacements, testing helpers (t.Context, b.Loop, synctest), deprecated APIs and Go 1.27 GODEBUG checks. Use when reviewing old-style Go, handling a deprecation, or planning a toolchain or tool-pin upgrade. Suggest changes outside the current task; do not sweep unrelated code."
 license: MIT
 metadata:
   author: samber
@@ -31,7 +31,7 @@ You MUST NEVER conduct large refactoring while the developer is working on a dif
 
 When invoked:
 
-1. **Check `go.mod`**: kali-tools is a single module on `go 1.27.2`. Use any API available in Go 1.27; do not use newer APIs, and do not bump the directive as a side effect
+1. **Check `go.mod`**: kali-tools is a single module on `go 1.27.3`. Use any API available in Go 1.27; do not use newer APIs, and do not bump the directive as a side effect
 2. **Check the latest Go release** against the changelog table and mention an upgrade only as a separate proposal
 3. **Respect earlier decisions** recorded in `docs/adr/` or PLAN.md; do not re-suggest something the owner declined
 4. **Scan the codebase** for modernization opportunities based on the target Go version
@@ -97,7 +97,7 @@ For the Go toolchain, govulncheck, golangci-lint v2 and `go fix`, see [Tooling m
 
 ## Go 1.27 notes for kali-tools
 
-kali-tools already targets Go 1.27.2. The checklist below matters when reviewing `godebug` settings or older code paths. Go 1.27 items in this skill come from the upstream skill; confirm each one against <https://go.dev/doc/go1.27> or `go doc` before relying on it.
+kali-tools already targets Go 1.27.3. The checklist below matters when reviewing `godebug` settings or older code paths. Go 1.27 items in this skill come from the upstream skill; confirm each one against <https://go.dev/doc/go1.27> or `go doc` before relying on it.
 
 Several Go 1.27 changes need **verification, not a rewrite**. Most notably: a `godebug` line in `go.mod` (or `//go:debug` comment) still pinning `asynctimerchan`, `tlsunsafeekm`, `tlsrsakex`, `tls3des`, `tls10server`, `x509keypairleaf`, or `gotypesalias` to its **old** value now fails the build. Full checklist in [Go version modernizations](./references/versions.md#go-127-version-bump-risk-checklist-verify-dont-rewrite).
 

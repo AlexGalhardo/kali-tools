@@ -9,7 +9,7 @@ stdout:
       "state": "available"
     },
     {
-      "detail": "DNS, bounded TCP, HTTP and TLS; redirects are not followed",
+      "detail": "DNS, bounded TCP, HTTP (phase timings, security headers, redirect target; explicit hop trace at most 5) and TLS; redirects are never followed automatically",
       "id": "diagnostics",
       "provider": "go/net",
       "state": "available"

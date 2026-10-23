@@ -69,16 +69,58 @@ type DiagnosticRequest struct {
 	Target     string `json:"target"`
 	Port       int    `json:"port"`
 	TimeoutMS  int    `json:"timeout_ms"`
+	Redirects  int    `json:"redirects,omitempty"`
 }
 
 type DiagnosticResult struct {
-	ErrorCode string   `json:"error_code,omitempty"`
-	Kind      string   `json:"kind"`
-	Target    string   `json:"target"`
-	Status    string   `json:"status"`
-	ElapsedMS float64  `json:"elapsed_ms"`
-	Values    []string `json:"values"`
-	Provider  string   `json:"provider"`
+	ErrorCode string        `json:"error_code,omitempty"`
+	Kind      string        `json:"kind"`
+	Target    string        `json:"target"`
+	Status    string        `json:"status"`
+	ElapsedMS float64       `json:"elapsed_ms"`
+	Values    []string      `json:"values"`
+	Provider  string        `json:"provider"`
+	HTTP      *HTTPMetadata `json:"http,omitempty"`
+}
+
+type HTTPMetadata struct {
+	StatusCode      int              `json:"status_code,omitempty"`
+	FinalURL        string           `json:"final_url,omitempty"`
+	Phases          HTTPPhases       `json:"phases"`
+	SecurityHeaders []SecurityHeader `json:"security_headers"`
+	Redirect        *RedirectTarget  `json:"redirect,omitempty"`
+	Chain           []RedirectHop    `json:"chain,omitempty"`
+	ChainStatus     string           `json:"chain_status,omitempty"`
+}
+
+type HTTPPhases struct {
+	DNSMS     *float64 `json:"dns_ms"`
+	ConnectMS *float64 `json:"connect_ms"`
+	TLSMS     *float64 `json:"tls_ms"`
+	TTFBMS    *float64 `json:"ttfb_ms"`
+	TotalMS   float64  `json:"total_ms"`
+}
+
+type SecurityHeader struct {
+	Name    string   `json:"name"`
+	Present bool     `json:"present"`
+	Value   string   `json:"value,omitempty"`
+	Notes   []string `json:"notes,omitempty"`
+}
+
+type RedirectTarget struct {
+	Location  string   `json:"location,omitempty"`
+	Valid     bool     `json:"valid"`
+	SelfLoop  bool     `json:"self_loop"`
+	CrossHost bool     `json:"cross_host"`
+	Downgrade bool     `json:"downgrade"`
+	Notes     []string `json:"notes,omitempty"`
+}
+
+type RedirectHop struct {
+	URL        string `json:"url"`
+	StatusCode int    `json:"status_code,omitempty"`
+	Status     string `json:"status"`
 }
 
 type Job struct {

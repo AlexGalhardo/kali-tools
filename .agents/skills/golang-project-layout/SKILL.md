@@ -16,7 +16,7 @@ Adapted for kali-tools from AlexGalhardo/vukem@cf7e016eacfa17d184af364f820e59974
 
 ## Module
 
-- One module: `github.com/AlexGalhardo/kali-tools`, `go 1.27.2`. No `go.work`, no nested modules, no `pkg/`, no `vendor/`.
+- One module: `github.com/AlexGalhardo/kali-tools`, `go 1.27.3`. No `go.work`, no nested modules, no `pkg/`, no `vendor/`.
 - All Go logic lives under `internal/`.
 
 ## Where things go

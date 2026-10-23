@@ -20,7 +20,7 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
 )
 
-var allDTOs = []any{contract.TLSAuditRequest{}, contract.TLSAuditReport{}, contract.TLSAuditCertificate{}, contract.TLSAuditFinding{}, contract.TLSAuditProtocolResult{}, contract.TLSAuditSCTSummary{}, contract.Neighbor{}, contract.NeighborTable{}, contract.Error{}, contract.Capability{}, contract.Interface{}, contract.Counter{}, contract.Adapter{}, contract.Inventory{}, contract.DiagnosticRequest{}, contract.DiagnosticResult{}, contract.Job{}, contract.JobEvent{}, contract.Settings{}, contract.PortResult{}, contract.Packet{}, contract.Capture{}, contract.LiveCaptureRequest{}, contract.LiveCapture{}, contract.CaptureEvent{}, contract.Rate{}, contract.Metrics{}, contract.WiFi{}, contract.WiFiSecret{}, contract.Tool{}, contract.ServiceInspection{}, contract.NmapFinished{}, contract.NmapState{}, contract.NmapAddress{}, contract.NmapService{}, contract.NmapPort{}, contract.NmapHost{}}
+var allDTOs = []any{contract.TLSAuditRequest{}, contract.TLSAuditReport{}, contract.TLSAuditCertificate{}, contract.TLSAuditFinding{}, contract.TLSAuditProtocolResult{}, contract.TLSAuditSCTSummary{}, contract.Neighbor{}, contract.NeighborTable{}, contract.Error{}, contract.Capability{}, contract.Interface{}, contract.Counter{}, contract.Adapter{}, contract.Inventory{}, contract.DiagnosticRequest{}, contract.DiagnosticResult{}, contract.HTTPMetadata{}, contract.HTTPPhases{}, contract.SecurityHeader{}, contract.RedirectTarget{}, contract.RedirectHop{}, contract.Job{}, contract.JobEvent{}, contract.Settings{}, contract.PortResult{}, contract.Packet{}, contract.Capture{}, contract.LiveCaptureRequest{}, contract.LiveCapture{}, contract.CaptureEvent{}, contract.Rate{}, contract.Metrics{}, contract.WiFi{}, contract.WiFiSecret{}, contract.Tool{}, contract.ServiceInspection{}, contract.NmapFinished{}, contract.NmapState{}, contract.NmapAddress{}, contract.NmapService{}, contract.NmapPort{}, contract.NmapHost{}}
 
 func TestEveryDTOIsRedactionSafe(t *testing.T) {
 	entries, err := os.ReadDir(".")
@@ -77,7 +77,7 @@ func checkFields(t *testing.T, typ reflect.Type) {
 			if slices.Contains([]string{"key", "psk", "password", "passphrase", "secret", "token", "payload", "raw", "material", "bytes"}, name) {
 				t.Fatalf("forbidden field %s.%s", typ, name)
 			}
-			if name == "value" && typ != reflect.TypeFor[contract.WiFiSecret]() {
+			if name == "value" && typ != reflect.TypeFor[contract.WiFiSecret]() && typ != reflect.TypeFor[contract.SecurityHeader]() {
 				t.Fatalf("secret value outside WiFiSecret: %v", typ)
 			}
 			checkFields(t, field.Type)

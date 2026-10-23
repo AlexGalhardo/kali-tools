@@ -4,7 +4,7 @@ System: OS/ARCH
 
 CAPABILITY STATE PROVIDER DETAIL
 interfaces available go/net Go interface inventory
-diagnostics available go/net DNS, bounded TCP, HTTP and TLS; redirects are not followed
+diagnostics available go/net DNS, bounded TCP, HTTP (phase timings, security headers, redirect target; explicit hop trace at most 5) and TLS; redirects are never followed automatically
 discovery available go/net IPv4 TCP connect, /24 or narrower, at most 32 ports
 capture_import available gopacket PCAP and PCAPNG, 64 MiB and 10000 decoded packets
 tls_audit        available    go/crypto+zlint  Chain, protocol matrix (TLS 1.0–1.3) and zlint; no exploit checks

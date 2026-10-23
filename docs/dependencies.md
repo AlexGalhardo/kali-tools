@@ -29,4 +29,12 @@ This table summarizes direct dependencies. Release packaging also generates a tr
 
 Nmap is not executed, parsed or redistributed. TShark is neither installed nor redistributed. Optional inventory probes use fixed argument arrays, deadlines and bounded output. TShark 4.2+ within major 4 remains inventory-only. Service inspection is implemented in Go (ADR 006) and adds no module. No mandatory paid runtime service is required.
 
-The module requires Go 1.27.2 and pins x/net 0.60.0, x/crypto 0.57.0 and x/text 0.42.0 after the 2026-10-19 security scan. Core and desktop-tagged govulncheck runs returned no findings; see the verification record for scope and commands. Both frontend lockfiles are retained for the verified Bun and npm installation paths.
+The module requires Go 1.27.3 and pins x/net 0.60.0, x/crypto 0.57.0 and x/text 0.42.0. The 2026-10-19 security scan used Go 1.27.2; the module directive has since moved to 1.27.3. Core and desktop-tagged govulncheck runs returned no findings; see the verification record for scope and commands. Both frontend lockfiles are retained for the verified Bun and npm installation paths.
+
+## DNS library (B09), decided 2026-10-23
+
+The owner chose `github.com/miekg/dns` v1 (BSD-3-Clause). The newest v1.1 tag on `proxy.golang.org` at decision time was **v1.1.73**. The Codeberg module `codeberg.org/miekg/dns` is not used. 1.0 needs a stable API. The Codeberg module is pre-1.0 (0.6.x), so breaking changes are allowed until about 2028, and its dependency set is heavier.
+
+This module is not in `go.mod` until B09 is implemented. When it is added, collect its license in the notices inventory.
+
+Revisit when `codeberg.org/miekg/dns` tags v1.0.0, or if the GitHub v1 repository is archived or stops receiving fixes.

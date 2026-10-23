@@ -13,6 +13,7 @@ import { Empty } from "../../shared/ui/Empty";
 import { Field } from "../../shared/ui/Field";
 import { NavIcon } from "../../shared/ui/Icon";
 import { TLSAuditPanel } from "../tls/TLSAuditPanel";
+import { HTTPMetadataView } from "./HTTPMetadataView";
 
 type Props = PageProps & { errorLabels: Record<string, string> };
 export function DiagnosticsPage({
@@ -27,6 +28,7 @@ export function DiagnosticsPage({
     [target, setTarget] = useState("localhost"),
     [port, setPort] = useState(443),
     [timeout, setTimeoutMS] = useState(3000),
+    [redirects, setRedirects] = useState(0),
     [diagnostic, setDiagnostic] = useState<DiagnosticResult>(),
     [activeJob, setActiveJob] = useState("");
   const diagnosticRun = () =>
@@ -37,6 +39,7 @@ export function DiagnosticsPage({
         port,
         timeout_ms: timeout,
         record_type: kind === "dns" ? recordType : "",
+        redirects: kind === "http" ? redirects : 0,
       };
       const j = await backend().StartDiagnostic(request);
       setActiveJob(j.id);
@@ -109,6 +112,17 @@ export function DiagnosticsPage({
                 onChange={(e) => setTimeoutMS(Number(e.target.value))}
               />
             </Field>
+            {kind === "http" && (
+              <Field label={t.traceRedirects}>
+                <input
+                  type="number"
+                  min="0"
+                  max="5"
+                  value={redirects}
+                  onChange={(e) => setRedirects(Number(e.target.value))}
+                />
+              </Field>
+            )}
           </div>
           <div className="actions">
             <Button
@@ -144,6 +158,9 @@ export function DiagnosticsPage({
               </span>{" "}
               <span>{diagnostic.elapsed_ms.toFixed(2)} ms</span>
               <pre>{diagnostic.values.join("\n")}</pre>
+              {diagnostic.http && (
+                <HTTPMetadataView http={diagnostic.http} t={t} />
+              )}
               {diagnostic.error_code && (
                 <p role="alert">
                   {errorLabels[diagnostic.error_code] ?? t.error}

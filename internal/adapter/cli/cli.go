@@ -72,6 +72,7 @@ func runLegacy(ctx context.Context, application *app.Application, call invocatio
 	kind := flags.String("kind", "tcp", "dns, tcp, http, tls, ping or traceroute")
 	port := flags.Int("port", 443, "TCP port")
 	timeout := flags.Int("timeout", 3000, "timeout milliseconds")
+	redirects := flags.Int("redirects", 0, "HTTP redirect hops to trace, 0..5")
 	file := flags.String("file", "", "capture path")
 	output := flags.String("output", "", "explicit packet-file destination; requires --format pcap or pcapng")
 	ports := flags.String("ports", "80,443", "comma separated ports")
@@ -127,7 +128,7 @@ func runLegacy(ctx context.Context, application *app.Application, call invocatio
 				return exitOK
 			}
 		case "diagnose":
-			value, e := runDiagnostic(ctx, application, network.Request{Kind: *kind, Target: *target, Port: *port, TimeoutMS: *timeout, RecordType: *recordType})
+			value, e := runDiagnostic(ctx, application, network.Request{Kind: *kind, Target: *target, Port: *port, TimeoutMS: *timeout, RecordType: *recordType, Redirects: *redirects})
 			data, err = contract.FromDiagnosticResult(value), e
 		case "discover", "inspect":
 			if *format != "json" && *format != "csv" {

@@ -55,7 +55,7 @@ System: OS/ARCH
 
 CAPABILITY STATE PROVIDER DETAIL
 interfaces available go/net Go interface inventory
-diagnostics available go/net DNS, bounded TCP, HTTP and TLS; redirects are not followed
+diagnostics available go/net DNS, bounded TCP, HTTP (phase timings, security headers, redirect target; explicit hop trace at most 5) and TLS; redirects are never followed automatically
 discovery available go/net IPv4 TCP connect, /24 or narrower, at most 32 ports
 capture_import available gopacket PCAP and PCAPNG, 64 MiB and 10000 decoded packets
 
@@ -78,7 +78,7 @@ Human example (fixture values):
 ```text
 CAPABILITY STATE PROVIDER DETAIL
 interfaces available go/net Go interface inventory
-diagnostics available go/net DNS, bounded TCP, HTTP and TLS; redirects are not followed
+diagnostics available go/net DNS, bounded TCP, HTTP (phase timings, security headers, redirect target; explicit hop trace at most 5) and TLS; redirects are never followed automatically
 discovery available go/net IPv4 TCP connect, /24 or narrower, at most 32 ports
 capture_import available gopacket PCAP and PCAPNG, 64 MiB and 10000 decoded packets
 ```
@@ -141,7 +141,7 @@ error: unsupported: neighbor inventory is not implemented yet
 
 `kali-tools diagnose [flags]`
 
-Flags / positional: kind ∈ `dns tcp http tls ping trace traceroute`; `--target` (required), `--port` int default 443, `--record` string, `--kind` (deprecated).
+Flags / positional: kind ∈ `dns tcp http tls ping trace traceroute`; `--target` (required), `--port` int default 443, `--record` string, `--redirects` int default 0 (HTTP only, 0..5), `--kind` (deprecated). Redirects are never followed unless `--redirects` asks for that many hops.
 
 JSON `data`: `DiagnosticResult`. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
 

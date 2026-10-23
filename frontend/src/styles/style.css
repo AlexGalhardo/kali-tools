@@ -900,6 +900,13 @@ th {
     gap: 12px;
   }
 }
+.http-meta code {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.http-meta h3 {
+  margin-top: 1rem;
+}
 @media (prefers-reduced-motion: reduce) {
   button {
     transition: none;

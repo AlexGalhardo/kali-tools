@@ -6,6 +6,7 @@ import {checkRelease} from "./release-policy.mjs";
 const root=fileURLToPath(new URL("../",import.meta.url));
 const platform={win32:"windows",linux:"linux",darwin:"macos"}[process.platform];
 if(!platform)throw Error("Unsupported packaging platform");
+if(process.platform==="darwin" && process.arch!=="arm64")throw Error("macOS packages are Apple Silicon (arm64) only");
 const version=checkRelease(root);
 const output=path.join(root,"build/release");mkdirSync(output,{recursive:true});
 const stage=mkdtempSync(path.join(root,"build/staging-"));
@@ -22,7 +23,7 @@ if(process.platform==="darwin"){
 }else{cpSync(path.join(root,"build/bin/kali-tools-desktop"+suffix),path.join(stage,"kali-tools-desktop"+suffix));}
 const commit=spawnSync("git",["rev-parse","HEAD"],{cwd:root,encoding:"utf8",timeout:10000});if(commit.status!==0)throw Error("Cannot identify source commit");
 const status=spawnSync("git",["-c","core.fileMode=false","status","--porcelain"],{cwd:root,encoding:"utf8",timeout:10000});if(status.status!==0)throw Error("Cannot inspect source state");
-writeFileSync(path.join(stage,"BUILD.json"),JSON.stringify({version,source_commit:commit.stdout.trim(),source_dirty:Boolean(status.stdout.trim()),platform,architecture:process.arch,signed:false,qualification:"development preview; see PLAN.md"},null,2)+"\n");
+writeFileSync(path.join(stage,"BUILD.json"),JSON.stringify({version,source_commit:commit.stdout.trim(),source_dirty:Boolean(status.stdout.trim()),platform,architecture:process.arch,signed:false,signature:process.platform==="darwin"?"ad-hoc":"none",qualification:"development preview; see PLAN.md"},null,2)+"\n");
 const stem=`kali-tools-${version}-${platform}-${process.arch}`;
 const archive=path.join(output,stem+(process.platform==="linux"?".tar.gz":".zip"));
 if(process.platform==="darwin")run("ditto",["-c","-k",stage,archive]);
