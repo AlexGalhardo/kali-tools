@@ -1,6 +1,7 @@
 exit=0
 stdout:
 System: OS/ARCH
+Ubuntu 24.04 LTS is the documented Linux baseline. Debian 13 and Kali are best-effort and come with no guarantee.
 
 CAPABILITY STATE PROVIDER DETAIL
 interfaces available go/net Go interface inventory
