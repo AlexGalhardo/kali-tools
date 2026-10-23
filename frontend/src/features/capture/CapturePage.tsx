@@ -62,7 +62,10 @@ export function CapturePage({
     { value: "raw_socket", id: "capture_live", label: t.backendRawSocket },
     { value: "pktmon", id: "capture_pktmon", label: t.backendPktmon },
     { value: "npcap", id: "capture_npcap", label: t.backendNpcap },
+    { value: "libpcap", id: "capture_libpcap", label: t.backendLibpcap },
   ];
+  const wideAddress =
+    captureBackend === "npcap" || captureBackend === "libpcap";
   const selected = backends.find(
     (c) => c.id === choices.find((c) => c.value === captureBackend)?.id,
   );
@@ -139,11 +142,7 @@ export function CapturePage({
           </Field>
           {captureBackend !== "pktmon" && (
             <Field
-              label={
-                captureBackend === "npcap"
-                  ? t.captureLocalAddress
-                  : t.captureAddress
-              }
+              label={wideAddress ? t.captureLocalAddress : t.captureAddress}
             >
               <select
                 value={captureAddress}
@@ -152,14 +151,10 @@ export function CapturePage({
               >
                 <option value="">{t.selectCaptureAddress}</option>
                 {interfaces
-                  .filter(
-                    (i) => i.up && (captureBackend === "npcap" || !i.loopback),
-                  )
+                  .filter((i) => i.up && (wideAddress || !i.loopback))
                   .flatMap((i) =>
                     i.addresses
-                      .filter(
-                        (a) => captureBackend === "npcap" || !a.includes(":"),
-                      )
+                      .filter((a) => wideAddress || !a.includes(":"))
                       .map((a) => (
                         <option key={`${i.index}:${a}`} value={a.split("/")[0]}>
                           {i.name} ? {a}

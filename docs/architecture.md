@@ -321,7 +321,7 @@ C01 provides the command tree, strict flags, stable exit codes, human output by 
 
 Add `<name>_<goos>.go` beside the existing files, keeping the same constructor and method set. Keep the `_other.go` fallback returning an explicit unsupported error. Run `GOOS=windows|linux|darwin go vet ./...`. Never mark native acceptance from cross-compilation.
 
-B01's documented Linux baseline is Ubuntu 24.04 LTS ([ADR 010](adr/010-linux-baseline.md)). Debian 13 and Kali are best-effort and come with no guarantee. Linux routes and counters come from netlink, with the procfs readers as fallback. Neighbors already use netlink. Wi-Fi metadata comes from nl80211 (`github.com/mdlayher/wifi`). The saved key is read only through NetworkManager `GetSecrets`; a missing NetworkManager is `dependency_missing` and does not hide metadata. Native acceptance remains open.
+B01's documented Linux baseline is Ubuntu 24.04 LTS ([ADR 010](adr/010-linux-baseline.md)). Debian 13 and Kali are best-effort and come with no guarantee. Linux routes and counters come from netlink, with the procfs readers as fallback. Neighbors already use netlink. Wi-Fi metadata comes from nl80211 (`github.com/mdlayher/wifi`). The saved key is read only through NetworkManager `GetSecrets`; a missing NetworkManager is `dependency_missing` and does not hide metadata. Linux live capture uses libpcap when the binary is built with `-tags pcap`. Opening an interface needs `CAP_NET_RAW` on the capture process. The UI and the web server are not elevated. An untagged build reports `unsupported`. Native acceptance remains open.
 
 ### 7.3 Moving or renaming packages
 

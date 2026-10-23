@@ -32,16 +32,16 @@ func TestCaptureBackendStatusIsOrderedAndDoesNotCapture(t *testing.T) {
 	}
 	a := serviceWithDeps(t, deps)
 	got := a.CaptureBackendStatus(t.Context())
-	if len(got) != 3 || got[0].ID != "capture_live" || got[1].ID != "capture_pktmon" || got[2].ID != "capture_npcap" || got[0].State != "unsupported" || got[1].State != "permission_required" {
+	if len(got) != 4 || got[0].ID != "capture_live" || got[1].ID != "capture_pktmon" || got[2].ID != "capture_npcap" || got[3].ID != "capture_libpcap" || got[0].State != "unsupported" || got[1].State != "permission_required" || got[3].State != "unsupported" {
 		t.Fatal(got)
 	}
 	count := 0
 	for _, c := range a.Capabilities(t.Context()) {
-		if c.ID == "capture_live" || c.ID == "capture_pktmon" || c.ID == "capture_npcap" {
+		if c.ID == "capture_live" || c.ID == "capture_pktmon" || c.ID == "capture_npcap" || c.ID == "capture_libpcap" {
 			count++
 		}
 	}
-	if count != 3 {
+	if count != 4 {
 		t.Fatal("missing or duplicate capabilities", count)
 	}
 }

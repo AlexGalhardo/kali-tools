@@ -26,6 +26,10 @@ type device struct {
 }
 
 func selectDevice(devices []device, address netip.Addr) (string, error) {
+	return selectDeviceMessage(devices, address, "address does not belong to an Npcap device")
+}
+
+func selectDeviceMessage(devices []device, address netip.Addr, missing string) (string, error) {
 	if len(devices) > MaxPcapDevices {
 		return "", &domain.Error{Code: domain.CodeFailed, Message: "device list exceeds limit"}
 	}
@@ -36,7 +40,7 @@ func selectDevice(devices []device, address netip.Addr) (string, error) {
 			}
 		}
 	}
-	return "", domain.Invalid("address does not belong to an Npcap device")
+	return "", &domain.Error{Code: domain.CodeInvalidInput, Message: missing}
 }
 
 type NpcapStatus struct {

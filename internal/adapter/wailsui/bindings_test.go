@@ -63,7 +63,7 @@ func TestNpcapActionsUseFixedURLAndBackendStatus(t *testing.T) {
 	if err := b.OpenNpcapDownload(); err != nil || opened != "https://npcap.com/#download" {
 		t.Fatal(opened, err)
 	}
-	if got, err := b.CaptureBackends(); err != nil || len(got) != 3 {
+	if got, err := b.CaptureBackends(); err != nil || len(got) != 4 || got[3].ID != "capture_libpcap" {
 		t.Fatal(got, err)
 	}
 	rt.OpenURL = nil

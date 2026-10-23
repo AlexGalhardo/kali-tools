@@ -232,7 +232,7 @@ key: synthetic-test-key
 
 `kali-tools capture live [flags]`
 
-Flags / positional: `--target` local IPv4, `--duration` int 1..60 default 5, `--limit` int 1..10000 default 1000, `--output`, `--format pcap\|pcapng`.
+Flags / positional: `--backend raw_socket|pktmon|npcap|libpcap` (default `raw_socket`), `--target` local address, `--duration` int 1..60 default 5, `--limit` int 1..10000 default 1000, `--output`, `--format pcap\|pcapng`. `libpcap` is a Linux backend and needs `CAP_NET_RAW` on the capture process. Pktmon rejects `--target`.
 
 JSON `data`: capture result. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
 
