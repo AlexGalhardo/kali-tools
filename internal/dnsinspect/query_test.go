@@ -22,6 +22,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 
@@ -52,16 +53,24 @@ func listenDNS(t *testing.T, addr string, handler dns.Handler) string {
 
 func listenBoth(t *testing.T, addr string, handler dns.Handler) string {
 	t.Helper()
-	conn, err := net.ListenPacket("udp", addr)
-	if err != nil {
-		t.Fatal(err)
-	}
-	tcp, err := net.Listen("tcp", conn.LocalAddr().String())
-	if err != nil {
+	var last error
+	for range 8 {
+		conn, err := net.ListenPacket("udp", addr)
+		if err != nil {
+			t.Fatal(err)
+		}
+		tcp, err := net.Listen("tcp", conn.LocalAddr().String())
+		if err == nil {
+			return serveDNS(t, conn, tcp, handler)
+		}
+		last = err
 		_ = conn.Close()
-		t.Fatal(err)
+		if !errors.Is(err, syscall.EADDRINUSE) {
+			t.Fatal(err)
+		}
 	}
-	return serveDNS(t, conn, tcp, handler)
+	t.Fatal(last)
+	return ""
 }
 
 func serveDNS(t *testing.T, conn net.PacketConn, tcp net.Listener, handler dns.Handler) string {
