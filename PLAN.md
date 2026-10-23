@@ -517,7 +517,7 @@ Interfaces exit: a parity matrix (capability × desktop/CLI/web) is recorded in 
   - [ ] Validate settings and versioned result formats; redact diagnostic bundles.
     - [x] Stored preferences reject malformed, oversized or unsupported values without echoing contents.
     - [x] Versioned CLI JSON and discovery JSON/CSV contracts tested; discovery history stores counts without targets.
-    - [ ] Redacted diagnostic bundles and compatibility fixtures for all exported formats.
+    - [ ] Redacted diagnostic bundles and compatibility fixtures for all exported formats. The on-demand zip is implemented ([ADR 012](docs/adr/012-diagnostic-bundle.md), [evidence](docs/verification/specs/B06.md)). Compatibility fixtures for other export formats remain open.
   - [ ] Test translation key parity and all permission/error UI flows.
   - Assert: prior beta data upgrades without silent loss; secret fixtures appear in no ordinary artifact.
 - [ ] B07 Native packaging matrix.

@@ -155,7 +155,7 @@ bash scripts/setup/setup-windows.sh dev
 # macOS: bash scripts/setup/setup-darwin.sh dev
 ```
 
-Use `doctor` to inspect prerequisites or `help` to see the action list.
+Use `doctor` to inspect prerequisites or `help` to see the action list. `doctor --bundle PATH` writes a redacted diagnostic zip on this computer and does not upload it.
 
 ## 5. Build and test with Docker
 

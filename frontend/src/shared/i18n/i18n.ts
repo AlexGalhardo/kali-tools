@@ -203,6 +203,9 @@ export const en = {
   language: "Language",
   retention: "History retention (days)",
   save: "Save preferences",
+  diagnosticBundle: "Save diagnostic bundle",
+  diagnosticSaved:
+    "Diagnostic bundle saved on this computer. Nothing was uploaded.",
   privacy:
     "Local storage only. History stores operation type and state; targets, passwords and packet payloads are excluded.",
   error: "Operation failed",
@@ -505,6 +508,9 @@ export const pt: typeof en = {
   language: "Idioma",
   retention: "Retenção do histórico (dias)",
   save: "Salvar preferências",
+  diagnosticBundle: "Salvar pacote de diagnóstico",
+  diagnosticSaved:
+    "Pacote de diagnóstico salvo neste computador. Nada foi enviado.",
   privacy:
     "Armazenamento somente local. O histórico registra tipo e estado da operação; destinos, senhas e conteúdo de pacotes são excluídos.",
   error: "Falha na operação",

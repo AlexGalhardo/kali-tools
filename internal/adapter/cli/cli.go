@@ -7,8 +7,11 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/contract"
@@ -81,6 +84,7 @@ func runLegacy(ctx context.Context, application *app.Application, call invocatio
 	limit := flags.Int("limit", 1000, "capture packet limit")
 	backend := flags.String("backend", "raw_socket", "capture backend: raw_socket, pktmon or npcap")
 	family := flags.String("family", "all", "neighbor family: all, ipv4 or ipv6")
+	bundlePath := flags.String("bundle", "", "write a redacted diagnostic zip; nothing is uploaded")
 	if e := flags.Parse(args[1:]); e != nil {
 		return exitInvalid
 	}
@@ -91,8 +95,21 @@ func runLegacy(ctx context.Context, application *app.Application, call invocatio
 		case "version":
 			data = map[string]string{"version": domain.Version, "go": runtime.Version(), "os": runtime.GOOS, "arch": runtime.GOARCH}
 		case "doctor":
+			if *bundlePath != "" {
+				body, e := application.DiagnosticBundle(ctx)
+				if e != nil {
+					err = e
+					break
+				}
+				if e = writeDiagnosticBundle(*bundlePath, body); e != nil {
+					err = e
+					break
+				}
+				data = map[string]string{"path": *bundlePath, "format": "zip"}
+				break
+			}
 			inventory, _ := application.Tools(ctx)
-			data = map[string]any{"os": runtime.GOOS, "arch": runtime.GOARCH, "capabilities": contract.FromCapabilities(application.Capabilities(ctx)), "tools": contract.FromTools(inventory), "capture": "Raw IPv4 and Pktmon require administrator authorization. Optional Npcap is user-installed from https://npcap.com/#download and requires a pcap-tagged build; it is never bundled or installed. See capture backend capabilities.", "wifi": "Windows WLAN API; key reveal requires wifi reveal --confirm or the desktop reveal action"}
+			data = map[string]any{"os": runtime.GOOS, "arch": runtime.GOARCH, "capabilities": contract.FromCapabilities(application.Capabilities(ctx)), "tools": contract.FromTools(inventory), "capture": app.DoctorCaptureNote, "wifi": app.DoctorWiFiNote}
 		case "interfaces":
 			value, e := application.Interfaces(ctx)
 			data, err = contract.FromInterfaces(value), e
@@ -259,4 +276,24 @@ func ExitCode(code string) int {
 	default:
 		return ExitFailed
 	}
+}
+
+func writeDiagnosticBundle(path string, body []byte) error {
+	if path == "" || len(path) > 4096 || strings.ContainsRune(path, 0) || strings.HasSuffix(path, string(os.PathSeparator)) {
+		return domain.Invalid("diagnostic bundle path is invalid")
+	}
+	clean := filepath.Clean(path)
+	if clean == "." || clean == ".." {
+		return domain.Invalid("diagnostic bundle path is invalid")
+	}
+	file, err := os.OpenFile(clean, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
+	if err != nil {
+		return domain.Invalid("diagnostic bundle path is not writable")
+	}
+	_, writeErr := file.Write(body)
+	closeErr := file.Close()
+	if writeErr != nil || closeErr != nil {
+		return domain.Invalid("diagnostic bundle path is not writable")
+	}
+	return nil
 }

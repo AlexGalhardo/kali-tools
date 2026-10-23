@@ -54,6 +54,7 @@ kali-tools/
 │   ├── tlsaudit/                   capability: TLS audit request validation and certificate reports (B08); native verifier acceptance pending
 │   ├── dnsinspect/                 capability: DNS inspection (B09)
 │   ├── localdiscovery/             capability: mDNS, SSDP and owned-device SNMP (B10)
+│   ├── bundle/                     redacted diagnostic zip; no network and no Wi-Fi key read (B06)
 │   ├── adapter/                    all adapters, named by technology
 │   │   ├── contract/               shared frontend DTOs, explicit mappers and safe error mapping
 │   │   ├── storage/                driven: SQLite store, migrations, settings, retention
@@ -192,6 +193,8 @@ A06 step 6 exposes ordered backend status through Application, Wails and authent
 A06's inspector selects an available backend, renders translated stable loss codes and distinguishes unknown drops from zero. Pktmon sends no address; Npcap exposes local IPv4/IPv6 including loopback. ADR 005 remains proposed with native measurements open; the raw_socket default is preserved pending qualification.
 
 B05 records the decode contract in [capture decoding](capture-decoding.md). Each packet is decoded alone: a complete IPv6 hop-by-hop header is followed, truncation is reported, and TCP streams and IPv6 fragments are not reassembled. Payloads stay out of summaries and history. Artifact growth stops at 10000 packets or the reserved 64 MiB budget. TShark stays inventory-only (ADR 006). Pulling a cable remains a native runbook check.
+
+B06's diagnostic bundle is a pure writer in `internal/bundle`. `Application.DiagnosticBundle` gathers version, doctor text, capability states, language, retention and at most 50 history rows. It does not call Wi-Fi or capture. CLI `doctor --bundle`, authenticated `GET /api/doctor/bundle` and the Settings action all write that same zip locally. Addresses and hostnames become per-archive pseudonyms. Known secrets are deleted. Nothing is uploaded ([ADR 012](adr/012-diagnostic-bundle.md)).
 
 A01 step 1 adds passive neighbor value types and pure normalization in network: discard unusable/broadcast rows, deduplicate by interface/address, sort deterministically and return at most 4,096 rows with an explicit Limited flag. This group adds no OS query, port extension or public route.
 

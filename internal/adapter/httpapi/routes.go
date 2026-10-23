@@ -43,4 +43,5 @@ func addRoutes(mux *http.ServeMux, a *app.Application, s *Server) {
 	mux.Handle("POST /api/capture/stop", handleStopCapture(a))
 	mux.Handle("POST /api/capture/import", s.handleImport())
 	mux.Handle("GET /api/capture/export", emptyRequest(s.handleExport()))
+	mux.Handle("GET /api/doctor/bundle", emptyRequest(s.handleBundle()))
 }
