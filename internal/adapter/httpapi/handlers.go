@@ -8,7 +8,6 @@ import (
 
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/contract"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
-	"github.com/AlexGalhardo/kali-tools/internal/conn"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/job"
 )
@@ -153,7 +152,7 @@ func handleThroughput(a *app.Application) http.HandlerFunc {
 			}
 			duration = time.Duration(body.DurationMS) * time.Millisecond
 		}
-		value, err := a.Throughput(r.Context(), conn.Request{Duration: duration, IperfJSON: []byte(body.IperfJSON)})
+		value, err := a.Throughput(r.Context(), duration, []byte(body.IperfJSON))
 		if err != nil {
 			writeError(w, r, err)
 			return

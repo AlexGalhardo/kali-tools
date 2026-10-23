@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/AlexGalhardo/kali-tools/internal/app"
-	"github.com/AlexGalhardo/kali-tools/internal/conn"
 )
 
 func TestThroughputCancellation(t *testing.T) {
@@ -15,7 +14,7 @@ func TestThroughputCancellation(t *testing.T) {
 	t.Cleanup(func() { _ = application.Close() })
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	_, err := application.Throughput(ctx, conn.Request{Duration: time.Second})
+	_, err := application.Throughput(ctx, time.Second, nil)
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal(err)
 	}

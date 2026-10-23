@@ -11,7 +11,6 @@ import (
 
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/contract"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
-	"github.com/AlexGalhardo/kali-tools/internal/conn"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/job"
 )
@@ -158,7 +157,7 @@ func (b *Bindings) Throughput(durationMS int) (contract.ThroughputSample, error)
 	if durationMS < 1 || durationMS > 10_000 {
 		return contract.ThroughputSample{}, fail(domain.Invalid("throughput duration must be 1ms..10s"))
 	}
-	value, err := b.app.Throughput(ctx, conn.Request{Duration: time.Duration(durationMS) * time.Millisecond})
+	value, err := b.app.Throughput(ctx, time.Duration(durationMS)*time.Millisecond, nil)
 	return contract.FromThroughput(value), fail(err)
 }
 

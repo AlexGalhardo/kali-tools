@@ -1460,6 +1460,7 @@ export namespace contract {
 	        this.lint = source["lint"];
 	    }
 	}
+	
 	export class ThroughputSample {
 	    endpoint: string;
 	    duration_ms: number;
@@ -1478,7 +1479,6 @@ export namespace contract {
 	        this.source = source["source"];
 	    }
 	}
-	
 	export class Tool {
 	    name: string;
 	    state: string;

@@ -315,7 +315,7 @@ func runThroughput(ctx context.Context, a *app.Application, call invocation) (co
 		}
 		report = body
 	}
-	return a.Throughput(ctx, conn.Request{Duration: duration, IperfJSON: report})
+	return a.Throughput(ctx, duration, report)
 }
 
 func readIperf(path string) ([]byte, error) {
