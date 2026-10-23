@@ -22,6 +22,8 @@ if(task==="workflows"){
  if(files.length===0)throw Error("Authorized CI/CD source is missing");
  for(const file of files){const raw=readFileSync(path.join(directory,file),"utf8");
   if(raw.includes("pull_request_target"))throw Error("Privileged pull-request triggers are not allowed");
+  for(const target of ["linux","darwin","windows"]){if(!raw.includes(`CGO_ENABLED=0 GOOS=${target} go vet ./...`))throw Error(`Missing ${target} cross-compile vet`);}
+  if(!raw.includes("node scripts/task.mjs arch"))throw Error("Missing dependency-rule check");
   for(const match of raw.matchAll(/uses:\s+([^\s]+)/g)){if(!/@[0-9a-f]{40}$/.test(match[1]))throw Error(`Action must be pinned: ${match[1]}`);}
  }
  console.log("Active workflow source and immutable action pins verified; run actionlint for full static validation");
