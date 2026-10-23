@@ -4,6 +4,7 @@ const (
 	BackendRawSocket = "raw_socket"
 	BackendPktmon    = "pktmon"
 	BackendNpcap     = "npcap"
+	BackendLibpcap   = "libpcap"
 )
 
 const (

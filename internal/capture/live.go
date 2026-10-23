@@ -54,15 +54,15 @@ func ValidateLiveRequest(r LiveRequest) error {
 			return domain.Invalid("pktmon captures all NICs; address must be empty")
 		}
 		return nil
-	case "", BackendRawSocket, BackendNpcap:
+	case "", BackendRawSocket, BackendNpcap, BackendLibpcap:
 	default:
-		return domain.Invalid("backend must be raw_socket, pktmon or npcap")
+		return domain.Invalid("backend must be raw_socket, pktmon, npcap or libpcap")
 	}
 	ip, err := netip.ParseAddr(r.Address)
 	if err != nil {
 		return domain.Invalid("select a local non-loopback IPv4, duration 1..60 and packet limit 1..10000")
 	}
-	if r.Backend != BackendNpcap && (!ip.Is4() || ip.IsLoopback()) {
+	if r.Backend != BackendNpcap && r.Backend != BackendLibpcap && (!ip.Is4() || ip.IsLoopback()) {
 		return domain.Invalid("select a local non-loopback IPv4, duration 1..60 and packet limit 1..10000")
 	}
 	addresses, err := net.InterfaceAddrs()

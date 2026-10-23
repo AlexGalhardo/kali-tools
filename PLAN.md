@@ -488,7 +488,7 @@ Interfaces exit: a parity matrix (capability × desktop/CLI/web) is recorded in 
 - [ ] B01 Linux native adapters. Native acceptance remains open.
   - [x] Select documented distro baseline; implement routes/counters/neighbors (netlink) and NetworkManager integration. Ubuntu 24.04 LTS is the baseline; Debian 13 and Kali are best-effort ([ADR 010](docs/adr/010-linux-baseline.md)). Routes and counters read netlink, with a procfs fallback. Neighbors already use netlink. NetworkManager GetSecrets is the only key path and reports `dependency_missing` when NetworkManager is absent. Native acceptance is not closed by CI.
   - [x] Wi-Fi metadata via nl80211 (`mdlayher/wifi`) and key retrieval through authorized NetworkManager secret APIs; handle systems without NetworkManager. Signal is a 0–100 value. Native acceptance remains open.
-  - [ ] Capture with libpcap and `CAP_NET_RAW`; avoid elevating the full UI or server.
+  - [x] Capture with libpcap and `CAP_NET_RAW`; avoid elevating the full UI or server. The `libpcap` backend opens one interface only in a Linux build tagged `pcap`. A missing capability is `permission_required` and names `CAP_NET_RAW`. The UI and the web server are not elevated. Native acceptance remains open.
   - Assert: native evidence covers real adapter, denied permission, restart and no saved PSK.
 - [ ] B02 macOS native adapters.
   - [x] Select supported macOS/architecture baseline and native bridge approach. macOS 13 Ventura or later, Apple Silicon (`darwin/arm64`) only. The bridge is cgo with a thin Objective-C layer. No Intel, universal, or Swift helper for 1.0. [ADR 007](docs/adr/007-macos-baseline.md).

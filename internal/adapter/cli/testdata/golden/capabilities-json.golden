@@ -91,6 +91,12 @@ stdout:
       "id": "capture_npcap",
       "provider": "\u003cnative\u003e",
       "state": "\u003cnative\u003e"
+    },
+    {
+      "detail": "\u003cnative\u003e",
+      "id": "capture_libpcap",
+      "provider": "\u003cnative\u003e",
+      "state": "\u003cnative\u003e"
     }
   ],
   "schema_version": 1,

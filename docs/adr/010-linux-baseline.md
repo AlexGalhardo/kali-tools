@@ -11,6 +11,6 @@ Decision:
 - `doctor` and the README state that sentence. A best-effort run does not close B01.
 - Native acceptance still requires a human on Ubuntu 24.04. Cross-compilation and the CI runner do not close it.
 
-Consequences: setup instructions and the Linux runbook aim at Ubuntu 24.04. Other distributions may need the same GTK3 and WebKitGTK 4.1 packages, and may lack NetworkManager or libpcap. Those gaps stay explicit capability states.
+Consequences: setup instructions and the Linux runbook aim at Ubuntu 24.04. Other distributions may need the same GTK3 and WebKitGTK 4.1 packages, and may lack NetworkManager or libpcap. Those gaps stay explicit capability states. The Linux native CI artifact links libpcap (`-tags pcap`). Opening an interface needs `CAP_NET_RAW` on the capture process. The UI and the web server are not elevated.
 
 Revisit when 1.0 hardware acceptance is finished, or when the owner chooses a second guaranteed distribution.
