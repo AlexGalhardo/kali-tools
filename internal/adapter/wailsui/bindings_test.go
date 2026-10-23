@@ -1,11 +1,13 @@
 package wailsui_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -367,6 +369,28 @@ func TestImportCaptureReadsSelectedFile(t *testing.T) {
 	}
 }
 
+func TestSaveDiagnosticBundleWritesZip(t *testing.T) {
+	destination := filepath.Join(t.TempDir(), "diag.zip")
+	chosen := destination
+	rt := quietRuntime()
+	rt.SaveFile = func(context.Context, wruntime.SaveDialogOptions) (string, error) { return chosen, nil }
+	b := wailsui.NewWithRuntime(newApplication(t), rt)
+	b.Startup(t.Context())
+	defer b.Shutdown(t.Context())
+	saved, err := b.SaveDiagnosticBundle()
+	if !saved || err != nil {
+		t.Fatalf("saved=%v err=%v", saved, err)
+	}
+	body, err := os.ReadFile(destination)
+	if err != nil || !bytes.HasPrefix(body, []byte("PK")) || bytes.Contains(body, []byte("synthetic-psk")) {
+		t.Fatalf("err=%v size=%d", err, len(body))
+	}
+	chosen = ""
+	if saved, err = b.SaveDiagnosticBundle(); saved || err != nil {
+		t.Fatalf("cancel saved=%v err=%v", saved, err)
+	}
+}
+
 func TestBindingsDelegateToApplication(t *testing.T) {
 	a := newApplication(t)
 	if wailsui.New(a).Version() != domain.Version {
@@ -486,7 +510,7 @@ func TestBindingMethodSetMatchesBackend(t *testing.T) {
 			names = append(names, name)
 		}
 	}
-	want := []string{"AuditTLS", "CancelJob", "Capabilities", "CaptureBackends", "ClearHistory", "CurrentWiFi", "Diagnose", "Discover", "DiscoverLocal", "History", "ImportCapture", "InspectDNS", "InspectServices", "Interfaces", "Inventory", "Neighbors", "OpenLocationSettings", "OpenNpcapDownload", "QuerySNMP", "RevealWiFi", "SaveCapture", "SaveSettings", "Settings", "StartCapture", "StartDiagnostic", "StopCapture", "Tools", "Version"}
+	want := []string{"AuditTLS", "CancelJob", "Capabilities", "CaptureBackends", "ClearHistory", "CurrentWiFi", "Diagnose", "Discover", "DiscoverLocal", "History", "ImportCapture", "InspectDNS", "InspectServices", "Interfaces", "Inventory", "Neighbors", "OpenLocationSettings", "OpenNpcapDownload", "QuerySNMP", "RevealWiFi", "SaveCapture", "SaveDiagnosticBundle", "SaveSettings", "Settings", "StartCapture", "StartDiagnostic", "StopCapture", "Tools", "Version"}
 	if !slices.Equal(names, want) {
 		t.Fatalf("methods=%v, want=%v", names, want)
 	}

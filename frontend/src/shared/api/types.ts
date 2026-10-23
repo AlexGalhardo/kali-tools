@@ -213,6 +213,7 @@ export type Backend = {
   ClearHistory(): Promise<void>;
   Settings(): Promise<Settings>;
   SaveSettings(v: Settings): Promise<void>;
+  SaveDiagnosticBundle(): Promise<boolean>;
   CurrentWiFi(): Promise<WiFi>;
   RevealWiFi(): Promise<{ state: string; value: string }>;
   OpenLocationSettings(): Promise<void>;

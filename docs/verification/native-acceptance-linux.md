@@ -6,6 +6,8 @@ The CI artifact is linux/amd64. Do not treat an aarch64 run of that binary as a 
 
 Wi-Fi metadata uses nl80211. Live capture uses libpcap only in a build with `-tags pcap`. The CI Linux artifact is that build. Opening an interface needs `CAP_NET_RAW` on the capture process. Do not run the UI or the server as root. Those steps do not close A05, A06 or B01 until the evidence is pasted.
 
+Privilege for 1.0 is a one-time `sudo setcap cap_net_raw+eip` on the capture binary ([ADR 011](../adr/011-no-privileged-helper.md)). Do not run the UI or `kali-tools serve` as root. There is no privileged helper. `capture_live` stays `unsupported` on Linux and its doctor detail names that command. `setcap` is what lets the libpcap backend in step 7 open an interface.
+
 1. **Record the host.** Run `cat /etc/os-release` and `uname -m`. Expected for a B01 baseline run: Ubuntu 24.04 and `x86_64`. If the file says Debian 13 or Kali, record that and mark the run best-effort. Evidence: `01-os-release.txt`. Supports every step below.
 
 2. **Launch the desktop app.** Install WebKitGTK 4.1 if the app fails to start (`libwebkit2gtk-4.1-0` on Debian/Ubuntu). Open the desktop build. Expected: Overview lists this machine's adapters and the sidebar does not say "Not connected". Evidence: `02-overview.png`. If the library is missing, save the error text as `02-start.txt` and stop; that does not close a PLAN box. A successful launch closes the practical native-bridge check for H01 AC-10, H03 AC-11, H04 AC-12, H05 AC-17/18 and H06 AC-17 on the installed artifact.

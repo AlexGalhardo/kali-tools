@@ -1,4 +1,4 @@
-//go:build !windows
+//go:build !windows && !darwin
 
 package capture
 
@@ -10,7 +10,7 @@ import (
 
 func (Native) Status(context.Context) domain.Capability {
 	return domain.Capability{ID: "capture_live", Provider: "raw_socket", State: domain.CapabilityUnsupported,
-		Detail: "live capture provider is not implemented on this platform"}
+		Detail: "Live capture is not implemented in this build. For a pcap-tagged Linux binary, grant capture once with sudo setcap cap_net_raw+eip on that binary. Do not run the UI or the web server as root."}
 }
 
 func live(_ context.Context, _ LiveRequest, _ *Artifact) (LiveResult, error) {
