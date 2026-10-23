@@ -87,8 +87,14 @@ func Decode(data []byte, link layers.LinkType, ci gopacket.CaptureInfo, n int) (
 			r.Info += " Port 443 (encryption not verified)"
 		}
 	}
-	if p.ErrorLayer() != nil {
-		r.Info = "Truncated or malformed packet"
+	truncated := ci.Length > len(data) || (ci.CaptureLength > 0 && ci.CaptureLength < ci.Length) || p.ErrorLayer() != nil
+	if truncated {
+		switch {
+		case r.Info == "":
+			r.Info = "Truncated or malformed packet"
+		case !strings.Contains(r.Info, "truncated") && !strings.Contains(r.Info, "Truncated"):
+			r.Info += "; truncated"
+		}
 	}
 	return r, nil
 }

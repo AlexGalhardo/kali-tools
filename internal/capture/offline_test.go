@@ -113,6 +113,72 @@ func TestLinkAndICMPSummaries(t *testing.T) {
 	}
 }
 
+func TestTruncationIPv6ExtensionsAndNoReassembly(t *testing.T) {
+	full := synthetic(t)
+	short := full[:len(full)-4]
+	got, err := Decode(short, layers.LinkTypeRaw, gopacket.CaptureInfo{CaptureLength: len(short), Length: len(full)}, 1)
+	if err != nil || (!strings.Contains(got.Info, "truncated") && !strings.Contains(got.Info, "Truncated")) || strings.Contains(got.Info, "example.test") {
+		t.Fatalf("truncated decode: %+v %v", got, err)
+	}
+	hop := &layers.IPv6HopByHop{NextHeader: layers.IPProtocolICMPv6, Options: []*layers.IPv6HopByHopOption{{OptionType: 1, OptionData: []byte{0, 0, 0, 0}}}}
+	icmp := []gopacket.SerializableLayer{
+		&layers.IPv6{Version: 6, HopLimit: 64, SrcIP: []byte{0x20, 1, 0xd, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}, DstIP: []byte{0x20, 1, 0xd, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}, NextHeader: layers.IPProtocolIPv6HopByHop},
+		hop,
+		&layers.ICMPv6{TypeCode: layers.CreateICMPv6TypeCode(layers.ICMPv6TypeEchoRequest, 0)},
+		&layers.ICMPv6Echo{},
+	}
+	buf := gopacket.NewSerializeBuffer()
+	if err := gopacket.SerializeLayers(buf, gopacket.SerializeOptions{FixLengths: true}, icmp...); err != nil {
+		t.Fatal(err)
+	}
+	got, err = Decode(buf.Bytes(), layers.LinkTypeRaw, gopacket.CaptureInfo{CaptureLength: len(buf.Bytes()), Length: len(buf.Bytes())}, 2)
+	if err != nil || got.Protocol != "ICMPv6" || got.Source != "2001:db8::1" || !strings.Contains(got.Info, "EchoRequest") {
+		t.Fatalf("hop-by-hop: %+v %v", got, err)
+	}
+	secret := []byte("synthetic-secret-payload")
+	frag := []gopacket.SerializableLayer{
+		&layers.IPv6{Version: 6, HopLimit: 64, SrcIP: []byte{0x20, 1, 0xd, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}, DstIP: []byte{0x20, 1, 0xd, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}, NextHeader: layers.IPProtocolIPv6Fragment},
+		&layers.IPv6Fragment{NextHeader: layers.IPProtocolUDP, FragmentOffset: 1, MoreFragments: true, Identification: 7},
+		gopacket.Payload(secret),
+	}
+	buf = gopacket.NewSerializeBuffer()
+	if err := gopacket.SerializeLayers(buf, gopacket.SerializeOptions{FixLengths: true}, frag...); err != nil {
+		t.Fatal(err)
+	}
+	got, err = Decode(buf.Bytes(), layers.LinkTypeRaw, gopacket.CaptureInfo{CaptureLength: len(buf.Bytes()), Length: len(buf.Bytes()) + 8}, 3)
+	if err != nil || strings.Contains(got.Info, "synthetic-secret") || got.Protocol == "UDP" {
+		t.Fatalf("fragment was reassembled: %+v %v", got, err)
+	}
+	parts := []string{"GET /syn", "thetic-secret"}
+	for _, part := range parts {
+		ip := &layers.IPv4{Version: 4, IHL: 5, TTL: 64, SrcIP: []byte{192, 0, 2, 1}, DstIP: []byte{192, 0, 2, 2}, Protocol: layers.IPProtocolTCP}
+		tcp := &layers.TCP{SrcPort: 12345, DstPort: 80, DataOffset: 5}
+		one := gopacket.NewSerializeBuffer()
+		if err := gopacket.SerializeLayers(one, gopacket.SerializeOptions{FixLengths: true}, ip, tcp, gopacket.Payload([]byte(part))); err != nil {
+			t.Fatal(err)
+		}
+		got, err = Decode(one.Bytes(), layers.LinkTypeRaw, gopacket.CaptureInfo{Length: len(one.Bytes())}, 4)
+		if err != nil || strings.Contains(got.Info, "thetic") || strings.Contains(got.Info, "secret") {
+			t.Fatalf("segment %q leaked payload: %+v %v", part, got, err)
+		}
+		if part == "thetic-secret" && got.Protocol == "HTTP" {
+			t.Fatalf("second segment reassembled into HTTP: %+v", got)
+		}
+	}
+}
+
+func TestCorruptedCaptureRejected(t *testing.T) {
+	header := []byte{0xd4, 0xc3, 0xb2, 0xa1, 2, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0}
+	packet := make([]byte, 16)
+	binary.LittleEndian.PutUint32(packet[8:12], 4)
+	binary.LittleEndian.PutUint32(packet[12:16], 2)
+	for _, raw := range [][]byte{nil, {1, 2, 3}, header[:20], append(header, packet...)} {
+		if _, err := Read(bytes.NewReader(raw)); err == nil {
+			t.Fatalf("accepted %d bytes", len(raw))
+		}
+	}
+}
+
 func TestHTTPAndPortMetadata(t *testing.T) {
 	for _, tt := range []struct{ payload, protocol, info string }{
 		{"PATCH /private HTTP/1.1\r\n", "HTTP", "Plaintext HTTP message (payload omitted) Port 443 (encryption not verified)"},

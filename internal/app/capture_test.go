@@ -196,6 +196,38 @@ func captureAddress(t *testing.T) string {
 	return address
 }
 
+func TestCaptureInterfaceLossStaysOutOfHistory(t *testing.T) {
+	deps := fakeDeps()
+	deps.CaptureBackends = map[string]app.CaptureBackend{capture.BackendPktmon: fake.LiveCapture{
+		Capability: domain.Capability{State: domain.CapabilityAvailable, Detail: "fixture"},
+		Result:     capture.LiveResult{Limited: true, Limits: []string{capture.LimitTruncated}, Packets: []capture.Packet{{Info: "synthetic-psk"}}},
+		Err:        &domain.Error{Code: domain.CodeFailed, Message: "capture interface disappeared"},
+	}}
+	s := serviceWithDeps(t, deps)
+	events, _ := s.Subscribe(t.Context())
+	if err := s.StartCapture(t.Context(), capture.LiveRequest{Backend: capture.BackendPktmon, DurationSeconds: 1, PacketLimit: 1}); err != nil {
+		t.Fatal(err)
+	}
+	timer := time.NewTimer(3 * time.Second)
+	defer timer.Stop()
+	var event job.Event
+	for event.Topic != job.TopicCapture {
+		select {
+		case event = <-events:
+		case <-timer.C:
+			t.Fatal("capture completion missing")
+		}
+	}
+	outcome, ok := event.Data.(app.CaptureEvent)
+	if !ok || outcome.Error != "failed: capture interface disappeared" || strings.Contains(outcome.Error, "synthetic-psk") {
+		t.Fatalf("event = %+v", outcome)
+	}
+	history, err := s.History(t.Context())
+	if err != nil || len(history) != 1 || history[0].State != job.Failed || strings.Contains(history[0].Summary, "synthetic-psk") {
+		t.Fatalf("history = %+v %v", history, err)
+	}
+}
+
 func TestCaptureSessionStates(t *testing.T) {
 	address := captureAddress(t)
 	deps := fakeDeps()

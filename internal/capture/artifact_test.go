@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"syscall"
 	"testing"
 	"time"
 
@@ -101,9 +102,16 @@ func TestArtifactBoundsAndWriterFailure(t *testing.T) {
 		if err := a.Write(t.Context(), failingWriter{}, format); !errors.Is(err, io.ErrClosedPipe) {
 			t.Fatalf("lost writer error: %v", err)
 		}
+		if err := a.Write(t.Context(), enospcWriter{}, format); !errors.Is(err, syscall.ENOSPC) {
+			t.Fatalf("lost disk-full error: %v", err)
+		}
 	}
 }
 
 type failingWriter struct{}
 
 func (failingWriter) Write([]byte) (int, error) { return 0, io.ErrClosedPipe }
+
+type enospcWriter struct{}
+
+func (enospcWriter) Write([]byte) (int, error) { return 0, syscall.ENOSPC }

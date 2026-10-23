@@ -190,6 +190,8 @@ A06 step 6 exposes ordered backend status through Application, Wails and authent
 
 A06's inspector selects an available backend, renders translated stable loss codes and distinguishes unknown drops from zero. Pktmon sends no address; Npcap exposes local IPv4/IPv6 including loopback. ADR 005 remains proposed with native measurements open; the raw_socket default is preserved pending qualification.
 
+B05 records the decode contract in [capture decoding](capture-decoding.md). Each packet is decoded alone: a complete IPv6 hop-by-hop header is followed, truncation is reported, and TCP streams and IPv6 fragments are not reassembled. Payloads stay out of summaries and history. Artifact growth stops at 10000 packets or the reserved 64 MiB budget. TShark stays inventory-only (ADR 006). Pulling a cable remains a native runbook check.
+
 A01 step 1 adds passive neighbor value types and pure normalization in network: discard unusable/broadcast rows, deduplicate by interface/address, sort deterministically and return at most 4,096 rows with an explicit Limited flag. This group adds no OS query, port extension or public route.
 
 A01 step 2 adds untagged netlink/procfs parsing inside adapter/platform. Length/alignment checks precede slicing, inputs are capped at 4 MiB/1 MiB and raw rows at 65,536, and summaries retain no borrowed input bytes. These parsers are tested on the host independently of Linux OS access; the OS glue follows separately.
