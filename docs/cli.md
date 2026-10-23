@@ -510,6 +510,8 @@ Wi-Fi reveal requires `--confirm`, warns on stderr before revealing, writes the 
 
 Within one `schema_version`, JSON changes are additive only (new keys or commands). Removing or retyping a key, renaming a command or flag, or changing an exit code requires a schema_version bump, an entry here and in CHANGELOG.md, and a deprecation period of at least one minor release with a stderr warning. Fixtures in internal/adapter/cli/testdata/contract enforce JSON paths and types. Native inventory values, elapsed times and generated IDs are normalized only in golden tests.
 
+The supported operating systems are the [packaging matrix](packaging.md). Combinations absent from that table are not supported. `doctor` prints the Ubuntu 24.04 baseline sentence on every OS. That sentence is the Linux baseline, not a claim that the current machine is Ubuntu. The doctor `capture` and `wifi` strings describe the Windows path. Live capability rows are the per-OS states. This contract does not promise every Kali tool or every protocol payload. Settings are `language` (`en` or `pt-BR`) and `retention_days` (1 through 365). A new database defaults to `en` and 30 days. The SQLite schema version is 1.
+
 ## Migration from 0.1.0-alpha.1-dev
 
 1. Output defaults to human text. Add `--json` to scripts.

@@ -2,7 +2,7 @@
 
 A local network and security toolkit inspired by the Kali Linux ecosystem, built with Go, Wails, React, TypeScript, Base UI, Tailwind CSS v4 and SQLite. One Go core serves three interfaces: the native desktop GUI (primary), a local web server with the same UI, and a CLI for headless or SSH hosts. Native SSH acceptance is still open. The interface supports English and Brazilian Portuguese.
 
-**Development preview:** core workflows are implemented and tested; hardware qualification is still open. Windows 11 leads development. Linux/macOS binaries do not imply Wi-Fi or capture parity. See [PLAN.md](PLAN.md) and [verification evidence](docs/verification/0.1.0-alpha.2-dev.md).
+**Development preview:** core workflows are implemented and tested; hardware qualification is still open. Windows 11 leads development. Linux/macOS binaries do not imply Wi-Fi or capture parity. The frozen surface is the [CLI contract](docs/cli.md), the [HTTP contract](docs/http.md), schema version 1, settings `language` and `retention_days`, and the [packaging matrix](docs/packaging.md). This project does not promise every Kali tool or every protocol payload. See [PLAN.md](PLAN.md) and [verification evidence](docs/verification/0.1.0-alpha.2-dev.md).
 
 ## What it does
 
