@@ -553,12 +553,12 @@ Beta exit: the agreed capability matrix is verified on all three OSes and all th
   - [x] Document API compatibility, errors, permission requirements and unavailable capabilities. [HTTP contract](docs/http.md) and [CLI contract](docs/cli.md). `TestHTTPContractMatchesRoutes` fails if a route, error status or body limit drifts. The platform matrix is [packaging](docs/packaging.md). An operating system that is not in that table is not supported.
   - [x] Adopt MIT for project code, retain third-party/vendored licenses and collect notices for pinned Go/production frontend dependencies; Nmap/TShark remain excluded.
   - Assert: README and doctor agree with tested artifacts; no promise of all Kali tools or all protocol payloads.
-- [ ] R02 Release qualification.
-  - [ ] Re-run meaningful regression suites after final changes and review evidence.
-  - [ ] Test native install, upgrade, rollback/data recovery, uninstall and offline operation.
-  - [ ] Validate agreed numeric performance budgets and absence of critical/high unresolved vulnerabilities.
-  - [ ] Confirm PT-BR/English and keyboard/accessibility acceptance.
-  - [ ] External review of the web-server threat model.
+- [ ] R02 Release qualification. Notes for the open checks are in [the review index](docs/review/README.md). None of those checks was executed or accepted. [Evidence](docs/verification/specs/R02.md).
+  - [ ] Re-run meaningful regression suites after final changes and review evidence. CI is the suite. It has not been repeated after hardware acceptance.
+  - [ ] Test native install, upgrade, rollback/data recovery, uninstall and offline operation. The procedure is [install, upgrade and rollback](docs/review/install-upgrade-rollback.md). It was not run.
+  - [ ] Validate agreed numeric performance budgets and absence of critical/high unresolved vulnerabilities. No numeric budget is agreed. A CI `govulncheck` run is not a finding recorded here.
+  - [ ] Confirm PT-BR/English and keyboard/accessibility acceptance. Catalog parity and the browser axe smoke are not that acceptance. See [accessibility](docs/review/accessibility.md).
+  - [ ] External review of the web-server threat model. The brief is [the threat model](docs/review/threat-model.md). No external reviewer has signed it.
   - Assert: release checklist links reproducible results; no unfinished blocker is marked complete.
 - [ ] R03 Distribution and provenance.
   - [x] Signing decision (2026-10-23): no Apple Developer Program, Developer ID, notarization, or Windows Authenticode, EV, or Azure Trusted Signing, now or for 1.0. Releases are vendor-unsigned. macOS arm64 keeps the ad-hoc linker signature. Every artifact gets a SHA-256 checksum. GitHub artifact attestations are the provenance mechanism. [ADR 009](docs/adr/009-signing-and-provenance.md).

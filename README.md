@@ -252,6 +252,7 @@ On Windows 11 24H2+, a Wi-Fi location-consent notice points to Settings > Privac
 - [Development and native acceptance](docs/development.md)
 - [Dependency inventory](docs/dependencies.md)
 - [Packaging matrix](docs/packaging.md)
+- [Release qualification review](docs/review/README.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)
 - [Verification evidence](docs/verification/0.1.0-alpha.2-dev.md) ([previous](docs/verification/0.1.0-alpha.1-dev.md))
