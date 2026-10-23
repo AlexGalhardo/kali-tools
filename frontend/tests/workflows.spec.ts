@@ -114,6 +114,19 @@ test("diagnostic job returns real contract result and history",async({page,conne
 test("Wi-Fi key clears on navigation and blur",async({page,connect})=>{await connect(page);await page.getByRole("button",{name:"Wi-Fi",exact:true}).click();await page.getByRole("button",{name:"Reveal current network key"}).click();await expect(page.getByText("synthetic-test-key")).toBeVisible();await page.evaluate(()=>window.dispatchEvent(new Event("blur")));await expect(page.getByText("synthetic-test-key")).toHaveCount(0);await page.getByRole("button",{name:"Reveal current network key"}).click();await page.getByRole("button",{name:"Overview",exact:true}).click();await expect(page.getByText("synthetic-test-key")).toHaveCount(0);});
 test("packet import and display filtering",async({page,connect})=>{await connect(page);await page.getByRole("button",{name:"Packet inspector",exact:true}).click();await importCapture(page);await expect(page.getByRole("cell",{name:"DNS",exact:true})).toBeVisible();await page.getByLabel("Display filter (protocol or address)").fill("TCP");await expect(page.getByRole("cell",{name:"DNS",exact:true})).toHaveCount(0);});
 test("PT-BR catalog and preferences",async({page,connect})=>{await connect(page);await page.getByRole("button",{name:"Settings",exact:true}).click();await page.getByLabel("Language",{exact:true}).last().selectOption("pt-BR");await page.getByRole("button",{name:"Salvar preferências"}).click();await expect(page.getByRole("status")).toHaveText("Preferências salvas");});
+test("settings saves a local diagnostic bundle", async ({page, connect}) => {
+  await connect(page);
+  await page.getByRole("button", {name: "Settings", exact: true}).click();
+  if (test.info().project.name === "http") {
+    const download = page.waitForEvent("download");
+    await page.getByRole("button", {name: "Save diagnostic bundle"}).click();
+    expect((await download).suggestedFilename()).toBe("kali-tools-diagnostic.zip");
+  } else {
+    await page.getByRole("button", {name: "Save diagnostic bundle"}).click();
+    await expect(page.locator("html")).toHaveAttribute("data-diagnostic-bundle", "1");
+  }
+  await expect(page.getByRole("status")).toHaveText("Diagnostic bundle saved on this computer. Nothing was uploaded.");
+});
 test("all screens have no serious or critical accessibility violations",async({page,connect})=>{await connect(page);for(const name of ["Overview","Interfaces","Diagnostics","Wi-Fi","Packet inspector","Discovery & tools","History","Settings"]){await page.getByRole("button",{name,exact:true}).click();const results=await new AxeBuilder({page}).analyze();expect(results.violations.filter(v=>v.impact==="serious"||v.impact==="critical"),name).toEqual([]);}});
 test("browser without a backend shows explicit limitation @wails-only",async({page,connect})=>{await page.goto("/");await expect(page.getByText("Not connected. Launch the desktop app, or open the URL printed by kali-tools serve.")).toBeVisible();await expect(page.getByRole("button",{name:/Refresh/})).toBeDisabled();});
 test("desktop and compact visual evidence @wails-only",async({page,connect})=>{await page.setViewportSize({width:1320,height:900});await connect(page);await page.screenshot({path:"../.impeccable/review/desktop.png",fullPage:true});await page.setViewportSize({width:960,height:768});await page.getByRole("button",{name:"Diagnostics",exact:true}).click();await page.screenshot({path:"../.impeccable/review/compact.png",fullPage:true});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);});

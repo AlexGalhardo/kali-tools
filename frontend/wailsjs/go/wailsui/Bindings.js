@@ -86,6 +86,10 @@ export function SaveCapture(arg1) {
   return window['go']['wailsui']['Bindings']['SaveCapture'](arg1);
 }
 
+export function SaveDiagnosticBundle() {
+  return window['go']['wailsui']['Bindings']['SaveDiagnosticBundle']();
+}
+
 export function SaveSettings(arg1) {
   return window['go']['wailsui']['Bindings']['SaveSettings'](arg1);
 }

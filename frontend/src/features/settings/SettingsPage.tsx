@@ -60,6 +60,17 @@ export function SettingsPage({
         >
           {t.save}
         </Button>
+        <Button
+          disabled={!connected() || busy}
+          onClick={() =>
+            execute(async () => {
+              const saved = await backend().SaveDiagnosticBundle();
+              if (saved) setNotice(t.diagnosticSaved);
+            })
+          }
+        >
+          {t.diagnosticBundle}
+        </Button>
       </div>
     </section>
   );
