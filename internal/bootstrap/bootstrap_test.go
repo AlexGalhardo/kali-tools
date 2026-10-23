@@ -63,7 +63,7 @@ func TestNativeProviderAdapters(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err := (platform.Host{}).Inventory(t.Context())
-	if runtime.GOOS == "windows" || runtime.GOOS == "linux" {
+	if runtime.GOOS == "windows" || runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
 		if err != nil {
 			t.Fatal(err)
 		}
