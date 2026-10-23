@@ -72,7 +72,7 @@ CLI           ─┘   (use cases,     network/capture/  ├─ adapter/probe   
 
 ```text
 main.go, app.go                 Wails composition root and current desktop facade (root required by Wails v2)
-cmd/kali-tools/                 CLI composition root; `serve` will start the web server
+cmd/kali-tools/                 CLI composition root; `serve` starts the web server
 cmd/lab-fixture/                Docker lab fixture services
 internal/domain/                shared kernel: typed errors, capability, versions
 internal/app/                   use cases, job lifecycle, history; declares driven ports

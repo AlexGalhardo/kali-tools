@@ -52,7 +52,8 @@ kali-tools/
 │   ├── capture/                    capability: live capture (Windows raw IPv4), PCAP/PCAPNG import/export, gopacket decoding
 │   ├── wifi/                       capability: current Wi-Fi metadata and explicit key reveal (Windows)
 │   ├── tlsaudit/                   capability: TLS audit request validation and certificate reports (B08); native verifier acceptance pending
-│   ├── dnsinspect/                 capability: DNS inspection request validation (B09); queries are not implemented yet
+│   ├── dnsinspect/                 capability: DNS inspection (B09)
+│   ├── localdiscovery/             capability: mDNS, SSDP and owned-device SNMP (B10)
 │   ├── adapter/                    all adapters, named by technology
 │   │   ├── contract/               shared frontend DTOs, explicit mappers and safe error mapping
 │   │   ├── storage/                driven: SQLite store, migrations, settings, retention

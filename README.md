@@ -1,6 +1,6 @@
 # kali-tools
 
-A local network and security toolkit inspired by the Kali Linux ecosystem, built with Go, Wails, React, TypeScript, Base UI, Tailwind CSS v4 and SQLite. One Go core serves three interfaces: the native desktop GUI (primary), a web server with the same UI (planned) and a complete CLI for headless/SSH hosts (in progress). The interface supports English and Brazilian Portuguese.
+A local network and security toolkit inspired by the Kali Linux ecosystem, built with Go, Wails, React, TypeScript, Base UI, Tailwind CSS v4 and SQLite. One Go core serves three interfaces: the native desktop GUI (primary), a local web server with the same UI, and a CLI for headless or SSH hosts. Native SSH acceptance is still open. The interface supports English and Brazilian Portuguese.
 
 **Development preview:** core workflows are implemented and tested; hardware qualification is still open. Windows 11 leads development. Linux/macOS binaries do not imply Wi-Fi or capture parity. See [PLAN.md](PLAN.md) and [verification evidence](docs/verification/0.1.0-alpha.2-dev.md).
 
