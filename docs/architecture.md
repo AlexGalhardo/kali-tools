@@ -339,7 +339,7 @@ Use `git mv`, then rewrite import paths and run `gofmt`. Run `go vet ./...` for 
 
 ```bash
 go vet ./... && go vet -tags desktop .
-GOOS=linux go vet ./... && GOOS=darwin go vet ./...
+CGO_ENABLED=0 GOOS=linux go vet ./... && CGO_ENABLED=0 GOOS=darwin go vet ./... && CGO_ENABLED=0 GOOS=windows go vet ./...
 go test ./...                      # add -race where the toolchain supports it
 cd frontend && bun run typecheck && bun run lint && bun run build && bunx playwright test
 node scripts/task.mjs fuzz         # parser fuzz smoke

@@ -167,13 +167,13 @@ docs/, docs/adr/                architecture, research, decisions, evidence
   - [x] Deterministic integration assertions; cleanup and bounded startup time.
   - [x] Document that host Wi-Fi, elevation, capture drivers and WebViews require native tests.
   - Assert: one documented command fails on wrong results and returns zero only after assertions pass.
-- [ ] S09 CI/CD implementation (activation authorized 2026-10-19).
+- [x] S09 CI/CD implementation (activation authorized 2026-10-19).
   - Hosted repair verified: Windows inactive-WLAN state and macOS inventory/config-path assertions corrected; [run 39668017937](https://github.com/AlexGalhardo/kali-tools/actions/runs/39668017937) passes every job, including draft assembly. [S09 evidence](docs/verification/specs/S09.md).
   - [x] Prepare CI source for formatting/lint/typecheck/build, race tests, vulnerabilities and CLI lab. Active source passes actionlint and immutable-pin checks; execution acceptance is recorded separately.
-  - [ ] Prepare native Wails build matrix with per-OS dependencies and capability tests.
-  - [ ] Prepare release source for draft artifacts, checksums and source/dependency notices.
+  - [x] Prepare native Wails build matrix with per-OS dependencies and capability tests. The `native` job builds on windows-2025, ubuntu-24.04 (GTK and WebKitGTK) and macos-15, and runs `go test -race` on each. [Run 39981075045](https://github.com/AlexGalhardo/kali-tools/actions/runs/39981075045) passed that matrix. Hosted builds are not hardware acceptance.
+  - [x] Prepare release source for draft artifacts, checksums and source/dependency notices. `scripts/release.mjs` writes `SHA256SUMS`, copies the notice files and archives the source. The release job runs only for a non-pull-request push to `main`. Draft assembly passed on [run 39668017937](https://github.com/AlexGalhardo/kali-tools/actions/runs/39668017937).
   - [x] Pin official Actions release revisions; minimize permissions and use the short-lived GitHub token only in the main-branch release job.
-  - [ ] Add `GOOS=linux|darwin|windows go vet ./...` and the dependency-rule check (H08) to CI.
+  - [x] Add `GOOS=linux|darwin|windows go vet ./...` and the dependency-rule check (H08) to CI. The quality job runs `CGO_ENABLED=0` vet for those three targets and `node scripts/task.mjs arch`. `node scripts/task.mjs workflows` fails if either check is removed. Cross-compilation is not native acceptance. [S09 evidence](docs/verification/specs/S09.md).
   - Assert: static workflow checks and hosted jobs pass; activation follows explicit owner authorization; only successful main-branch runs assemble development release drafts.
 - [x] S10 Architecture research and repository reorganization (2026-10-21).
   - [x] Research Clean/Hexagonal architecture in Go and record decisions in `docs/architecture-research.md`.
@@ -272,7 +272,7 @@ These are reusable delivery requirements, not a separate completed milestone. De
   - Implementation evidence: [H06](docs/verification/specs/H06.md). Native bridge AC-17/DA-8 remains pending under the authorized headless workflow.
   - [ ] H06 native bridge AC-17/DA-8.
   - Assert: no `storage.*` type appears in a binding, HTTP or CLI signature; secret-redaction tests cover every DTO.
-- [ ] H07 Contract and acceptance test harness.
+- [x] H07 Contract and acceptance test harness.
   - Spec: [H07-test-harness](docs/specs/H07-test-harness.md)
   - [x] `internal/porttest` suites for each driven port, run against the real adapter and an in-memory fake. [Continuation evidence](docs/verification/specs/H07.md#continuation-2026-10-21).
   - [x] `tests/acceptance` diagnostics/discovery for direct application, CLI and headless Wails; history for direct/Wails. [Evidence](docs/verification/specs/H07.md).
@@ -280,8 +280,8 @@ These are reusable delivery requirements, not a separate completed milestone. De
   - [x] Rerun H07 race checks after installing GCC 16.2.0: `go test -race -timeout 120s ./internal/porttest/... ./internal/adapter/... ./tests/acceptance/...` passes. [Evidence](docs/verification/specs/H07.md#continuation-2026-10-21).
   - [x] H07 native OS-port data branches AC-10/DA-7: Wi-Fi, ICMP, host inventory and elevated capture pass on Windows build 26300 after the suite selects an active interface. [Native evidence](docs/verification/specs/H07.md#native-capture-correction-2026-10-21).
   - [x] C01 step 4: CLI history list/clear implemented; the acceptance skip is removed and history runs through all three drivers.
-  - [ ] W01/W03: add the HTTP driver and run the unchanged shared acceptance specifications.
-  - Progress: [H07 evidence](docs/verification/specs/H07.md). Native OS-port data branches now pass; C01 step 4 removes the CLI-history skip. HTTP remains W01. Other specs' native gates are independent.
+  - [x] W01/W03: add the HTTP driver and run the unchanged shared acceptance specifications. `tests/acceptance` runs the shared specifications through `newHTTP` as well as direct, CLI and Wails. [W01 evidence](docs/verification/specs/W01.md).
+  - Progress: [H07 evidence](docs/verification/specs/H07.md). Native OS-port data branches now pass; C01 step 4 removes the CLI-history skip. The HTTP driver is in the shared acceptance loop. Other specs' native gates are independent.
   - Assert: each fake passes the same suite as its adapter; at least the diagnostics, discovery and history specifications run through two drivers.
 - [x] H08 Enforce the dependency rule.
   - Eight depguard cases, wrong-version guard, cleanup and actual commit-hook rejection pass. Positive hosted run 39669810016 passes; negative PR #1 fails specifically on the application depguard rule, then was closed and deleted without merging. [Evidence](docs/verification/specs/H08.md).

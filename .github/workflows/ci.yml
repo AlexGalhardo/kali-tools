@@ -39,6 +39,9 @@ jobs:
       - run: npm exec -- playwright install --with-deps chromium
         working-directory: frontend
       - run: node scripts/task.mjs check
+      - run: CGO_ENABLED=0 GOOS=linux go vet ./...
+      - run: CGO_ENABLED=0 GOOS=darwin go vet ./...
+      - run: CGO_ENABLED=0 GOOS=windows go vet ./...
       - run: node scripts/task.mjs arch
       - run: node scripts/task.mjs race
       - run: node scripts/task.mjs fuzz
