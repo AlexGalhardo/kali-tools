@@ -8,7 +8,7 @@ alwaysApply: true
 Local network and security toolkit: one Go core, a Wails desktop, a loopback web server, and a CLI. Read `AGENTS.md` and `docs/architecture.md` before adding a package or wiring an interface.
 
 - Implement one spec from `docs/specs/` at a time. Write the spec's tests first. Do not invent requirements the spec does not state.
-- English source, docs, and commits. Conventional Commits. The project license is MIT. Do not create a release tag. Releases are vendor-unsigned (ADR 008): no Apple Developer ID, notarization, or Windows Authenticode. macOS arm64 keeps the linker's ad-hoc signature.
+- English source, docs, and commits. Conventional Commits. The project license is MIT. Do not create a release tag. Releases are vendor-unsigned (ADR 009): no Apple Developer ID, notarization, or Windows Authenticode. macOS arm64 keeps the linker's ad-hoc signature.
 - Dependencies point inward. `internal/domain` imports only the standard library. Capabilities (`network`, `capture`, `wifi`, `tlsaudit`) do not import adapters, `app`, Wails, or `database/sql`. Driving adapters call `app.Application` and do not import storage, tools, probe, platform, or pcap.
 - Declare a port in the package that calls it. Pass dependencies into `app.New` (`app.Deps`). No DI framework.
 - Do not concatenate shell commands. Bound network IO, parser input, event queues, and subprocess output.

@@ -2,7 +2,7 @@
 
 Release policy: always follow SemVer 2.0.0 and Keep a Changelog 1.1.0, as specified in CONTRIBUTING.md. Run `node scripts/release-policy.mjs`; keep app/package/Wails versions, Git tags, dated changelog entries and release notes consistent. Never rewrite published release contents or tags.
 
-Use English for source, documentation and commits. Keep business logic in Go services shared by the Wails GUI, the web server and the CLI. Read docs/architecture.md before adding, moving or wiring packages, and keep it current; the reasoning is in docs/architecture-research.md. Never concatenate shell commands. Bound network operations, parser input, event queues and subprocess output. Never persist Wi-Fi secrets or packet payloads in diagnostic history. GitHub Actions activation was explicitly authorized on 2026-10-19; maintain pinned workflows under .github/workflows with minimum permissions. Mark PLAN.md tasks complete only with actual verification evidence. Run `go test ./...`, `go vet ./...` and the frontend check/build after relevant changes. Do not claim native platform acceptance from cross compilation. Use the MIT project license. No release tag before qualification. Signing is decided: vendor-unsigned releases, SHA-256 checksums and GitHub artifact attestations (ADR 008). Do not add Apple or Microsoft certificates. Development artifacts must disclose unsigned status and open acceptance gates.
+Use English for source, documentation and commits. Keep business logic in Go services shared by the Wails GUI, the web server and the CLI. Read docs/architecture.md before adding, moving or wiring packages, and keep it current; the reasoning is in docs/architecture-research.md. Never concatenate shell commands. Bound network operations, parser input, event queues and subprocess output. Never persist Wi-Fi secrets or packet payloads in diagnostic history. GitHub Actions activation was explicitly authorized on 2026-10-19; maintain pinned workflows under .github/workflows with minimum permissions. Mark PLAN.md tasks complete only with actual verification evidence. Run `go test ./...`, `go vet ./...` and the frontend check/build after relevant changes. Do not claim native platform acceptance from cross compilation. Use the MIT project license. No release tag before qualification. Signing is decided: vendor-unsigned releases, SHA-256 checksums and GitHub artifact attestations (ADR 009). Do not add Apple or Microsoft certificates. Development artifacts must disclose unsigned status and open acceptance gates.
 
 ## Mandatory start of every task
 
@@ -16,7 +16,7 @@ Do this for every task, including small ones. If a skill conflicts with docs/arc
 
 ## Release naming
 
-GitHub releases follow the pattern: `kali-tools X.Y.Z — description`. All development releases are vendor-unsigned and published with status note: "unsigned development preview; hardware qualification remains open. Not a release-qualified build." macOS arm64 keeps the linker's ad-hoc signature only. Provenance is SHA-256 checksums plus GitHub artifact attestations (ADR 008).
+GitHub releases follow the pattern: `kali-tools X.Y.Z — description`. All development releases are vendor-unsigned and published with status note: "unsigned development preview; hardware qualification remains open. Not a release-qualified build." macOS arm64 keeps the linker's ad-hoc signature only. Provenance is SHA-256 checksums plus GitHub artifact attestations (ADR 009).
 
 ## Implementation workflow
 
@@ -68,7 +68,7 @@ Behavior is specified in `docs/specs/`. The package map and dependency rule are 
 - `scripts/` — Node task runners. `scripts/setup/` is the per-OS setup entry point. `scripts/task.mjs` is the allowlist of task names.
 - `tests/acceptance` — in-process drivers. `tests/integration` is `//go:build integration`. `tests/e2e` is `//go:build e2e`.
 
-`frontend/src/features/` holds the capability pages. When the map and the tree disagree, trust the tree and update the architecture doc only as part of the spec you are implementing. The 1.0 macOS target is macOS 13 or later on Apple Silicon, with a cgo Objective-C bridge (ADR 006). Pagination, not a virtualization library, satisfies the 1.0 table requirement (ADR 007).
+`frontend/src/features/` holds the capability pages. When the map and the tree disagree, trust the tree and update the architecture doc only as part of the spec you are implementing. The 1.0 macOS target is macOS 13 or later on Apple Silicon, with a cgo Objective-C bridge (ADR 007). Pagination, not a virtualization library, satisfies the 1.0 table requirement (ADR 008).
 
 ## Commands
 
@@ -110,7 +110,7 @@ Install Lefthook once per clone after frontend dependencies exist: `frontend/nod
 
 ## Adding an optional external program
 
-Copy the Nmap path. Do not interpolate a shell command.
+Follow the TShark inventory path and `runCommand`. Do not interpolate a shell command. Do not execute Nmap or read Nmap data files (`docs/adr/006-native-service-inspection.md` supersedes ADR 003).
 
 1. Add the smallest method on the consumer port (`app.ToolRunner` in `internal/app/ports.go`).
 2. Implement it in `internal/adapter/tools` through `runCommand`: a fixed argument array, a context deadline, stdout and stderr caps, and process-group or Windows Job Object cancellation.
@@ -119,7 +119,7 @@ Copy the Nmap path. Do not interpolate a shell command.
 5. Expose the operation on `app.Application`, then through Wails, HTTP, and the CLI using `internal/adapter/contract`. Add the same strings to `en` and `pt`.
 6. Extend `internal/porttest` and `internal/porttest/fake`.
 
-Nmap itself is 7.80 or newer within major 7, TCP connect plus light version detection only, an explicit IPv4 /24 or narrower, at most 32 ports, a two-minute deadline, and 4 MiB of stdout. There is no script, OS detection, UDP scan, or caller-supplied argument. See `docs/adr/003-optional-nmap.md`. TShark is inventory-only.
+Service inspection is native TCP, banner, TLS and one HTTP request: an explicit IPv4 /24 or narrower, at most 32 ports, and a two-minute deadline. TShark 4.2 or newer within major 4 is inventory-only.
 
 ## Safety and other gotchas
 

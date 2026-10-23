@@ -280,7 +280,7 @@ func TestParallelOperations(t *testing.T) {
 
 Use fuzzing to find edge cases and bugs:
 
-Every parser of untrusted input (PCAP/PCAPNG, Nmap XML, tool output) has a fuzz target that asserts "no panic, bounded work, error on malformed input":
+Every parser of untrusted input (PCAP/PCAPNG, service banners, tool output) has a fuzz target that asserts "no panic, bounded work, error on malformed input":
 
 ```go
 func FuzzNmapXML(f *testing.F) {
@@ -291,7 +291,7 @@ func FuzzNmapXML(f *testing.F) {
 }
 ```
 
-`node scripts/task.mjs fuzz` runs the existing `FuzzCapture` and `FuzzNmap` targets for 10 s each. Add crashers as regression cases under `testdata/fuzz/`. The function name above is illustrative.
+`node scripts/task.mjs fuzz` runs `FuzzCapture`, `FuzzClassifyBanner` and `FuzzParseNetlinkNeighbors`. Add crashers as regression cases under `testdata/fuzz/`. The function name above is illustrative.
 
 ## Examples as Documentation
 

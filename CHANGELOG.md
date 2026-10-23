@@ -10,6 +10,7 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ### Changed
 
+- Service inspection no longer runs Nmap. Explicit TCP scopes are identified with built-in banner, TLS and HTTP checks. TShark remains inventory-only. ADR 006 supersedes ADR 003.
 - Accepted ADR 004: the CLI keeps the standard-library flag parser. Cobra is not adopted (owner, 2026-10-23).
 - Chose `github.com/miekg/dns` v1.1.73 for the future DNS inspection module. It is not a dependency until that work is implemented.
 - Set the 1.0 macOS baseline to macOS 13 or later on Apple Silicon, with a cgo Objective-C bridge. No Intel or universal build.

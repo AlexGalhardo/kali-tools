@@ -1,9 +1,9 @@
 exit=0
 stdout:
-nmap fixture
+native 1
 HOST       PORTA  ESTADO  SERVIÇO  MÉTODO
-192.0.2.1  443    aberta  https    probed
+192.0.2.1  443    aberta  https    banner
 stderr:
-job <id> nmap: na fila
-job <id> nmap: executando
-job <id> nmap: concluído
+job <id> inspect: na fila
+job <id> inspect: executando
+job <id> inspect: concluído

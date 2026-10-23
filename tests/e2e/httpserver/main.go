@@ -75,7 +75,7 @@ func run(ctx context.Context, args []string, out io.Writer) error {
 	a := app.New(app.Deps{Jobs: store, Settings: store,
 		Host:        Host{Snapshot: app.HostSnapshot{Adapters: []app.HostAdapter{{Index: 1, Name: "Fixture Ethernet", Gateways: []string{"192.0.2.1"}, DNS: []string{"192.0.2.53"}}}, Counters: []network.Counter{{ID: "1", Received: 200, Sent: 100}}}},
 		WiFi:        WiFi{Network: wifi.Network{SSID: "Fixture Network", Profile: "Fixture", BSSID: "02:00:00:00:00:02", Signal: 80, Authentication: 7, State: "connected"}, Secret: wifi.Secret{State: "available", Value: "synthetic-test-key"}},
-		Tools:       Tools{Tools: []app.Tool{{Name: "nmap", State: "dependency_missing"}, {Name: "tshark", State: "dependency_missing"}}},
+		Tools:       Tools{Tools: []app.Tool{{Name: "tshark", State: "dependency_missing"}}},
 		Diagnostics: network.Diagnostics{Prober: Prober{Values: []string{"echo reply"}}},
 		CaptureBackends: map[string]app.CaptureBackend{capture.BackendRawSocket: LiveCapture{CaptureFunc: func(ctx context.Context, _ capture.LiveRequest) (capture.LiveResult, *capture.Artifact, error) {
 			result, artifact, err := capture.ReadArtifactFile(capturePath)

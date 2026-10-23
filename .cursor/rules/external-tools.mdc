@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Optional programs and safety limits
 
-Add an external program the way Nmap is added. Do not build a shell string.
+Add an external program through `runCommand`. Do not build a shell string. Do not execute Nmap or read Nmap data files (`docs/adr/006-native-service-inspection.md` supersedes ADR 003).
 
 1. Add the smallest method on the consumer port (`app.ToolRunner` in `internal/app/ports.go`).
 2. Implement it in `internal/adapter/tools` with `runCommand`: fixed argv, a context deadline, stdout and stderr caps, and process-group or Windows Job Object cancellation (`prepareCommand`).
@@ -15,6 +15,6 @@ Add an external program the way Nmap is added. Do not build a shell string.
 5. Call it from `app.Application`, then from Wails, HTTP, and the CLI through `internal/adapter/contract`. Add `en` and `pt` strings.
 6. Extend `internal/porttest` and `internal/porttest/fake`.
 
-Nmap is major 7 from 7.80, `-sT -sV --version-light` only, an explicit IPv4 /24 or narrower, at most 32 ports, a two-minute deadline, and 4 MiB of stdout. No NSE scripts, OS detection, UDP, or caller-supplied arguments (`docs/adr/003-optional-nmap.md`). TShark is inventory-only.
+Service inspection is native TCP, banner, TLS and one HTTP request: an explicit IPv4 /24 or narrower, at most 32 ports, and a two-minute deadline. TShark 4.2+ within major 4 is inventory-only.
 
 Wi-Fi reveal is explicit (`wifi reveal --confirm` or the desktop action) and the displayed secret is cleared. Capture starts only on request, never at launch. `serve` binds loopback unless `--allow-remote` is set together with TLS. Do not log launch tokens or session cookies.

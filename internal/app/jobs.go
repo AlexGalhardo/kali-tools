@@ -23,7 +23,7 @@ func jobSummary(kind string, state job.State, detail string) string {
 		label = "TLS audit"
 	case "discovery":
 		label = "Discovery"
-	case "nmap":
+	case "inspect":
 		label = "Service inspection"
 	}
 	summary := label + " " + string(state)
@@ -78,13 +78,13 @@ func (a *Application) InspectServices(parent context.Context, cidr string, ports
 	if a.deps.Tools == nil {
 		return result, domain.Unsupported("tool runner is not configured")
 	}
-	err = a.runOperation(parent, "nmap", func(ctx context.Context) (string, error) {
+	err = a.runOperation(parent, "inspect", func(ctx context.Context) (string, error) {
 		var err error
-		result, err = a.deps.Tools.RunNmap(ctx, cidr, ports)
+		result, err = a.deps.Tools.InspectServices(ctx, cidr, ports)
 		if err != nil {
 			return "", err
 		}
-		return fmt.Sprintf("Nmap %s: %d hosts", result.Version, len(result.Hosts)), nil
+		return fmt.Sprintf("%s %s: %d hosts", result.Scanner, result.Version, len(result.Hosts)), nil
 	})
 	return result, err
 }

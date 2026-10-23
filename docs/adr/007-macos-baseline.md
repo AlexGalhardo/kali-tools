@@ -1,4 +1,4 @@
-# ADR 006: macOS 1.0 baseline
+# ADR 007: macOS 1.0 baseline
 
 Status: accepted on 2026-10-23 by the repository owner (Alex Galhardo).
 
@@ -9,7 +9,7 @@ Decision:
 - Support macOS 13 Ventura or later, Apple Silicon only (`darwin/arm64`).
 - Do not ship Intel (`darwin/amd64`) or universal binaries for 1.0.
 - The native bridge is cgo with a thin Objective-C layer (CoreWLAN and the other Apple frameworks the adapter needs). There is no separate Swift helper.
-- The macOS build keeps the ad-hoc signature the Go linker applies (`codesign -s -`). That signature lets an arm64 binary run. It is not a Developer ID signature and it is not notarization. See [ADR 008](008-signing-and-provenance.md).
+- The macOS build keeps the ad-hoc signature the Go linker applies (`codesign -s -`). That signature lets an arm64 binary run. It is not a Developer ID signature and it is not notarization. See [ADR 009](009-signing-and-provenance.md).
 
 Consequences: CI and release assembly publish `macos-arm64` only. `GOOS=darwin` vet stays. Packaging refuses a non-arm64 macOS host. Native macOS acceptance is still open. Cross-compilation does not close it.
 

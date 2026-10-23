@@ -60,7 +60,6 @@ discovery available go/net IPv4 TCP connect, /24 or narrower, at most 32 ports
 capture_import available gopacket PCAP and PCAPNG, 64 MiB and 10000 decoded packets
 
 NAME    STATE               VERSION  PATH
-nmap    available           fixture  /fixture/nmap
 tshark  dependency_missing
 ```
 
@@ -183,9 +182,9 @@ JSON `data`: `ServiceInspection`. The envelope contains `schema_version: 1`, `ve
 Human example (stderr for errors):
 
 ```text
-nmap fixture
+native 1
 HOST       PORT  STATE  SERVICE  METHOD
-192.0.2.1  443   open   https    probed
+192.0.2.1  443   open   https    banner
 ```
 
 ## wifi show
@@ -412,7 +411,6 @@ Human example (fixture values):
 
 ```text
 NAME    STATE               VERSION  PATH
-nmap    available           fixture  /fixture/nmap
 tshark  dependency_missing
 ```
 

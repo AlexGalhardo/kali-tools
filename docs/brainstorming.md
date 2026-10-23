@@ -10,6 +10,7 @@ Status: first round completed on 2026-10-19. Research: `tools-research.md`. Exec
 4. Use local SQLite for history and preferences.
 5. PT-BR and English interface; English code and documentation.
 6. After creating PLAN.md, configure GitHub authentication/access for ongoing pushes.
+7. On 2026-10-23, cancel Nmap service inspection because of the NPSL 0.95 execute-and-parse clause. This supersedes the Nmap half of decision 2. Identify scoped TCP services with native Go checks. See ADR 006.
 
 The earlier recommendations/questions below are retained as brainstorming history. The decisions above supersede conflicting proposals, including postponing capture until beta.
 
@@ -41,4 +42,4 @@ The earlier recommendations/questions below are retained as brainstorming histor
 
 ## Planning rules
 
-Record answers here, then build PLAN.md with structure/alpha/beta/stable phases, nested tasks, delivery assertions, quality gates and evidence. Do not mark unimplemented features complete. The project license is MIT. Signing is vendor-unsigned ([ADR 008](adr/008-signing-and-provenance.md)). The macOS 1.0 baseline is macOS 13 or later on Apple Silicon ([ADR 006](adr/006-macos-baseline.md)). Redistribution of optional tools remains an explicit decision before release packaging.
+Record answers here, then build PLAN.md with structure/alpha/beta/stable phases, nested tasks, delivery assertions, quality gates and evidence. Do not mark unimplemented features complete. The project license is MIT. Signing is vendor-unsigned ([ADR 009](adr/009-signing-and-provenance.md)). The macOS 1.0 baseline is macOS 13 or later on Apple Silicon ([ADR 007](adr/007-macos-baseline.md)). Redistribution of optional tools remains an explicit decision before release packaging.

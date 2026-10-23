@@ -37,7 +37,7 @@ export function DiscoveryPage({
     if (!connected()) return;
     void execute(async () => setTools(await backend().Tools()));
     return onEvent<{ job: Job }>("job", (e) => {
-      if (e.job.kind === "discovery" || e.job.kind === "nmap") {
+      if (e.job.kind === "discovery" || e.job.kind === "inspect") {
         setDiscoveryJob(e.job.state === "running" ? e.job.id : "");
       }
     });
@@ -79,13 +79,7 @@ export function DiscoveryPage({
           </Button>
           <Button
             className="secondary"
-            disabled={
-              !connected() ||
-              busy ||
-              !tools.some(
-                (tool) => tool.name === "nmap" && tool.state === "available",
-              )
-            }
+            disabled={!connected() || busy}
             onClick={() =>
               execute(async () => {
                 setDiscoveryPage(0);

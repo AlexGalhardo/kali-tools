@@ -37,8 +37,8 @@ type interruptTools struct {
 	started chan struct{}
 }
 
-func (f interruptTools) RunNmap(ctx context.Context, cidr string, ports []int) (app.Nmap, error) {
-	result, err := f.Tools.RunNmap(ctx, cidr, ports)
+func (f interruptTools) InspectServices(ctx context.Context, cidr string, ports []int) (app.Nmap, error) {
+	result, err := f.Tools.InspectServices(ctx, cidr, ports)
 	if err != nil || f.started == nil {
 		return result, err
 	}
@@ -49,7 +49,7 @@ func (f interruptTools) RunNmap(ctx context.Context, cidr string, ports []int) (
 
 func TestInterruptToolsContract(t *testing.T) {
 	porttest.ToolRunnerContract(t, func(t *testing.T) app.ToolRunner {
-		return interruptTools{Tools: fake.Tools{Tools: []app.Tool{{Name: "nmap", State: "dependency_missing"}, {Name: "tshark", State: "dependency_missing"}}}}
+		return interruptTools{Tools: fake.Tools{Tools: []app.Tool{{Name: "tshark", State: "dependency_missing"}}}}
 	})
 }
 

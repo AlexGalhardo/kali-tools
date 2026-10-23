@@ -12,7 +12,7 @@ kali-tools is one Go core with three driving interfaces. It uses the hexagonal (
           DRIVING SIDE (primary actors)                      DRIVEN SIDE (secondary actors)
  ┌────────────────────────────────────────┐            ┌──────────────────────────────────────┐
  │ Wails desktop  main.go + wailsui        │            │ adapter/storage   SQLite (modernc)   │
- │ Web server     adapter/httpapi         │──calls──►  │ adapter/tools     Nmap/TShark exec   │
+ │ Web server     adapter/httpapi         │──calls──►  │ adapter/tools  native inspect/TShark │
  │ CLI            cmd/kali-tools          │   ▲        │ adapter/probe     Windows ICMP       │
  └────────────────────────────────────────┘   │        │ adapter/platform  routes, counters   │
                  │                            │        └──────────────────────────────────────┘
@@ -46,7 +46,7 @@ kali-tools/
 │
 ├── internal/                       all Go logic; not importable by other modules
 │   ├── domain/                     shared kernel: Error{Code,Message}, Capability, Version, SchemaVersion
-│   ├── app/                        application layer: Application (jobs, history, discovery, Nmap inspection), capability registry
+│   ├── app/                        application layer: Application (jobs, history, discovery, native service inspection), capability registry
 │   ├── job/                        manager-owned job lifecycle, bounded subscriptions and ordered event fan-out
 │   ├── network/                    capability: interfaces, DNS/TCP/HTTP/TLS/ping/trace diagnostics, TCP discovery, counter deltas
 │   ├── capture/                    capability: live capture (Windows raw IPv4), PCAP/PCAPNG import/export, gopacket decoding
@@ -55,7 +55,7 @@ kali-tools/
 │   ├── adapter/                    all adapters, named by technology
 │   │   ├── contract/               shared frontend DTOs, explicit mappers and safe error mapping
 │   │   ├── storage/                driven: SQLite store, migrations, settings, retention
-│   │   ├── tools/                  driven: optional executables (Nmap/TShark), bounded process runner, Nmap XML parser
+│   │   ├── tools/                  driven: native TCP service inspection, TShark inventory, bounded process runner
 │   │   ├── probe/                  driven: native Windows ICMP echo/traceroute
 │   │   ├── platform/               driven: OS routes, DNS servers and interface counters (windows/linux/other)
 │   │   ├── pcap/                   driven: optional Npcap detection and the tagged capture adapter
@@ -158,7 +158,7 @@ A port is a small Go interface declared **in the package that consumes it**. Ada
 | `WiFiProvider` — done 2026-10-21 | `app` | `wifi.Native` |
 | `CaptureProvider` — done 2026-10-21 | `capture.LiveProvider`, alias in `app` | `capture.Native` returns a live result and retained artifact |
 
-H03 compile-time assertions live only in `internal/bootstrap/assert.go`. No inner package imports an adapter, checked across all GOOS source files by `TestCoreDoesNotImportAdapters`. `app.New(Deps)` requires job and settings stores; bootstrap owns SQLite and returns a `sync.Once` cleanup that closes the service before the store. Application-owned settings, host and tool types retain their existing JSON tags; tool XML tags remain in the application model; contract inspection DTOs carry JSON fields only. H07 adds seven reusable suites in `internal/porttest` and in-memory implementations in `internal/porttest/fake`. The ICMP port adapter validates targets with `network.ValidateHost` before DNS/native delegation; the real adapter now runs the same `ProberContract` as the fake. Verification and native qualification status are recorded in [H07 evidence](verification/specs/H07.md).
+H03 compile-time assertions live only in `internal/bootstrap/assert.go`. No inner package imports an adapter, checked across all GOOS source files by `TestCoreDoesNotImportAdapters`. `app.New(Deps)` requires job and settings stores; bootstrap owns SQLite and returns a `sync.Once` cleanup that closes the service before the store. Application-owned settings, host and tool types retain their JSON tags. Service-inspection results no longer carry XML tags (ADR 006); contract inspection DTOs carry JSON fields only. The Go result type keeps the name `Nmap` so the generated Wails models stay valid. `scanner` is `native`. H07 adds seven reusable suites in `internal/porttest` and in-memory implementations in `internal/porttest/fake`. The ICMP port adapter validates targets with `network.ValidateHost` before DNS/native delegation; the real adapter now runs the same `ProberContract` as the fake. Verification and native qualification status are recorded in [H07 evidence](verification/specs/H07.md).
 
 H07 suite wiring:
 

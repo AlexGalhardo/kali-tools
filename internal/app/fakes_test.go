@@ -81,7 +81,7 @@ func TestDiagnosticJobWithFakes(t *testing.T) {
 
 func TestInspectServicesUsesToolRunner(t *testing.T) {
 	deps := fakeDeps()
-	deps.Tools = fakeTools{Result: app.Nmap{Version: "7.95", Hosts: []app.NmapHost{{}, {}}}}
+	deps.Tools = fakeTools{Result: app.Nmap{Scanner: "native", Version: "1", Hosts: []app.NmapHost{{Ports: []app.NmapPort{{Service: app.NmapService{Product: "SECRET-BANNER"}}}}, {}}}}
 	s := app.New(deps)
 	defer func() { _ = s.Close() }()
 	result, err := s.InspectServices(t.Context(), "127.0.0.1/32", []int{80})
@@ -89,11 +89,11 @@ func TestInspectServicesUsesToolRunner(t *testing.T) {
 		t.Fatalf("inspection = %+v, err = %v", result, err)
 	}
 	rows, err := s.History(t.Context())
-	if err != nil || len(rows) != 1 || rows[0].Summary != "Service inspection completed: Nmap 7.95: 2 hosts" {
+	if err != nil || len(rows) != 1 || rows[0].Summary != "Service inspection completed: native 1: 2 hosts" || rows[0].Kind != "inspect" {
 		t.Fatalf("history = %+v, err = %v", rows, err)
 	}
-	if strings.Contains(rows[0].Summary, "127.0.0.1") {
-		t.Fatal("scope persisted")
+	if strings.Contains(rows[0].Summary, "127.0.0.1") || strings.Contains(rows[0].Summary, "SECRET-BANNER") {
+		t.Fatal("scope or probe content persisted")
 	}
 }
 

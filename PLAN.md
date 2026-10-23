@@ -33,7 +33,7 @@ Every capability is implemented once in Go services and exposed through all thre
 **Implementation choices.**
 
 - Implement as much as practical in Go.
-- Integrate optional Nmap, TShark, iperf3 or Pktmon executables only where a native implementation would be incomplete or unreasonable.
+- Integrate optional TShark, iperf3 or Pktmon executables only where a native implementation would be incomplete or unreasonable. Service inspection is native and does not execute Nmap (ADR 006).
 - SQLite stores local preferences and diagnostic history.
 
 **Language.** Interface languages are English and PT-BR. Code, documentation and commits are in English.
@@ -56,7 +56,7 @@ These are real implementation requirements, not placeholder panels. Alpha accept
 - The project has no commercial purpose.
 - Select dependencies whose source is available under suitable open-source licenses, with no mandatory paid runtime service. Do not infer that every open-source license forbids commercial use.
 - The owner delegated open-source housekeeping on 2026-10-19. Project code uses MIT in LICENSE.md, and no noncommercial restriction is added.
-- Keep Nmap, TShark and Npcap optional and separately installed. Neither the Npcap free license nor the Nmap NPSL permits bundling (see tools research §3).
+- Keep TShark and Npcap optional and separately installed. Do not bundle Npcap. Do not execute or bundle Nmap (NPSL; ADR 006). See tools research §3.
 - Windows capture-driver selection is a feasibility gate, because a free driver is not automatically an eligible open-source dependency.
 
 ## 2. Architecture
@@ -65,7 +65,7 @@ Hexagonal (ports and adapters). Dependencies point inward. Full rules, the repos
 
 ```text
 Wails desktop ─┐                                     ┌─ adapter/storage   (SQLite)
-Web (httpapi) ─┼─► internal/app ─► capabilities ◄────┼─ adapter/tools     (Nmap/TShark exec)
+Web (httpapi) ─┼─► internal/app ─► capabilities ◄────┼─ adapter/tools     (native inspect, TShark inventory)
 CLI           ─┘   (use cases,     network/capture/  ├─ adapter/probe     (ICMP)
                     jobs, events)  wifi + domain     └─ adapter/platform  (routes/counters)
 ```
@@ -361,26 +361,25 @@ These are reusable delivery requirements, not a separate completed milestone. De
   - Assert: synthetic captures decode expected fields; native Windows test captures controlled traffic, stops promptly and leaves no live handle.
   - Gate: resolve capture-driver eligibility before declaring alpha complete; an incompatible dependency is not silently accepted.
 - [ ] A07 Optional advanced adapters.
-  - [x] ADR 003 justifies Nmap service signatures; native TCP remains default and no TShark execution is introduced.
-  - [ ] Owner decision on the NPSL "execute and parse" clause (tools research §3.1): (a) accept and document the risk, (b) request a waiver, or (c) restrict the adapter to importing user-produced XML. Update ADR 003 accordingly.
+  - [x] ADR 003 recorded optional Nmap service inspection; native TCP remained the default and no TShark execution was introduced.
+  - [x] Owner decision (Alex Galhardo, 2026-10-23): cancel Nmap service inspection because of the NPSL 0.95 execute-and-parse clause. [ADR 006](docs/adr/006-native-service-inspection.md) supersedes ADR 003. The evaluation is in [tools research](docs/tools-research.md) §3.1.
+  - [x] Native TCP/banner/TLS inspection replaces the Nmap adapter behind `ToolRunner`. Linux loopback tests identify HTTP, TLS and SSH and reject an out-of-scope prefix before any dial. Windows, macOS and non-loopback qualification remain open.
   - [ ] Tool discovery, supported versions, structured parsers and dependency diagnostics.
     - [x] Bounded optional-executable version inventory and explicit missing-dependency states; core remains usable without installed tools.
-    - [x] Bounded Nmap XML parser and fuzz smoke.
-    - [x] Nmap 7.80+ within major 7 version validation and explicit CLI/desktop service inspection; TShark 4.2+ within major 4 is inventory-only.
-  - [x] Fixed argument arrays, stdout/stderr limits and deadlines; Windows suspended-start Job Object descendant cancellation and Unix process-group execution tested.
-  - [x] Executable fixtures cover valid, partial, malformed, wrong-version and out-of-scope/unrequested-port Nmap output.
-  - [ ] Qualify the actual separately installed Nmap executable; it is absent from this host.
-  - Assert: core works without tools installed; optional results preserve provider/version and cannot execute arbitrary shell input.
+    - [x] TShark 4.2+ within major 4 remains inventory-only. The Nmap executable, XML parser and version gate are removed.
+  - [x] Fixed argument arrays, stdout/stderr limits and deadlines remain for optional executables. Windows Job Object and Unix process-group tests still cover that runner; they no longer wrap Nmap.
+  - [ ] Qualify separately installed optional executables on native hosts. TShark execution is not implemented. Nmap qualification was withdrawn with the feature.
+  - Assert: core works without tools installed; service inspection does not execute Nmap or accept shell input; history stores the provider and host count only.
 - [ ] A08 Integrated UI.
   - [x] Owner-requested black/neon-green terminal theme, bundled JetBrains Mono, mobile layout and Impeccable review. [Theme spec](docs/specs/A08-terminal-theme.md); [evidence](docs/verification/specs/A08-theme.md). Shared styling applies to desktop and browser; HTTP implementation and security are present; open acceptance is recorded in W01/W04.
   - [x] Dashboard, interfaces, diagnostics, Wi-Fi, packet inspector, toolkit, history and settings.
   - [ ] PT-BR/English catalogs, keyboard access, focus states and Base UI primitives.
   - [ ] Paginated packet/result tables, loading/error/permission states and cancel controls.
-    - [x] Packet and discovery tables render at most 100 rows per page; discovery pagination verified with 205 synthetic endpoints. Owner decision 2026-10-23: this pagination satisfies the 1.0 virtualization requirement. Do not add a virtualization library. [ADR 007](docs/adr/007-paginated-tables.md).
+    - [x] Packet and discovery tables render at most 100 rows per page; discovery pagination verified with 205 synthetic endpoints. Owner decision 2026-10-23: this pagination satisfies the 1.0 virtualization requirement. Do not add a virtualization library. [ADR 008](docs/adr/008-paginated-tables.md).
     - [x] Diagnostics cancellation, capture stop and discovery cancellation controls; browser discovery test uses the emitted service job ID.
     - [x] Actual provider capability states, bounded-import notice and metric sample timestamps.
     - [x] Translated states, permission/diagnostic reasons, capture start failure recovery and optional-adapter dependency flows.
-    - [x] Pagination satisfies the virtualization requirement for 1.0. [ADR 007](docs/adr/007-paginated-tables.md).
+    - [x] Pagination satisfies the virtualization requirement for 1.0. [ADR 008](docs/adr/008-paginated-tables.md).
     - [ ] Complete all permission/error acceptance.
   - [ ] SQLite preferences and history; opt-in capture save and clear-history action.
     - [x] SQLite-backed preferences/history and explicit clear-history action; restart/retention and settings validation tests pass.
@@ -492,8 +491,8 @@ Interfaces exit: a parity matrix (capability × desktop/CLI/web) is recorded in 
   - [ ] Capture with libpcap and `CAP_NET_RAW`; avoid elevating the full UI or server.
   - Assert: native evidence covers real adapter, denied permission, restart and no saved PSK.
 - [ ] B02 macOS native adapters.
-  - [x] Select supported macOS/architecture baseline and native bridge approach. macOS 13 Ventura or later, Apple Silicon (`darwin/arm64`) only. The bridge is cgo with a thin Objective-C layer. No Intel, universal, or Swift helper for 1.0. [ADR 006](docs/adr/006-macos-baseline.md).
-  - [ ] Implement interfaces/routes/counters and current Wi-Fi metadata. On real Apple Silicon hardware, verify whether an ad-hoc-signed `.app` can read CoreWLAN SSID/BSSID and whether Location Services prompts. Show an explicit capability state when that access is unavailable. Not accepted from documentation or cross-compilation. [ADR 006](docs/adr/006-macos-baseline.md), [ADR 008](docs/adr/008-signing-and-provenance.md).
+  - [x] Select supported macOS/architecture baseline and native bridge approach. macOS 13 Ventura or later, Apple Silicon (`darwin/arm64`) only. The bridge is cgo with a thin Objective-C layer. No Intel, universal, or Swift helper for 1.0. [ADR 007](docs/adr/007-macos-baseline.md).
+  - [ ] Implement interfaces/routes/counters and current Wi-Fi metadata. On real Apple Silicon hardware, verify whether an ad-hoc-signed `.app` can read CoreWLAN SSID/BSSID and whether Location Services prompts. Show an explicit capability state when that access is unavailable. Not accepted from documentation or cross-compilation. [ADR 007](docs/adr/007-macos-baseline.md), [ADR 009](docs/adr/009-signing-and-provenance.md).
   - [ ] Keychain feasibility spike.
   - [ ] BPF capture permissions: detect ChmodBPF group access and never change device permissions.
   - [ ] Key-reveal authorization, with an explicit unsupported state if OS policy prevents access.
@@ -562,7 +561,7 @@ Beta exit: the agreed capability matrix is verified on all three OSes and all th
   - [ ] External review of the web-server threat model.
   - Assert: release checklist links reproducible results; no unfinished blocker is marked complete.
 - [ ] R03 Distribution and provenance.
-  - [x] Signing decision (2026-10-23): no Apple Developer Program, Developer ID, notarization, or Windows Authenticode, EV, or Azure Trusted Signing, now or for 1.0. Releases are vendor-unsigned. macOS arm64 keeps the ad-hoc linker signature. Every artifact gets a SHA-256 checksum. GitHub artifact attestations are the provenance mechanism. [ADR 008](docs/adr/008-signing-and-provenance.md).
+  - [x] Signing decision (2026-10-23): no Apple Developer Program, Developer ID, notarization, or Windows Authenticode, EV, or Azure Trusted Signing, now or for 1.0. Releases are vendor-unsigned. macOS arm64 keeps the ad-hoc linker signature. Every artifact gets a SHA-256 checksum. GitHub artifact attestations are the provenance mechanism. [ADR 009](docs/adr/009-signing-and-provenance.md).
   - [ ] Produce checksums, dependency inventory, source archive and release notes for the qualified 1.0. Development drafts already publish SHA-256 checksums.
   - [x] Vendor signatures are not configured. Development artifacts stay labeled unsigned. An ad-hoc macOS signature is not a vendor signature.
   - [ ] Create RC, test it, then tag 1.0.0 only after acceptance.
@@ -691,11 +690,11 @@ The plan does not claim feature parity with every Kali package.
 1. A05 implementation is verified on Windows. Linux-host pure-function coverage meets the spec gate; manual consent/reveal acceptance remains open. W01/W04 implementation and non-native acceptance are verified; native account/browser/desktop gates remain open.
 2. H09 is accepted: ADR 004 keeps stdlib `flag` (owner, 2026-10-23). H08 mechanical enforcement and hosted positive/negative proofs pass.
 3. Retain the W01/W04 native gates; the server's shared acceptance driver, bounds and shutdown verification are recorded.
-4. B11 HTTP metadata is implemented and its non-native checks pass. A05, A06, A01 and B08–B10 follow the remaining SDD execution order. B09's DNS library, B02's macOS baseline, A08's pagination decision and R03's vendor-unsigned provenance are recorded. Keep H01–H07 native checks and the A07 NPSL owner decision visible; do not treat them as headless passes.
+4. B11 HTTP metadata is implemented and its non-native checks pass. A05, A06, A01 and B08–B10 follow the remaining SDD execution order. B09's DNS library, B02's macOS baseline, A08's pagination decision and R03's vendor-unsigned provenance are recorded. The A07 NPSL decision is closed by ADR 006. Keep H01–H07 native checks visible; do not treat them as headless passes.
 
 **Constraints.**
 
-- Hardware acceptance, privilege architecture and Linux/macOS parity are not inferred from compilation. Signing is decided: vendor-unsigned releases, SHA-256 checksums and GitHub artifact attestations ([ADR 008](docs/adr/008-signing-and-provenance.md)). Do not add Apple or Microsoft certificates.
+- Hardware acceptance, privilege architecture and Linux/macOS parity are not inferred from compilation. Signing is decided: vendor-unsigned releases, SHA-256 checksums and GitHub artifact attestations ([ADR 009](docs/adr/009-signing-and-provenance.md)). Do not add Apple or Microsoft certificates.
 - Do not mark the plan complete. The owner's current explicit 0.4.0 checkpoint-publication request supersedes the earlier no-tag instruction only for that disclosed development release after its checks pass.
 
 ## 0.5.0 owner checkpoint (2026-10-22)

@@ -1,4 +1,4 @@
-# ADR 008: Signing and provenance
+# ADR 009: Signing and provenance
 
 Status: accepted on 2026-10-23 by the repository owner (Alex Galhardo).
 
@@ -9,7 +9,7 @@ Decision:
 - No Apple Developer Program membership, Developer ID signing, or notarization.
 - No Windows Authenticode, EV, or Azure Trusted Signing certificates.
 - Releases ship unsigned by vendor certificates. `BUILD.json` keeps `signed: false`. Development drafts keep the unsigned-preview status note.
-- macOS arm64 binaries keep the ad-hoc signature the Go linker applies (`codesign -s -`). That signature is required for arm64 to run and needs no Apple account. It is not a vendor signature. See [ADR 006](006-macos-baseline.md).
+- macOS arm64 binaries keep the ad-hoc signature the Go linker applies (`codesign -s -`). That signature is required for arm64 to run and needs no Apple account. It is not a vendor signature. See [ADR 007](007-macos-baseline.md).
 - Every release artifact gets a SHA-256 checksum in `SHA256SUMS`.
 - The release workflow attests those artifacts with `actions/attest-build-provenance` (Sigstore-backed, no paid certificate). That attestation is the R03 provenance mechanism.
 

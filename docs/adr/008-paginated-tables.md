@@ -1,4 +1,4 @@
-# ADR 007: Paginated tables for 1.0
+# ADR 008: Paginated tables for 1.0
 
 Status: accepted on 2026-10-23 by the repository owner (Alex Galhardo).
 

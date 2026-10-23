@@ -56,7 +56,7 @@ Retain all 18 workflows; extend visual-evidence workflow with mobile overflow an
 
 ## 10. Documentation updates
 
-Update DESIGN.md and its sidecar with the authorized visual direction, record source/font license, and record actual checks in A08-theme evidence. Pagination satisfies the 1.0 virtualization requirement ([ADR 007](../adr/007-paginated-tables.md)). A08's broader native and permission acceptance remains open.
+Update DESIGN.md and its sidecar with the authorized visual direction, record source/font license, and record actual checks in A08-theme evidence. Pagination satisfies the 1.0 virtualization requirement ([ADR 008](../adr/008-paginated-tables.md)). A08's broader native and permission acceptance remains open.
 
 ## 11. Risks and rollback
 

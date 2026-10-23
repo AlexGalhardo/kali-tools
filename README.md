@@ -8,14 +8,14 @@ A local network and security toolkit inspired by the Kali Linux ecosystem, built
 
 - Lists interfaces, addresses, gateways and DNS; monitors native traffic counters.
 - Runs DNS record queries, bounded TCP/HTTP/TLS checks and Windows IPv4 ping/traceroute. An HTTP check reports phase timings and security headers. It traces at most five redirects only when asked, and never follows one on its own.
-- Discovers explicitly selected IPv4 scopes and optionally inspects service signatures with separately installed Nmap.
+- Discovers explicitly selected IPv4 scopes and identifies services with built-in TCP, banner and TLS checks. It does not run Nmap.
 - Inspects Windows Wi-Fi metadata and reveals the current saved key only on explicit request; the display clears automatically.
 - Imports PCAP/PCAPNG, summarizes packets and explicitly saves retained packet data in either format.
 - Keeps preferences and redacted operation history locally in SQLite. No cloud runtime or telemetry is required.
 
 ## Development downloads
 
-[GitHub releases](https://github.com/AlexGalhardo/kali-tools/releases) contain development release drafts assembled only after CI passes. Archives target Windows x64, Ubuntu 24.04 x64 and macOS Apple Silicon (macOS 13 or later). There is no Intel or universal macOS build for 1.0. Each archive includes the desktop, CLI, license/notices, dependency inventory and build metadata. Verify downloads against `SHA256SUMS`. The release workflow also publishes a Sigstore build attestation. See [ADR 008](docs/adr/008-signing-and-provenance.md).
+[GitHub releases](https://github.com/AlexGalhardo/kali-tools/releases) contain development release drafts assembled only after CI passes. Archives target Windows x64, Ubuntu 24.04 x64 and macOS Apple Silicon (macOS 13 or later). There is no Intel or universal macOS build for 1.0. Each archive includes the desktop, CLI, license/notices, dependency inventory and build metadata. Verify downloads against `SHA256SUMS`. The release workflow also publishes a Sigstore build attestation. See [ADR 009](docs/adr/009-signing-and-provenance.md).
 
 Windows uses Edge WebView2. Linux requires GTK3 and WebKitGTK 4.1. Releases are vendor-unsigned: no Apple Developer ID, notarization, or Windows Authenticode certificate. An Apple Silicon build keeps only the ad-hoc signature the Go linker applies so the binary can run. Read the release notes before testing; a successful native build does not qualify hardware features.
 
@@ -50,7 +50,7 @@ If GitHub requests authentication, use an account with access to the repository.
 
 ## 2. Prepare your computer without Docker
 
-The development baseline is Go **1.27.3**, Node.js **24.21.0**, Bun **1.4.3** and Wails **2.17.0**. Install Go, Node.js and Git first. Reopen your terminal after installation to load PATH changes. macOS development for 1.0 is Apple Silicon on macOS 13 or later ([ADR 006](docs/adr/006-macos-baseline.md)).
+The development baseline is Go **1.27.3**, Node.js **24.21.0**, Bun **1.4.3** and Wails **2.17.0**. Install Go, Node.js and Git first. Reopen your terminal after installation to load PATH changes. macOS development for 1.0 is Apple Silicon on macOS 13 or later ([ADR 007](docs/adr/007-macos-baseline.md)).
 
 Setup installs pinned Wails, golangci-lint and govulncheck into the repository's ignored `.tools/bin` directory. It installs exact frontend dependencies from the npm lockfile and downloads Playwright Chromium. It does not change your global Go binary directory. GitHub Actions is enabled separately in the repository.
 
@@ -267,7 +267,7 @@ Formatting and linting are enforced: run `lefthook install` once; each commit ru
 
 ## License and contribution
 
-Project code is licensed under [MIT](LICENSE.md). Bundled dependencies and vendored development skills retain their own licenses; see [the inventory](docs/dependencies.md). Nmap/TShark are optional separate installations and are not redistributed.
+Project code is licensed under [MIT](LICENSE.md). Bundled dependencies and vendored development skills retain their own licenses; see [the inventory](docs/dependencies.md). Nmap is not used. TShark is an optional separate installation and is not redistributed.
 
 Contributions follow [CONTRIBUTING.md](CONTRIBUTING.md). Report bugs through [GitHub issues](https://github.com/AlexGalhardo/kali-tools/issues) and security concerns through [SECURITY.md](SECURITY.md). Do not attach passwords, tokens or private packet contents.
 
