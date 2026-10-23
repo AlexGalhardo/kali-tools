@@ -422,7 +422,7 @@ The binary root starts the HTTP/SSE server with the shared persistent applicatio
 
 Human output prints the address, token URL and shutdown instruction. JSON prints one versioned startup envelope with `data.url`, `data.address`, `data.tls`, `data.remote` and `data.certificate_sha256`. The URL is printed only on stdout. API requests thereafter use separate contract DTOs, not CLI envelopes.
 
-The adapter-only [reserved-command fixture](../internal/adapter/cli/testdata/contract/serve.json) verifies that `cli.Run` delegates listener ownership to the binary; it is not the binary's startup contract. See [web server specification](specs/W01-web-server.md) and [security](../SECURITY.md).
+The adapter-only [reserved-command fixture](../internal/adapter/cli/testdata/contract/serve.json) verifies that `cli.Run` delegates listener ownership to the binary; it is not the binary's startup contract. Routes, body limits, error statuses and capability states are in the [HTTP contract](http.md). See [web server specification](specs/W01-web-server.md) and [security](../SECURITY.md).
 
 ## help
 

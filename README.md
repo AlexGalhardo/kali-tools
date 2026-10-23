@@ -220,7 +220,7 @@ go run ./cmd/kali-tools inspect --target 127.0.0.1/32 --ports 8080
 go run ./cmd/kali-tools capture import --file synthetic.pcap --output converted.pcapng --format pcapng
 ```
 
-Start a listening local service for the TCP/HTTP examples; refusal is an expected diagnostic failure. Human output is the default; scripts must add `--json`, whose envelope includes `schema_version: 1`. Diagnostics stream bounded progress on stderr and record redacted job history. Settings and history persist in the shared per-user SQLite database. `wifi reveal --confirm` explicitly prints the saved key and a warning. Jobs remain owned by their starting process. See the [CLI contract](docs/cli.md) for commands, exit codes, SSH behavior and migration. Discovery accepts IPv4 /24 or narrower and up to 32 unique ports. Native SSH acceptance remains pending. The web server remains planned.
+Start a listening local service for the TCP/HTTP examples; refusal is an expected diagnostic failure. Human output is the default; scripts must add `--json`, whose envelope includes `schema_version: 1`. Diagnostics stream bounded progress on stderr and record redacted job history. Settings and history persist in the shared per-user SQLite database. `wifi reveal --confirm` explicitly prints the saved key and a warning. Jobs remain owned by their starting process. See the [CLI contract](docs/cli.md) for commands, exit codes, SSH behavior and migration. Discovery accepts IPv4 /24 or narrower and up to 32 unique ports. Native SSH acceptance remains pending. `kali-tools serve` is the local web server; its routes, errors and capability rules are in the [HTTP contract](docs/http.md).
 
 ## Troubleshooting
 
