@@ -325,6 +325,8 @@ B03 ships no privileged helper and no helper IPC ([ADR 011](adr/011-no-privilege
 
 B01's documented Linux baseline is Ubuntu 24.04 LTS ([ADR 010](adr/010-linux-baseline.md)). Debian 13 and Kali are best-effort and come with no guarantee. Linux routes and counters come from netlink, with the procfs readers as fallback. Neighbors already use netlink. Native acceptance remains open.
 
+macOS routes and interface counters come from the routing sysctl ([ADR 013](adr/013-macos-wifi.md)). Current Wi-Fi metadata uses CoreWLAN when cgo is enabled. An empty network name is `location_consent_required`, not a success. Keychain lookup does not prompt. The shared signal field stays unset for a dBm reading. Native acceptance remains open.
+
 ### 7.3 Moving or renaming packages
 
 Use `git mv`, then rewrite import paths and run `gofmt`. Run `go vet ./...` for all three GOOS targets plus `go vet -tags desktop .`, then `go test ./...`. Update `.golangci.yml`, `scripts/task.mjs`, `docker/Dockerfile` and the docs that mention the old path. Historical evidence in `docs/verification/` is a record and keeps its original paths.
