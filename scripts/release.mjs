@@ -22,6 +22,6 @@ for(const target of ["windows-x64.zip","linux-x64.tar.gz","macos-arm64.zip"]){if
 writeFileSync(path.join(directory,"SHA256SUMS"),assets.map(file=>createHash("sha256").update(readFileSync(path.join(directory,file))).digest("hex")+"  "+file).join("\n")+"\n");
 const notes=path.join(root,"docs/releases",version+".md");
 if(release){run("gh",["release","edit",tag,"--repo",repo,"--draft","--prerelease","--target",sha,"--notes-file",notes]);}
-else{run("gh",["release","create",tag,"--repo",repo,"--draft","--prerelease","--target",sha,"--title",`kali-tools ${version} ? development preview`,"--notes-file",notes]);}
+else{run("gh",["release","create",tag,"--repo",repo,"--draft","--prerelease","--target",sha,"--title",`kali-tools ${version} — development preview`,"--notes-file",notes]);}
 run("gh",["release","upload",tag,"--repo",repo,"--clobber",...assets.concat("SHA256SUMS").map(file=>path.join(directory,file))]);
 console.log(run("gh",["release","view",tag,"--repo",repo,"--json","url,isDraft,targetCommitish"]));
