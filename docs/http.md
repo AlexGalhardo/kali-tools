@@ -44,12 +44,15 @@ There is no CORS. A cross-site request is `403` `forbidden`. One token is one op
 | `POST /api/capture/stop` | yes | 204 |
 | `POST /api/capture/import` | yes | 200 |
 | `GET /api/capture/export` | yes | 200 capture bytes |
+| `GET /api/doctor/bundle` | yes | 200 zip bytes |
 
 `GET /api/events` is the job event stream. A finished job remains available at `GET /api/jobs/{id}`.
 
 `POST /api/wifi/reveal` sets `Cache-Control: no-store`. The saved key is not written to history.
 
 `POST /api/capture/import` requires `Content-Type: application/octet-stream`. `GET /api/capture/export` with query `format=pcap` or `format=pcapng` returns that file with `Cache-Control: no-store`. The server does not accept a filesystem path.
+
+`GET /api/doctor/bundle` returns `application/zip` with `Cache-Control: no-store` and filename `kali-tools-diagnostic.zip`. The body is the same local archive as `kali-tools doctor --bundle`. The server does not upload it.
 
 `POST /api/snmp` reads a community or SNMPv3 secret from the JSON body and does not log that body.
 

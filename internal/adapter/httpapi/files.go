@@ -115,3 +115,21 @@ func (s *Server) handleExport() http.HandlerFunc {
 		_, _ = io.Copy(w, file)
 	}
 }
+
+func (s *Server) handleBundle() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !s.acquireTransfer(w, r) {
+			return
+		}
+		defer func() { <-s.transfers }()
+		body, err := s.app.DiagnosticBundle(r.Context())
+		if err != nil {
+			writeError(w, r, err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/zip")
+		w.Header().Set("Content-Disposition", `attachment; filename="kali-tools-diagnostic.zip"`)
+		w.Header().Set("Cache-Control", "no-store")
+		_, _ = w.Write(body)
+	}
+}
