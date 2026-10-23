@@ -13,6 +13,8 @@ import (
 
 const maxTLSAuditBody = 4 << 10
 const maxDNSInspectBody = 8 << 10
+const maxLocalDiscoveryBody = 4 << 10
+const maxSNMPBody = 4 << 10
 
 func handleTLSAudit(a *app.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -43,6 +45,48 @@ func handleDNSInspect(a *app.Application) http.HandlerFunc {
 			return
 		}
 		writeJSON(w, http.StatusOK, contract.FromDNSInspect(value))
+	}
+}
+
+func handleLocalDiscovery(a *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var request contract.LocalDiscoveryRequest
+		if err := decodeJSON(w, r, &request, maxLocalDiscoveryBody); err != nil {
+			writeError(w, r, err)
+			return
+		}
+		value, err := a.DiscoverLocal(r.Context(), request.Request())
+		if err != nil {
+			writeError(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, contract.FromLocalDiscovery(value))
+	}
+}
+
+func handleSNMP(a *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var request contract.SNMPRequest
+		if err := decodeJSON(w, r, &request, maxSNMPBody); err != nil {
+			writeError(w, r, err)
+			return
+		}
+		query, err := request.Request()
+		request.Community = ""
+		if request.V3 != nil {
+			request.V3.AuthPass = ""
+			request.V3.PrivPass = ""
+		}
+		if err != nil {
+			writeError(w, r, err)
+			return
+		}
+		value, err := a.QuerySNMP(r.Context(), query)
+		if err != nil {
+			writeError(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, contract.FromSNMP(value))
 	}
 }
 

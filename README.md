@@ -210,6 +210,8 @@ go run ./cmd/kali-tools --json interfaces
 go run ./cmd/kali-tools neighbors --family all --format json
 go run ./cmd/kali-tools tls-audit --target example.com --lint=true --json
 go run ./cmd/kali-tools dns-inspect --target example.com --json
+go run ./cmd/kali-tools local-discover --interface eth0 --scope 192.0.2.0/24 --json
+go run ./cmd/kali-tools snmp --interface eth0 --scope 192.0.2.0/24 --target 192.0.2.1 --owned --secret-file ./secret.txt --json
 go run ./cmd/kali-tools diagnose dns --target example.com --record MX
 go run ./cmd/kali-tools diagnose tcp --target localhost --port 8080
 go run ./cmd/kali-tools diagnose http --target http://localhost:8080/health

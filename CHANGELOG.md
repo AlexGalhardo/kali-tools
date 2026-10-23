@@ -6,6 +6,7 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ### Added
 
+- Local discovery reads mDNS and SSDP on one IPv4 link, and SNMP reads system and interface data from an owned device. The CLI commands are `local-discover` and `snmp`. SNMP secrets come from `--secret-file` only. History stores counts only.
 - DNS inspection compares resolvers, checks SOA/NS consistency, validates a read-only DNSSEC chain, and checks DoH/DoT reachability. The CLI command is `dns-inspect`, the HTTP route is `POST /api/dns/inspect`, and the Diagnostics page has an English/PT-BR panel. A blocked port 53 stays a distinct result. History stores the state, query count and check count only.
 - HTTP diagnostics report phase timings, an allowlisted security-header report and an explicit redirect trace of at most five hops. Redirects are not followed unless that trace is requested.
 

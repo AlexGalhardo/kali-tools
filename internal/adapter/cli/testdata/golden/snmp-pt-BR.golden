@@ -1,0 +1,4 @@
+exit=2
+stdout:
+stderr:
+erro: entrada inválida: secret file is required

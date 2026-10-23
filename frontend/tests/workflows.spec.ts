@@ -306,6 +306,40 @@ test("HTTP diagnostic shows phases, headers and the redirect target", async ({pa
  }
 });
 
+test("local discovery requires scope and SNMP requires ownership", async ({page, connect}, info) => {
+ const discovery = {responders:[{protocol:"ssdp",address:"192.0.2.20",port:8080,name:"uuid:kali-tools-lab::upnp:rootdevice",service_type:"upnp:rootdevice",server:"lab",location:"http://192.0.2.20:8080/description.xml"}],limited:false,out_of_scope:1,malformed:0,errors:[]};
+ const snmp = {target:"192.0.2.1",system:{sysDescr:"lab fixture",sysObjectID:"1.3.6.1.4.1.8072.3.2.10",sysUpTime:"1s",sysContact:"lab",sysName:"kali-tools-lab",sysLocation:"lab"},interfaces:[{index:1,descr:"eth0",oper_status:"up",speed_bps:1000000000,mac:"02:00:00:00:00:01"}],limited:false};
+ await page.route("**/api/discovery/local", route => route.fulfill({json: discovery}));
+ await page.route("**/api/snmp", route => route.fulfill({json: snmp}));
+ await connect(page);
+ if (info.project.name === "wails-fake") {
+  await page.evaluate(({discovery, snmp}) => Object.assign(window.go!.wailsui!.Bindings!, {DiscoverLocal: async () => discovery, QuerySNMP: async () => snmp}), {discovery, snmp});
+ }
+ await page.getByRole("button", {name: "Discovery & tools", exact: true}).click();
+ const local = page.getByRole("form", {name: "Local discovery", exact: true});
+ const query = page.getByRole("form", {name: "SNMP query", exact: true});
+ await expect(local.getByLabel("Interface", {exact: true})).not.toHaveValue("");
+ await expect(local.getByRole("button", {name: "Local discovery", exact: true})).toBeDisabled();
+ await local.getByLabel("Scope", {exact: true}).fill("192.0.2.0/24");
+ await expect(local.getByRole("button", {name: "Local discovery", exact: true})).toBeEnabled();
+ await expect(query.getByRole("button", {name: "SNMP query", exact: true})).toBeDisabled();
+ await query.getByLabel("Community", {exact: true}).fill("synthetic-community");
+ await expect(query.getByRole("button", {name: "SNMP query", exact: true})).toBeDisabled();
+ await query.getByRole("checkbox", {name: "I own or administer this device", exact: true}).check();
+ await query.getByLabel("Scope", {exact: true}).fill("192.0.2.0/24");
+ await query.getByLabel("Target", {exact: true}).fill("192.0.2.1");
+ await query.getByRole("button", {name: "SNMP query", exact: true}).click();
+ await expect(query.getByLabel("Community", {exact: true})).toHaveValue("");
+ await expect(page.getByRole("rowheader", {name: "sysName", exact: true})).toBeVisible();
+ await expect(page.getByText("kali-tools-lab", {exact: true})).toBeVisible();
+ await local.getByRole("button", {name: "Local discovery", exact: true}).click();
+ await expect(page.getByText("uuid:kali-tools-lab::upnp:rootdevice", {exact: true})).toBeVisible();
+ await expect(page.getByRole("link", {name: /description\.xml/})).toHaveCount(0);
+ await page.getByRole("button", {name: "Diagnostics", exact: true}).click();
+ await page.getByRole("button", {name: "Discovery & tools", exact: true}).click();
+ await expect(page.getByRole("form", {name: "SNMP query", exact: true}).getByLabel("Community", {exact: true})).toHaveValue("");
+});
+
 test("DNS inspection renders comparison, SOA/NS and DNSSEC verdicts", async ({page, connect}, info) => {
  const report = {name:"differs.test",type:"A",queries:4,limited:false,compare:{agree:false,groups:[["192.0.2.1:5353"],["192.0.2.1:5356"]],results:[{resolver:"192.0.2.1:5353",transport:"udp",status:"ok",ad:false,answers:["differs.test. 0 in a 192.0.2.42"],elapsed_ms:1},{resolver:"192.0.2.1:5356",transport:"udp",status:"ok",ad:false,answers:["differs.test. 0 in a 192.0.2.43"],elapsed_ms:1}]},soa_ns:{zone:"mismatch.test.",servers:[{ns:"ns1.mismatch.test.",address:"192.0.2.10",status:"ok",serial:100,ns_set:["ns1.mismatch.test.","ns2.mismatch.test."],aa:true},{ns:"ns2.mismatch.test.",address:"192.0.2.10",status:"ok",serial:101,ns_set:["ns1.mismatch.test.","ns2.mismatch.test."],aa:true}],serials_agree:false,ns_sets_agree:true,verdict:"serial_mismatch"},dnssec:{links:[{zone:"signed.test.",ds_matches:true,key_tag:38590,algorithm:"ED25519",sig_valid:true,status:"secure"}],answer_sig:true,verdict:"secure",resolver:"192.0.2.1:5356"},encrypted:[{endpoint:"https://fixture:8443/dns-query",protocol:"doh",status:"ok",rcode:"NOERROR",elapsed_ms:1}]};
  await page.route("**/api/dns/inspect", route => route.fulfill({json: report}));

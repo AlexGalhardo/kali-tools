@@ -37,6 +37,9 @@ export class HttpTransport implements Transport {
   readonly backend: Backend = {
     AuditTLS: (request) => this.json("POST", "/api/tls/audit", request),
     InspectDNS: (request) => this.json("POST", "/api/dns/inspect", request),
+    DiscoverLocal: (request) =>
+      this.json("POST", "/api/discovery/local", request),
+    QuerySNMP: (request) => this.json("POST", "/api/snmp", request),
     Version: async () =>
       (await this.request<{ version: string }>("/api/version")).version,
     Capabilities: () =>

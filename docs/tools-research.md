@@ -165,7 +165,7 @@ In the architecture, each category maps to one module under `internal/modules/` 
 - `mdlayher/netlink` (MIT): Linux neighbor and route tables.
 - Windows `GetIpNetTable2` (iphlpapi): lists the OS ARP/ND cache without raw packets. This is the least-privilege answer to "what is on my LAN". x/sys v0.49.0 has no binding; kali-tools uses a read-only LazyProc shim with pinned layout tests (A01). Gateway/GUI native acceptance remains pending.
 - `hashicorp/mdns` (MIT): mDNS/DNS-SD. `grandcat/zeroconf` is stale (last release about 6 years ago).
-- `gosnmp` (BSD-2 **(verify)**): read-only system and interface MIB queries against owned devices.
+- `gosnmp` v1.46.0 (BSD-2-Clause AND BSD-3-Clause): read-only system and interface MIB queries against owned devices. The module LICENSE is BSD-2-Clause; ASN.1 helpers keep the Go BSD-3-Clause notice.
 - SSDP/UPnP: an M-SEARCH listener on `net.ListenMulticastUDP`, with no dependency.
 
 **(c) Recommendation.**
@@ -580,4 +580,4 @@ Repository: https://github.com/AlexGalhardo/vukem-marketplace-reactjs (snapshot 
 - Windows 24H2 location-consent behavior: Wails process vs web-server mode.
 - WinRT consent pre-check (`AppCapability.CheckAccess`) for unpackaged Wails apps: only needed if native 24H2 acceptance shows that opcode-7 `ERROR_ACCESS_DENIED` plus build >= 26100 is ambiguous. A05 implements the error/build mapping; native denied/granted/account comparisons remain unverified.
 - macOS CoreWLAN on an ad-hoc-signed Apple Silicon `.app`: Location Services prompt and SSID/BSSID still need real-hardware verification ([ADR 007](adr/007-macos-baseline.md)).
-- Licenses marked **(verify)**: arp-scan, netdiscover, mtr, sslscan, Suricata, gosnmp, pro-bing.
+- Licenses marked **(verify)**: arp-scan, netdiscover, mtr, sslscan, Suricata, pro-bing.

@@ -34,6 +34,10 @@ export function Discover(arg1, arg2) {
   return window['go']['wailsui']['Bindings']['Discover'](arg1, arg2);
 }
 
+export function DiscoverLocal(arg1) {
+  return window['go']['wailsui']['Bindings']['DiscoverLocal'](arg1);
+}
+
 export function History() {
   return window['go']['wailsui']['Bindings']['History']();
 }
@@ -68,6 +72,10 @@ export function OpenLocationSettings() {
 
 export function OpenNpcapDownload() {
   return window['go']['wailsui']['Bindings']['OpenNpcapDownload']();
+}
+
+export function QuerySNMP(arg1) {
+  return window['go']['wailsui']['Bindings']['QuerySNMP'](arg1);
 }
 
 export function RevealWiFi() {

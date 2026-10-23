@@ -18,6 +18,8 @@ export function Diagnose(arg1:contract.DiagnosticRequest):Promise<contract.Diagn
 
 export function Discover(arg1:string,arg2:Array<number>):Promise<Array<contract.PortResult>>;
 
+export function DiscoverLocal(arg1:contract.LocalDiscoveryRequest):Promise<contract.LocalDiscoveryResult>;
+
 export function History():Promise<Array<contract.Job>>;
 
 export function ImportCapture():Promise<contract.Capture>;
@@ -35,6 +37,8 @@ export function Neighbors(arg1:string):Promise<contract.NeighborTable>;
 export function OpenLocationSettings():Promise<void>;
 
 export function OpenNpcapDownload():Promise<void>;
+
+export function QuerySNMP(arg1:contract.SNMPRequest):Promise<contract.SNMPResult>;
 
 export function RevealWiFi():Promise<contract.WiFiSecret>;
 

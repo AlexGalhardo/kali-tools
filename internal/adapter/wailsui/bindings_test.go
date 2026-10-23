@@ -486,7 +486,7 @@ func TestBindingMethodSetMatchesBackend(t *testing.T) {
 			names = append(names, name)
 		}
 	}
-	want := []string{"AuditTLS", "CancelJob", "Capabilities", "CaptureBackends", "ClearHistory", "CurrentWiFi", "Diagnose", "Discover", "History", "ImportCapture", "InspectDNS", "InspectServices", "Interfaces", "Inventory", "Neighbors", "OpenLocationSettings", "OpenNpcapDownload", "RevealWiFi", "SaveCapture", "SaveSettings", "Settings", "StartCapture", "StartDiagnostic", "StopCapture", "Tools", "Version"}
+	want := []string{"AuditTLS", "CancelJob", "Capabilities", "CaptureBackends", "ClearHistory", "CurrentWiFi", "Diagnose", "Discover", "DiscoverLocal", "History", "ImportCapture", "InspectDNS", "InspectServices", "Interfaces", "Inventory", "Neighbors", "OpenLocationSettings", "OpenNpcapDownload", "QuerySNMP", "RevealWiFi", "SaveCapture", "SaveSettings", "Settings", "StartCapture", "StartDiagnostic", "StopCapture", "Tools", "Version"}
 	if !slices.Equal(names, want) {
 		t.Fatalf("methods=%v, want=%v", names, want)
 	}

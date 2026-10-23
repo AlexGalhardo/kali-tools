@@ -835,6 +835,126 @@ export namespace contract {
 	        this.packet_limit = source["packet_limit"];
 	    }
 	}
+	export class LocalScope {
+	    interface: string;
+	    cidr: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new LocalScope(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.interface = source["interface"];
+	        this.cidr = source["cidr"];
+	    }
+	}
+	export class LocalDiscoveryRequest {
+	    scope: LocalScope;
+	    protocols: string[];
+	    duration_seconds: number;
+	    service_types?: string[];
+	    ssdp_target?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new LocalDiscoveryRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.scope = this.convertValues(source["scope"], LocalScope);
+	        this.protocols = source["protocols"];
+	        this.duration_seconds = source["duration_seconds"];
+	        this.service_types = source["service_types"];
+	        this.ssdp_target = source["ssdp_target"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class LocalResponder {
+	    protocol: string;
+	    address: string;
+	    port?: number;
+	    name: string;
+	    host?: string;
+	    service_type?: string;
+	    txt?: string[];
+	    server?: string;
+	    location?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new LocalResponder(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.protocol = source["protocol"];
+	        this.address = source["address"];
+	        this.port = source["port"];
+	        this.name = source["name"];
+	        this.host = source["host"];
+	        this.service_type = source["service_type"];
+	        this.txt = source["txt"];
+	        this.server = source["server"];
+	        this.location = source["location"];
+	    }
+	}
+	export class LocalDiscoveryResult {
+	    responders: LocalResponder[];
+	    limited: boolean;
+	    out_of_scope: number;
+	    malformed: number;
+	    errors: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new LocalDiscoveryResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.responders = this.convertValues(source["responders"], LocalResponder);
+	        this.limited = source["limited"];
+	        this.out_of_scope = source["out_of_scope"];
+	        this.malformed = source["malformed"];
+	        this.errors = source["errors"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	
 	export class Neighbor {
 	    address: string;
 	    mac: string;
@@ -911,6 +1031,129 @@ export namespace contract {
 	    }
 	}
 	
+	
+	export class SNMPInterface {
+	    index: number;
+	    descr: string;
+	    oper_status: string;
+	    speed_bps: number;
+	    mac: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SNMPInterface(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.index = source["index"];
+	        this.descr = source["descr"];
+	        this.oper_status = source["oper_status"];
+	        this.speed_bps = source["speed_bps"];
+	        this.mac = source["mac"];
+	    }
+	}
+	export class SNMPv3Request {
+	    user: string;
+	    auth_protocol: string;
+	    auth_pass?: string;
+	    priv_protocol?: string;
+	    priv_pass?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SNMPv3Request(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.user = source["user"];
+	        this.auth_protocol = source["auth_protocol"];
+	        this.auth_pass = source["auth_pass"];
+	        this.priv_protocol = source["priv_protocol"];
+	        this.priv_pass = source["priv_pass"];
+	    }
+	}
+	export class SNMPRequest {
+	    scope: LocalScope;
+	    target: string;
+	    port: number;
+	    owned: boolean;
+	    version: string;
+	    community?: string;
+	    v3?: SNMPv3Request;
+	    timeout_ms: number;
+	    interfaces: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new SNMPRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.scope = this.convertValues(source["scope"], LocalScope);
+	        this.target = source["target"];
+	        this.port = source["port"];
+	        this.owned = source["owned"];
+	        this.version = source["version"];
+	        this.community = source["community"];
+	        this.v3 = this.convertValues(source["v3"], SNMPv3Request);
+	        this.timeout_ms = source["timeout_ms"];
+	        this.interfaces = source["interfaces"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class SNMPResult {
+	    target: string;
+	    system: Record<string, string>;
+	    interfaces: SNMPInterface[];
+	    limited: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new SNMPResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.target = source["target"];
+	        this.system = source["system"];
+	        this.interfaces = this.convertValues(source["interfaces"], SNMPInterface);
+	        this.limited = source["limited"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	
 	
 	export class ServiceInspection {

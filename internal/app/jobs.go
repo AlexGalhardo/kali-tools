@@ -23,6 +23,10 @@ func jobSummary(kind string, state job.State, detail string) string {
 		label = "TLS audit"
 	case "dns_inspect":
 		label = "DNS inspection"
+	case "local_discovery":
+		label = "Local discovery"
+	case "snmp":
+		label = "SNMP query"
 	case "discovery":
 		label = "Discovery"
 	case "inspect":

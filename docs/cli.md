@@ -514,3 +514,15 @@ Reports certificate metadata, explicit verification, protocol support and zlint 
 `kali-tools dns-inspect --target <name> [--record A] [--resolvers ip[:port],…] [--doh url,…] [--dot host[:port],…] [--checks compare,soa_ns,dnssec,encrypted] [--trust-anchor "<DS RR>"] [--timeout 2000] [--json]`
 
 Compares the system resolver with explicit resolvers and can check SOA/NS consistency, a read-only DNSSEC chain, and DoH/DoT reachability. `--record` defaults to A. `--checks` defaults to `compare`. Each comma-separated list and the trust-anchor text is limited to 1,024 bytes. The per-query timeout is 200..5000 ms and reuses the global `--timeout` flag; the overall inspection stops at 30 seconds. Invalid input exits 2. Network failures stay on the result and still exit 0. History stores the state, query count and check count only. Observed DNSSEC validation is not a trust decision. Zone transfer, NSEC walking and name guessing are not implemented.
+
+## local-discover
+
+`kali-tools local-discover --interface <name> --scope <cidr> [--protocols mdns,ssdp] [--duration 3] [--service-types _foo._tcp,…] [--ssdp-target ssdp:all] [--json]`
+
+Reads mDNS and SSDP on one up, non-loopback interface. The scope is an IPv4 prefix of /24 or narrower that overlaps that interface. Duration is 1..10 seconds. At most four extra service types are accepted. Responses from outside the scope are counted and discarded. `LOCATION` is shown as text and is never requested. History stores the responder count and the out-of-scope count only.
+
+## snmp
+
+`kali-tools snmp --interface <name> --scope <cidr> --target <ip> --owned --secret-file <path> [--port 161] [--version v2c|v3] [--v3-user <user> --auth SHA256 --priv AES] [--interfaces] [--timeout 2000] [--json]`
+
+Reads SNMP system and, with `--interfaces`, interface MIB columns from one owned device inside the scope. `--secret-file` is a regular file of at most 4 KiB owned by the user. Line 1 is the v2c community or the v3 auth passphrase. Line 2, for v3 only, is the optional privacy passphrase. There is no community or password flag, and environment variables are not read. Timeout is 500..5000 ms. History stores the interface count only. Write operations are not implemented.

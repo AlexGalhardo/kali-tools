@@ -117,6 +117,28 @@ func (b *Bindings) InspectDNS(r contract.DNSInspectRequest) (contract.DNSInspect
 	return contract.FromDNSInspect(value), fail(err)
 }
 
+func (b *Bindings) DiscoverLocal(r contract.LocalDiscoveryRequest) (contract.LocalDiscoveryResult, error) {
+	ctx, err := b.ready()
+	if err != nil {
+		return contract.LocalDiscoveryResult{}, fail(err)
+	}
+	value, err := b.app.DiscoverLocal(ctx, r.Request())
+	return contract.FromLocalDiscovery(value), fail(err)
+}
+
+func (b *Bindings) QuerySNMP(r contract.SNMPRequest) (contract.SNMPResult, error) {
+	ctx, err := b.ready()
+	if err != nil {
+		return contract.SNMPResult{}, fail(err)
+	}
+	query, err := r.Request()
+	if err != nil {
+		return contract.SNMPResult{}, fail(err)
+	}
+	value, err := b.app.QuerySNMP(ctx, query)
+	return contract.FromSNMP(value), fail(err)
+}
+
 func (b *Bindings) Neighbors(family string) (contract.NeighborTable, error) {
 	ctx, err := b.ready()
 	if err != nil {

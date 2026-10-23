@@ -161,14 +161,22 @@ func parseInvocation(args []string) (invocation, error) {
 		switch name {
 		case "lint":
 			fs.Bool(name, true, "run certificate linting")
-		case "all", "confirm":
-			fs.Bool(name, false, "include completed jobs")
+		case "all", "confirm", "owned", "interfaces":
+			fs.Bool(name, false, name)
 		case "port":
-			fs.Int(name, 443, "TCP port")
+			port := 443
+			if call.command.path == "snmp" {
+				port = 161
+			}
+			fs.Int(name, port, "port")
+		case "duration":
+			seconds := 5
+			if call.command.path == "local-discover" {
+				seconds = 3
+			}
+			fs.Int(name, seconds, "seconds")
 		case "redirects":
 			fs.Int(name, 0, "HTTP redirect hops to trace, 0..5")
-		case "duration":
-			fs.Int(name, 5, "capture seconds")
 		case "limit":
 			fs.Int(name, 1000, "packet limit")
 		case "retention-days":
@@ -190,6 +198,16 @@ func parseInvocation(args []string) (invocation, error) {
 				if call.command.path == "dns-inspect" {
 					value = "A"
 				}
+			case "protocols":
+				value = "mdns,ssdp"
+			case "ssdp-target":
+				value = "ssdp:all"
+			case "version":
+				if call.command.path == "snmp" {
+					value = "v2c"
+				}
+			case "auth":
+				value = "SHA256"
 			}
 			fs.String(name, value, name)
 		}

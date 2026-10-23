@@ -13,6 +13,7 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/dnsinspect"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/job"
+	"github.com/AlexGalhardo/kali-tools/internal/localdiscovery"
 	"github.com/AlexGalhardo/kali-tools/internal/tlsaudit"
 )
 
@@ -36,6 +37,8 @@ var commands = []command{
 	{path: "discover", synopsis: "Discover a bounded IPv4 scope", needsApp: true, flags: []string{"target", "ports", "format"}},
 	{path: "inspect", synopsis: "Inspect services on an explicit IPv4 scope", needsApp: true, flags: []string{"target", "ports", "format"}},
 	{path: "dns-inspect", synopsis: "Compare resolvers and check SOA, NS, DNSSEC, DoH and DoT", needsApp: true, flags: []string{"target", "record", "resolvers", "doh", "dot", "checks", "trust-anchor"}},
+	{path: "local-discover", synopsis: "Discover mDNS and SSDP responders on one IPv4 link", needsApp: true, flags: []string{"interface", "scope", "protocols", "duration", "service-types", "ssdp-target"}},
+	{path: "snmp", synopsis: "Query SNMP system and interface data on an owned device", needsApp: true, flags: []string{"interface", "scope", "target", "owned", "port", "version", "secret-file", "v3-user", "auth", "priv", "interfaces"}},
 	{path: "wifi", synopsis: "Show current Wi-Fi metadata", needsApp: true},
 	{path: "wifi show", synopsis: "Show current Wi-Fi metadata", needsApp: true},
 	{path: "wifi reveal", synopsis: "Print the saved key only with --confirm", needsApp: true, flags: []string{"confirm"}},
@@ -103,6 +106,30 @@ func runAdditional(ctx context.Context, a *app.Application, call invocation, std
 			return nil, err, true
 		}
 		return contract.FromDNSInspect(value), nil, true
+	case "local-discover":
+		protocols, err := splitList(call.values["protocols"])
+		if err != nil {
+			return nil, err, true
+		}
+		serviceTypes, err := splitList(call.values["service-types"])
+		if err != nil {
+			return nil, err, true
+		}
+		duration, _ := strconv.Atoi(call.values["duration"])
+		value, err := a.DiscoverLocal(ctx, localdiscovery.Request{
+			Scope:     localdiscovery.Scope{Interface: call.values["interface"], CIDR: call.values["scope"]},
+			Protocols: protocols, DurationSeconds: duration, ServiceTypes: serviceTypes, SSDPTarget: call.values["ssdp-target"],
+		})
+		if err != nil {
+			return nil, err, true
+		}
+		return contract.FromLocalDiscovery(value), nil, true
+	case "snmp":
+		report, err := runSNMP(ctx, a, call)
+		if err != nil {
+			return nil, err, true
+		}
+		return contract.FromSNMP(report), nil, true
 	case "serve":
 		return nil, domain.Invalid("serve is handled by the kali-tools binary"), true
 	case "capabilities":
@@ -216,6 +243,48 @@ func deprecation(call invocation) (string, string) {
 		}
 	}
 	return "", ""
+}
+
+func runSNMP(ctx context.Context, a *app.Application, call invocation) (localdiscovery.SNMPResult, error) {
+	if call.values["secret-file"] == "" {
+		return localdiscovery.SNMPResult{}, domain.Invalid("secret file is required")
+	}
+	line1, line2, err := readSecretLines(call.values["secret-file"])
+	if err != nil {
+		return localdiscovery.SNMPResult{}, err
+	}
+	port, _ := strconv.Atoi(call.values["port"])
+	timeout := call.g.Timeout
+	if timeout == 0 {
+		timeout = 2 * time.Second
+	}
+	request := localdiscovery.SNMPRequest{
+		Scope: localdiscovery.Scope{Interface: call.values["interface"], CIDR: call.values["scope"]}, Target: call.values["target"],
+		Port: port, Owned: call.values["owned"] == "true", Version: call.values["version"], TimeoutMS: int(timeout.Milliseconds()),
+		Interfaces: call.values["interfaces"] == "true",
+	}
+	if request.Version == "v3" {
+		auth, err := localdiscovery.NewSecret(line1)
+		if err != nil {
+			return localdiscovery.SNMPResult{}, err
+		}
+		creds := &localdiscovery.SNMPv3Creds{User: call.values["v3-user"], AuthProtocol: call.values["auth"], AuthPass: auth, PrivProtocol: call.values["priv"]}
+		if line2 != "" {
+			priv, err := localdiscovery.NewSecret(line2)
+			if err != nil {
+				return localdiscovery.SNMPResult{}, err
+			}
+			creds.PrivPass = priv
+		}
+		request.V3 = creds
+	} else {
+		community, err := localdiscovery.NewSecret(line1)
+		if err != nil {
+			return localdiscovery.SNMPResult{}, err
+		}
+		request.Community = community
+	}
+	return a.QuerySNMP(ctx, request)
 }
 
 func splitList(value string) ([]string, error) {

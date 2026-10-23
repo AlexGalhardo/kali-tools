@@ -1,10 +1,12 @@
 package httpapi
 
 import (
+	"bytes"
 	"encoding/json"
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -60,6 +62,42 @@ func TestDNSInspectRouteBodyLimit(t *testing.T) {
 		if w.Code != want {
 			t.Fatalf("%d bytes: %d %s", n, w.Code, w.Body)
 		}
+	}
+}
+
+func TestLocalAndSNMPBodyLimits(t *testing.T) {
+	mux := testMux(t, testApp(t))
+	for _, path := range []string{"/api/discovery/local", "/api/snmp"} {
+		for _, n := range []int{4096, 4097} {
+			r := httptest.NewRequest("POST", path, strings.NewReader("{}"+strings.Repeat(" ", n-2)))
+			r.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+			mux.ServeHTTP(w, r)
+			want := 400
+			if n > 4096 {
+				want = 413
+			}
+			if w.Code != want {
+				t.Fatalf("%s %d bytes: %d %s", path, n, w.Code, w.Body)
+			}
+		}
+	}
+}
+
+func TestSNMPRouteNeverLogsBody(t *testing.T) {
+	var logs bytes.Buffer
+	a := testApp(t)
+	s := &Server{app: a, log: slog.New(slog.NewTextHandler(&logs, nil)), subscribers: make(chan struct{}, maxSSESubscribers), transfers: make(chan struct{}, maxFileTransfers), keepAlive: sseKeepAlive}
+	mux := http.NewServeMux()
+	addRoutes(mux, a, s)
+	body := `{"community":"synthetic-community","v3":{"auth_pass":"synthetic-pass","priv_pass":"synthetic-pass"},"scope":{"interface":"missing","cidr":"192.0.2.0/24"},"target":"192.0.2.1","owned":true,"version":"v2c","timeout_ms":500}`
+	request := httptest.NewRequest("POST", "/api/snmp", strings.NewReader(body))
+	request.Header.Set("Content-Type", "application/json")
+	response := httptest.NewRecorder()
+	s.accessLog(mux).ServeHTTP(response, request)
+	text := logs.String() + response.Body.String()
+	if strings.Contains(text, "synthetic-community") || strings.Contains(text, "synthetic-pass") {
+		t.Fatal(text)
 	}
 }
 
@@ -257,7 +295,7 @@ func TestReadRouteErrors(t *testing.T) {
 func TestRoutesMatchApplication(t *testing.T) {
 	// Lifecycle and preflight helpers are not remotely callable operations.
 	excluded := map[string]bool{"Close": true, "StartMetrics": true, "CanImportCapture": true, "CanExportCapture": true, "RunMetricsForTest": true, "PublishForTest": true, "WaitForTest": true}
-	operations := map[string]string{"AuditTLS": "POST /api/tls/audit", "InspectDNS": "POST /api/dns/inspect", "Capabilities": "GET /api/capabilities", "CaptureBackendStatus": "GET /api/capture/backends", "Interfaces": "GET /api/interfaces", "Neighbors": "GET /api/neighbors", "Inventory": "GET /api/inventory", "Tools": "GET /api/tools", "Diagnose": "POST /api/diagnose", "StartDiagnostic": "POST /api/diagnostics", "CancelJob": "POST /api/jobs/{id}/cancel", "JobSnapshot": "GET /api/jobs/{id}", "Subscribe": "GET /api/events", "History": "GET /api/history", "ClearHistory": "DELETE /api/history", "Settings": "GET /api/settings", "SaveSettings": "PUT /api/settings", "CurrentWiFi": "GET /api/wifi", "RevealWiFi": "POST /api/wifi/reveal", "Discover": "POST /api/discovery", "InspectServices": "POST /api/inspect", "StartCapture": "POST /api/capture/start", "StopCapture": "POST /api/capture/stop", "ImportCapture": "POST /api/capture/import", "ExportCapture": "GET /api/capture/export"}
+	operations := map[string]string{"AuditTLS": "POST /api/tls/audit", "InspectDNS": "POST /api/dns/inspect", "DiscoverLocal": "POST /api/discovery/local", "QuerySNMP": "POST /api/snmp", "Capabilities": "GET /api/capabilities", "CaptureBackendStatus": "GET /api/capture/backends", "Interfaces": "GET /api/interfaces", "Neighbors": "GET /api/neighbors", "Inventory": "GET /api/inventory", "Tools": "GET /api/tools", "Diagnose": "POST /api/diagnose", "StartDiagnostic": "POST /api/diagnostics", "CancelJob": "POST /api/jobs/{id}/cancel", "JobSnapshot": "GET /api/jobs/{id}", "Subscribe": "GET /api/events", "History": "GET /api/history", "ClearHistory": "DELETE /api/history", "Settings": "GET /api/settings", "SaveSettings": "PUT /api/settings", "CurrentWiFi": "GET /api/wifi", "RevealWiFi": "POST /api/wifi/reveal", "Discover": "POST /api/discovery", "InspectServices": "POST /api/inspect", "StartCapture": "POST /api/capture/start", "StopCapture": "POST /api/capture/stop", "ImportCapture": "POST /api/capture/import", "ExportCapture": "GET /api/capture/export"}
 	file, err := parser.ParseFile(token.NewFileSet(), "routes.go", nil, 0)
 	if err != nil {
 		t.Fatal(err)

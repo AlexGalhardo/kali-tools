@@ -518,6 +518,25 @@ td small {
   margin: 0;
   padding-left: 1.2rem;
 }
+.local-discovery {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+.local-discovery > section,
+.local-discovery > form {
+  min-width: 0;
+}
+.local-discovery h2 {
+  margin: 0 0 20px;
+  font-size: 16px;
+}
+.local-discovery table {
+  min-width: 640px;
+}
+.local-discovery .form-grid {
+  margin-bottom: 20px;
+}
 table {
   width: 100%;
   border-collapse: collapse;

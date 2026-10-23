@@ -29,6 +29,8 @@ func addRoutes(mux *http.ServeMux, a *app.Application, s *Server) {
 	mux.Handle("POST /api/diagnose", handleDiagnose(a))
 	mux.Handle("POST /api/tls/audit", handleTLSAudit(a))
 	mux.Handle("POST /api/dns/inspect", handleDNSInspect(a))
+	mux.Handle("POST /api/discovery/local", handleLocalDiscovery(a))
+	mux.Handle("POST /api/snmp", handleSNMP(a))
 	mux.Handle("POST /api/diagnostics", handleStartDiagnostic(a))
 	mux.Handle("POST /api/jobs/{id}/cancel", handleCancel(a))
 	mux.Handle("GET /api/events", emptyRequest(s.handleEvents()))
