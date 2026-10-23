@@ -507,10 +507,10 @@ Interfaces exit: a parity matrix (capability × desktop/CLI/web) is recorded in 
   - [ ] Separate per-interface counters from per-process attribution; no invented bandwidth estimates.
   - [ ] Bounded Go throughput client/server for owned endpoints (not iperf3-wire-compatible); optional iperf3 `-J` adapter.
   - Assert: fixture processes match reported connections; active throughput has explicit endpoint/duration and cancellation.
-- [ ] B05 Capture and adapter resilience.
-  - [ ] Reassembly limits, IPv6 extensions, truncated packets and sustained capture backpressure.
-  - [ ] TShark broad decoding (`-T ek`/`-T fields`, streaming) where Go support is incomplete; document supported protocol levels.
-  - [ ] Test interface disappearance, tool termination, disk full and corrupted input.
+- [x] B05 Capture and adapter resilience. Automated bounds and loss reporting are in [B05 evidence](docs/verification/specs/B05.md). Pulling a cable is not covered.
+  - [x] Reassembly limits, IPv6 extensions, truncated packets and sustained capture backpressure. Decode reports truncation, follows a complete IPv6 hop-by-hop header, and does not reassemble TCP or IPv6 fragments. Artifact growth stops at 10000 packets or the reserved 64 MiB budget.
+  - [x] TShark broad decoding (`-T ek`/`-T fields`, streaming) where Go support is incomplete; document supported protocol levels. TShark stays inventory-only ([ADR 006](docs/adr/006-native-service-inspection.md)). Supported levels are in [capture decoding](docs/capture-decoding.md).
+  - [x] Test interface disappearance, tool termination, disk full and corrupted input. A provider loss is a failed job whose history omits packet text. Pktmon cancel always stops. Temporary-directory and export writer failures do not echo private paths. Corrupted captures are rejected. Pulling a cable stays on the Windows runbook.
   - Assert: bounded workload stays within alpha-established budgets and reports data loss accurately.
 - [ ] B06 Persistence, privacy and compatibility.
   - [ ] SQLite upgrade/backup/recovery, retention, export and migration fixtures.
