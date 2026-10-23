@@ -324,6 +324,8 @@ C01 provides the command tree, strict flags, stable exit codes, human output by 
 
 Add `<name>_<goos>.go` beside the existing files, keeping the same constructor and method set. Keep the `_other.go` fallback returning an explicit unsupported error. Run `GOOS=windows|linux|darwin go vet ./...`. Never mark native acceptance from cross-compilation.
 
+B01's documented Linux baseline is Ubuntu 24.04 LTS ([ADR 010](adr/010-linux-baseline.md)). Debian 13 and Kali are best-effort and come with no guarantee. Linux routes and counters come from netlink, with the procfs readers as fallback. Neighbors already use netlink. Native acceptance remains open.
+
 ### 7.3 Moving or renaming packages
 
 Use `git mv`, then rewrite import paths and run `gofmt`. Run `go vet ./...` for all three GOOS targets plus `go vet -tags desktop .`, then `go test ./...`. Update `.golangci.yml`, `scripts/task.mjs`, `docker/Dockerfile` and the docs that mention the old path. Historical evidence in `docs/verification/` is a record and keeps its original paths.

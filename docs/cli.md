@@ -46,7 +46,7 @@ kali-tools 0.4.0 (goX OS/ARCH)
 
 Flags / positional: `--bundle PATH`. Without `--bundle`, output is unchanged.
 
-JSON `data` without `--bundle`: `{"os","arch","capabilities","tools","capture","wifi"}` (unchanged keys; `wifi` text updated, see §4.9). The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+JSON `data` without `--bundle`: `{"os","arch","baseline","capabilities","tools","capture","wifi"}`. `baseline` states that Ubuntu 24.04 LTS is the documented baseline and that Debian 13 and Kali are best-effort with no guarantee. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
 
 `--bundle PATH` writes a redacted `.zip` and does not upload it. JSON `data` is `{"path","format":"zip"}`. Human output uses the saved-file line. The archive contains `summary.txt` and `report.json` (schema version 1): versions, doctor output, capability states, language, retention and at most 50 history rows. IPs, MAC addresses, dotted hostnames and labelled SSIDs are stable pseudonyms for that file. Wi-Fi keys, scan results and capture packets are not included. A directory path is `invalid_input` and the error does not repeat the path.
 
@@ -54,6 +54,7 @@ Human example (fixture values):
 
 ```text
 System: OS/ARCH
+Ubuntu 24.04 LTS is the documented Linux baseline. Debian 13 and Kali are best-effort and come with no guarantee.
 
 CAPABILITY STATE PROVIDER DETAIL
 interfaces available go/net Go interface inventory

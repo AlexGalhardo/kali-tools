@@ -14,6 +14,7 @@ var portuguese = messages{
 	"ID": "ID", "CREATED": "CRIADO", "KIND": "TIPO", "SUMMARY": "RESUMO",
 	"NO": "Nº", "TIME": "HORA", "LENGTH": "TAMANHO", "SOURCE": "ORIGEM", "DESTINATION": "DESTINO", "PROTOCOL": "PROTOCOLO", "INFO": "INFO",
 	"System": "Sistema", "language": "idioma", "retention_days": "dias_de_retenção", "state": "estado", "key": "chave",
+	"Ubuntu 24.04 LTS is the documented Linux baseline. Debian 13 and Kali are best-effort and come with no guarantee.": "Ubuntu 24.04 LTS é a base Linux documentada. Debian 13 e Kali são melhor esforço e não têm garantia.",
 	"SSID": "SSID", "BSSID": "BSSID", "profile": "perfil", "signal": "sinal", "authentication": "autenticação", "channel": "canal",
 	"id": "id", "kind": "tipo", "created": "criado", "finished": "finalizado", "summary": "resumo",
 	"available": "disponível", "completed": "concluído", "open": "aberta", "connected": "conectado", "failed": "falhou", "closed": "fechada",

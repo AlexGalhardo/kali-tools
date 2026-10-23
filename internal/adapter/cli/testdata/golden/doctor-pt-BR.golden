@@ -1,6 +1,7 @@
 exit=0
 stdout:
 Sistema: OS/ARCH
+Ubuntu 24.04 LTS é a base Linux documentada. Debian 13 e Kali são melhor esforço e não têm garantia.
 
 CAPACIDADE ESTADO PROVEDOR DETALHE
 interfaces disponível go/net Go interface inventory

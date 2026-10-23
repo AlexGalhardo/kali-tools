@@ -71,7 +71,7 @@ bash scripts/setup/setup-windows.sh setup
 
 ### Linux
 
-The initial desktop build instructions target Ubuntu 24.04 or compatible systems. Other distributions need equivalent GTK3 and WebKitGTK development packages.
+Ubuntu 24.04 LTS is the documented Linux baseline. Debian 13 and Kali are best-effort and come with no guarantee. Other distributions need equivalent GTK3 and WebKitGTK development packages. See [ADR 010](docs/adr/010-linux-baseline.md).
 
 1. Install Go and Node.js from their official distributions.
 2. Install native build dependencies:

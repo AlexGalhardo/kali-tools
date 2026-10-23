@@ -21,6 +21,8 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/network"
 )
 
+const linuxBaseline = "Ubuntu 24.04 LTS is the documented Linux baseline. Debian 13 and Kali are best-effort and come with no guarantee."
+
 type envelope struct {
 	SchemaVersion int             `json:"schema_version"`
 	Version       string          `json:"version"`
@@ -109,7 +111,7 @@ func runLegacy(ctx context.Context, application *app.Application, call invocatio
 				break
 			}
 			inventory, _ := application.Tools(ctx)
-			data = map[string]any{"os": runtime.GOOS, "arch": runtime.GOARCH, "capabilities": contract.FromCapabilities(application.Capabilities(ctx)), "tools": contract.FromTools(inventory), "capture": app.DoctorCaptureNote, "wifi": app.DoctorWiFiNote}
+			data = map[string]any{"os": runtime.GOOS, "arch": runtime.GOARCH, "baseline": linuxBaseline, "capabilities": contract.FromCapabilities(application.Capabilities(ctx)), "tools": contract.FromTools(inventory), "capture": app.DoctorCaptureNote, "wifi": app.DoctorWiFiNote}
 		case "interfaces":
 			value, e := application.Interfaces(ctx)
 			data, err = contract.FromInterfaces(value), e
