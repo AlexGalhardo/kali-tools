@@ -1,6 +1,7 @@
 package porttest
 
 import (
+	"net/netip"
 	"slices"
 	"testing"
 
@@ -23,30 +24,28 @@ func ToolRunnerContract(t *testing.T, newRunner func(*testing.T) app.ToolRunner)
 			}
 		}
 		slices.Sort(names)
-		if !slices.Equal(names, []string{"nmap", "tshark"}) {
+		if !slices.Equal(names, []string{"tshark"}) {
 			t.Fatal(names)
 		}
 	})
 	t.Run("rejects_scope_before_execution", func(t *testing.T) {
 		runner := newRunner(t)
-		_, err := runner.RunNmap(deadline(t), "0.0.0.0/0", []int{80})
+		_, err := runner.InspectServices(deadline(t), "0.0.0.0/0", []int{80})
 		requireCode(t, err, "invalid_input")
 	})
-	t.Run("unavailable_tool_is_a_typed_state", func(t *testing.T) {
-		runner := newRunner(t)
-		ctx := deadline(t)
-		for _, tool := range runner.Inventory(ctx) {
-			if tool.Name == "nmap" {
-				if tool.State == "available" {
-					t.Log("available Nmap; unavailable-state assertion does not apply")
-					return
-				}
-				_, err := runner.RunNmap(ctx, "127.0.0.1/32", []int{80})
-				requireCode(t, err, tool.State)
-				t.Logf("honest-state branch: %s", tool.State)
-				return
-			}
+	t.Run("loopback_inspection_or_honest_state", func(t *testing.T) {
+		result, err := newRunner(t).InspectServices(deadline(t), "127.0.0.1/32", []int{1})
+		RequireHonestState(t, err, "unsupported")
+		if err != nil || result.Scanner != "native" {
+			return
 		}
-		t.Fatal("missing Nmap inventory")
+		prefix := netip.MustParsePrefix("127.0.0.1/32")
+		if len(result.Hosts) != 1 || len(result.Hosts[0].Ports) != 1 || result.Hosts[0].Ports[0].Port != 1 || result.Hosts[0].Ports[0].Protocol != "tcp" {
+			t.Fatalf("%+v", result)
+		}
+		ip, parseErr := netip.ParseAddr(result.Hosts[0].Addresses[0].Address)
+		if parseErr != nil || !prefix.Contains(ip) {
+			t.Fatalf("address %v", result.Hosts[0].Addresses)
+		}
 	})
 }

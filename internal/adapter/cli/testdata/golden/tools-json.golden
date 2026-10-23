@@ -3,12 +3,6 @@ stdout:
 {
   "data": [
     {
-      "name": "nmap",
-      "path": "/fixture/nmap",
-      "state": "available",
-      "version": "fixture"
-    },
-    {
       "name": "tshark",
       "path": "",
       "state": "dependency_missing",

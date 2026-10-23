@@ -41,7 +41,7 @@ func TestFakeCancellation(t *testing.T) {
 		{"settings", func() error { _, err := store.Settings(ctx); return err }},
 		{"save settings", func() error { return store.SaveSettings(ctx, app.Settings{}) }},
 		{"host", func() error { _, err := (Host{}).Inventory(ctx); return err }},
-		{"tools", func() error { _, err := (Tools{}).RunNmap(ctx, "", nil); return err }},
+		{"tools", func() error { _, err := (Tools{}).InspectServices(ctx, "", nil); return err }},
 		{"wifi", func() error { _, err := (WiFi{}).Current(ctx); return err }},
 		{"reveal", func() error { _, err := (WiFi{}).Reveal(ctx); return err }},
 		{"prober", func() error { _, err := (Prober{}).Run(ctx, "", false); return err }},
@@ -74,8 +74,8 @@ func TestFakeReturnedValuesAreCopies(t *testing.T) {
 		}
 	})
 	t.Run("tools", func(t *testing.T) {
-		f := Tools{Tools: []app.Tool{{Name: "nmap", State: "available"}}, Result: app.Nmap{Hosts: []app.NmapHost{{Addresses: []app.NmapAddress{{Address: "192.0.2.1"}}, Ports: []app.NmapPort{{Port: 80}}}}}}
-		v, err := f.RunNmap(t.Context(), "192.0.2.0/24", []int{80})
+		f := Tools{Tools: []app.Tool{{Name: "tshark", State: "available"}}, Result: app.Nmap{Hosts: []app.NmapHost{{Addresses: []app.NmapAddress{{Address: "192.0.2.1"}}, Ports: []app.NmapPort{{Port: 80}}}}}}
+		v, err := f.InspectServices(t.Context(), "192.0.2.0/24", []int{80})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -83,8 +83,8 @@ func TestFakeReturnedValuesAreCopies(t *testing.T) {
 		v.Hosts[0].Ports[0].Port = 9
 		inventory := f.Inventory(t.Context())
 		inventory[0].Name = "changed"
-		again, _ := f.RunNmap(t.Context(), "192.0.2.0/24", []int{80})
-		if again.Hosts[0].Addresses[0].Address != "192.0.2.1" || again.Hosts[0].Ports[0].Port != 80 || f.Tools[0].Name != "nmap" {
+		again, _ := f.InspectServices(t.Context(), "192.0.2.0/24", []int{80})
+		if again.Hosts[0].Addresses[0].Address != "192.0.2.1" || again.Hosts[0].Ports[0].Port != 80 || f.Tools[0].Name != "tshark" {
 			t.Fatal("tool data aliases")
 		}
 	})
@@ -153,7 +153,7 @@ func TestFakePortContracts(t *testing.T) {
 					version = ""
 				}
 				porttest.ToolRunnerContract(t, func(*testing.T) app.ToolRunner {
-					return Tools{Tools: []app.Tool{{Name: "nmap", State: state, Version: version}, {Name: "tshark", State: state, Version: version}}, Err: err}
+					return Tools{Tools: []app.Tool{{Name: "tshark", State: state, Version: version}}, Err: err}
 				})
 			})
 			t.Run("wifi", func(t *testing.T) {

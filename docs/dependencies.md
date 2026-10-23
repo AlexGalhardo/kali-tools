@@ -27,6 +27,6 @@ Development baseline: 2026-10-19. Exact Go dependencies are in go.mod/go.sum; fr
 
 This table summarizes direct dependencies. Release packaging also generates a transitive inventory and collects license/copyright/notice files from the pinned modules and production frontend packages. `go list -m -json all` and `npm ls --all --json` provide transitive inventories. Each native archive includes THIRD_PARTY_NOTICES.txt and dependencies.json; vendored skill licenses and revisions are preserved.
 
-Nmap and TShark are neither installed nor redistributed by this project. Optional inventory probes and explicit Nmap service inspection use fixed argument arrays, deadlines and bounded output. Nmap 7.80+ within major 7 is recognized; TShark 4.2+ within major 4 remains inventory-only. No mandatory paid runtime service is required.
+Nmap is not executed, parsed or redistributed. TShark is neither installed nor redistributed. Optional inventory probes use fixed argument arrays, deadlines and bounded output. TShark 4.2+ within major 4 remains inventory-only. Service inspection is implemented in Go (ADR 006) and adds no module. No mandatory paid runtime service is required.
 
 The module requires Go 1.27.2 and pins x/net 0.60.0, x/crypto 0.57.0 and x/text 0.42.0 after the 2026-10-19 security scan. Core and desktop-tagged govulncheck runs returned no findings; see the verification record for scope and commands. Both frontend lockfiles are retained for the verified Bun and npm installation paths.

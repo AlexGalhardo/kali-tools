@@ -33,7 +33,7 @@ Every capability is implemented once in Go services and exposed through all thre
 **Implementation choices.**
 
 - Implement as much as practical in Go.
-- Integrate optional Nmap, TShark, iperf3 or Pktmon executables only where a native implementation would be incomplete or unreasonable.
+- Integrate optional TShark, iperf3 or Pktmon executables only where a native implementation would be incomplete or unreasonable. Service inspection is native and does not execute Nmap (ADR 006).
 - SQLite stores local preferences and diagnostic history.
 
 **Language.** Interface languages are English and PT-BR. Code, documentation and commits are in English.
@@ -56,7 +56,7 @@ These are real implementation requirements, not placeholder panels. Alpha accept
 - The project has no commercial purpose.
 - Select dependencies whose source is available under suitable open-source licenses, with no mandatory paid runtime service. Do not infer that every open-source license forbids commercial use.
 - The owner delegated open-source housekeeping on 2026-10-19. Project code uses MIT in LICENSE.md, and no noncommercial restriction is added.
-- Keep Nmap, TShark and Npcap optional and separately installed. Neither the Npcap free license nor the Nmap NPSL permits bundling (see tools research §3).
+- Keep TShark and Npcap optional and separately installed. Do not bundle Npcap. Do not execute or bundle Nmap (NPSL; ADR 006). See tools research §3.
 - Windows capture-driver selection is a feasibility gate, because a free driver is not automatically an eligible open-source dependency.
 
 ## 2. Architecture
@@ -65,7 +65,7 @@ Hexagonal (ports and adapters). Dependencies point inward. Full rules, the repos
 
 ```text
 Wails desktop ─┐                                     ┌─ adapter/storage   (SQLite)
-Web (httpapi) ─┼─► internal/app ─► capabilities ◄────┼─ adapter/tools     (Nmap/TShark exec)
+Web (httpapi) ─┼─► internal/app ─► capabilities ◄────┼─ adapter/tools     (native inspect, TShark inventory)
 CLI           ─┘   (use cases,     network/capture/  ├─ adapter/probe     (ICMP)
                     jobs, events)  wifi + domain     └─ adapter/platform  (routes/counters)
 ```
@@ -361,16 +361,15 @@ These are reusable delivery requirements, not a separate completed milestone. De
   - Assert: synthetic captures decode expected fields; native Windows test captures controlled traffic, stops promptly and leaves no live handle.
   - Gate: resolve capture-driver eligibility before declaring alpha complete; an incompatible dependency is not silently accepted.
 - [ ] A07 Optional advanced adapters.
-  - [x] ADR 003 justifies Nmap service signatures; native TCP remains default and no TShark execution is introduced.
-  - [ ] Owner decision on the NPSL "execute and parse" clause (tools research §3.1): (a) accept and document the risk, (b) request a waiver, or (c) restrict the adapter to importing user-produced XML. Update ADR 003 accordingly.
+  - [x] ADR 003 recorded optional Nmap service inspection; native TCP remained the default and no TShark execution was introduced.
+  - [x] Owner decision (Alex Galhardo, 2026-10-23): cancel Nmap service inspection because of the NPSL 0.95 execute-and-parse clause. [ADR 006](docs/adr/006-native-service-inspection.md) supersedes ADR 003. The evaluation is in [tools research](docs/tools-research.md) §3.1.
+  - [x] Native TCP/banner/TLS inspection replaces the Nmap adapter behind `ToolRunner`. Linux loopback tests identify HTTP, TLS and SSH and reject an out-of-scope prefix before any dial. Windows, macOS and non-loopback qualification remain open.
   - [ ] Tool discovery, supported versions, structured parsers and dependency diagnostics.
     - [x] Bounded optional-executable version inventory and explicit missing-dependency states; core remains usable without installed tools.
-    - [x] Bounded Nmap XML parser and fuzz smoke.
-    - [x] Nmap 7.80+ within major 7 version validation and explicit CLI/desktop service inspection; TShark 4.2+ within major 4 is inventory-only.
-  - [x] Fixed argument arrays, stdout/stderr limits and deadlines; Windows suspended-start Job Object descendant cancellation and Unix process-group execution tested.
-  - [x] Executable fixtures cover valid, partial, malformed, wrong-version and out-of-scope/unrequested-port Nmap output.
-  - [ ] Qualify the actual separately installed Nmap executable; it is absent from this host.
-  - Assert: core works without tools installed; optional results preserve provider/version and cannot execute arbitrary shell input.
+    - [x] TShark 4.2+ within major 4 remains inventory-only. The Nmap executable, XML parser and version gate are removed.
+  - [x] Fixed argument arrays, stdout/stderr limits and deadlines remain for optional executables. Windows Job Object and Unix process-group tests still cover that runner; they no longer wrap Nmap.
+  - [ ] Qualify separately installed optional executables on native hosts. TShark execution is not implemented. Nmap qualification was withdrawn with the feature.
+  - Assert: core works without tools installed; service inspection does not execute Nmap or accept shell input; history stores the provider and host count only.
 - [ ] A08 Integrated UI.
   - [x] Owner-requested black/neon-green terminal theme, bundled JetBrains Mono, mobile layout and Impeccable review. [Theme spec](docs/specs/A08-terminal-theme.md); [evidence](docs/verification/specs/A08-theme.md). Shared styling applies to desktop and browser; HTTP implementation and security are present; open acceptance is recorded in W01/W04.
   - [x] Dashboard, interfaces, diagnostics, Wi-Fi, packet inspector, toolkit, history and settings.
@@ -690,7 +689,7 @@ The plan does not claim feature parity with every Kali package.
 1. A05 implementation is verified on Windows; Linux-host pure-function coverage and manual consent/reveal acceptance remain open. W01/W04 implementation and non-native acceptance are verified; native account/browser/desktop gates remain open.
 2. H09 owner approval: ADR 004 is proposed; H08 mechanical enforcement and hosted positive/negative proofs pass.
 3. Retain the W01/W04 native gates; the server's shared acceptance driver, bounds and shutdown verification are recorded.
-4. A05, A06, A01, B08–B11: follow the remaining SDD execution order. Keep H01–H07 native checks and the A07 NPSL owner decision visible; do not treat them as headless passes.
+4. A05, A06, A01, B08–B11: follow the remaining SDD execution order. Keep H01–H07 native checks visible; do not treat them as headless passes. The A07 NPSL decision is closed by ADR 006.
 
 **Constraints.**
 

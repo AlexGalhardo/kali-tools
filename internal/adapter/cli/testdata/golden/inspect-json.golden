@@ -18,7 +18,7 @@ stdout:
             "port": 443,
             "protocol": "tcp",
             "service": {
-              "method": "probed",
+              "method": "banner",
               "name": "https",
               "product": "",
               "version": ""
@@ -33,8 +33,8 @@ stdout:
         }
       }
     ],
-    "scanner": "nmap",
-    "version": "fixture"
+    "scanner": "native",
+    "version": "1"
   },
   "schema_version": 1,
   "version": "0.6.0-dev.2"

@@ -10,6 +10,7 @@ Status: first round completed on 2026-10-19. Research: `tools-research.md`. Exec
 4. Use local SQLite for history and preferences.
 5. PT-BR and English interface; English code and documentation.
 6. After creating PLAN.md, configure GitHub authentication/access for ongoing pushes.
+7. On 2026-10-23, cancel Nmap service inspection because of the NPSL 0.95 execute-and-parse clause. This supersedes the Nmap half of decision 2. Identify scoped TCP services with native Go checks. See ADR 006.
 
 The earlier recommendations/questions below are retained as brainstorming history. The decisions above supersede conflicting proposals, including postponing capture until beta.
 

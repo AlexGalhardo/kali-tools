@@ -81,7 +81,7 @@ The owner authorized workflow activation on 2026-10-19. See [the CI/CD guide](ci
 
 After a native CLI/desktop build, `go mod download all` and `node scripts/package.mjs` assemble that host's release archive with notices and source metadata. Go/production frontend licenses are collected from pinned installed sources; missing notice files fail packaging. Native CI supplies Windows x64, Linux x64 and both Mac architectures.
 
-DNS accepts `--record A|AAAA|CNAME|MX|NS|TXT|PTR`. Discovery launches at most 100 probes/second with 32 workers and a two-minute total deadline. Nmap service inspection has its own fixed two-minute deadline. Packet conversion is explicit: `go run ./cmd/kali-tools capture import --file input.pcap --output output.pcapng --format pcapng`.
+DNS accepts `--record A|AAAA|CNAME|MX|NS|TXT|PTR`. Discovery and native service inspection each use at most 100 probes/second, 32 workers and a two-minute deadline. Service inspection does not run Nmap. Packet conversion is explicit: `go run ./cmd/kali-tools capture import --file input.pcap --output output.pcapng --format pcapng`.
 
 The local Windows preview can be copied from build/bin/kali-tools-desktop.exe to the repository root; both locations are ignored. Existing user preferences/history under the previous hacker-tools directory are reused without moving files; new installations use kali-tools. No configuration outside the repository is rewritten during the rename.
 

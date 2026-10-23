@@ -32,12 +32,11 @@ Nmap's scanning engine handles:
 
 A timeout alone does not establish that a port is closed. A small Go TCP-connect scanner is feasible, but it is not feature-equivalent to Nmap's service detection or OS fingerprinting.
 
-Recommendation:
+Recommendation, as updated on 2026-10-23 (see §3.1 and ADR 006):
 
 - Use native Go for a constrained connect diagnostic.
-- Use an optional Nmap adapter for advanced scans.
-- Parse structured output.
-- Preserve the tool version and scan settings with each result.
+- Identify a protocol with a banner read, one TLS handshake and one HTTP request. Do not execute Nmap.
+- Preserve the provider name and the probe-set revision with each result. Do not store probe bytes.
 
 Source: https://nmap.org/book/port-scanning-algorithms.html
 
@@ -81,12 +80,9 @@ Source: https://software.es.net/iperf/invoking.html
 
 1. **Nmap license (NPSL 0.95) and the dedicated adapter.**
    - NPSL lists software "designed specifically to execute Covered Software and parse the results" as a derivative-work trigger. It also lists reading `nmap-service-probes`/`nmap-os-db`. The licensor reads "derivative work" broadly, though the annotation says the definition only binds parties that accept the license.
-   - The existing `InspectServices` Nmap adapter falls into that wording.
-   - Owner decision required, choosing one of:
-     - (a) accept and document the risk;
-     - (b) request a waiver, which NPSL offers to open-source projects;
-     - (c) narrow the adapter to importing XML that the user produced with their own Nmap.
-   - Whatever the decision: never bundle Nmap and never read its data files. `Ullaakut/nmap` (MIT) wraps the same executable and does not change the analysis.
+   - The former `InspectServices` Nmap adapter fell into that wording.
+   - Owner decision (Alex Galhardo, 2026-10-23): cancel that adapter. Do not accept the clause, request a waiver, or import user-produced Nmap XML. Never bundle Nmap, never execute it, and never read its data files. `Ullaakut/nmap` (MIT) wraps the same executable and does not change the analysis.
+   - The replacement is native TCP/banner/TLS inspection (ADR 006). The option comparison is below.
    - Sources: https://nmap.org/npsl/npsl-annotated.html, https://github.com/Ullaakut/nmap
 2. **Npcap free edition is not redistributable.**
    - The free license allows up to 5 systems, no external redistribution and no silent installer. The OEM edition is paid.
@@ -113,6 +109,28 @@ Source: https://software.es.net/iperf/invoking.html
    - `pktmon etl2pcap` converts ETL to pcapng, but drops component identity and omits dropped packets unless `--drop-only` is passed. Microsoft's `etl2pcapng` keeps components as pcapng interfaces.
    - Candidate optional adapter: an elevated pktmon session → pcapng → existing `pcapgo.NgReader` import. Elevation required **(verify)**. Use argv arrays only.
    - Sources: https://learn.microsoft.com/en-us/windows-server/networking/technologies/pktmon/pktmon, https://github.com/microsoft/etl2pcapng
+
+### 3.5 Service inspection without Nmap (evaluated 2026-10-23)
+
+The capability to replace is: identify the service or protocol on TCP ports inside an explicit IPv4 /24 or narrower, at most 32 ports, with deadlines and output caps, and without writing targets or probe content to history. SYN scans, OS fingerprinting, brute force, exploit checks and evasion stay out of scope. Licenses were read from the upstream LICENSE files on 2026-10-23.
+
+| Option | License | Decision |
+| --- | --- | --- |
+| praetorian-inc/fingerprintx v1.1.19 | Apache-2.0. pkg.go.dev also lists BSD-3-Clause, matching the vendored Go crypto tree | Reject |
+| zmap/zgrab2 | Apache-2.0 for University of Michigan code, ISC for the Google/BoringSSL-derived files | Reject |
+| Go ports that embed or parse `nmap-service-probes` or `nmap-os-db` | Varies; the data files are NPSL | Reject |
+| projectdiscovery/naabu | MIT | Reject for this capability |
+| masscan | AGPL-3.0 | Reject (already §4.1) |
+| Ullaakut/nmap | MIT | Reject |
+| Native `net` and `crypto/tls` | Project MIT; no new module | Accept |
+
+fingerprintx is the closest library. It fingerprints application protocols over TCP (and UDP, which this project does not want) and its README states that it does not need the caller to name the protocol. Apache-2.0 can be combined with this MIT project if notices are kept. It is rejected because `go.mod` directly requires `github.com/ory/dockertest/v3` and `github.com/projectdiscovery/wappalyzergo`, and the README documents a `third_party/cryptolib` fork of Go's `crypto/ssh` used to export unexported handshake functions. That is a second SSH stack beside this module's `golang.org/x/crypto` v0.57.0 pin (fingerprintx requires v0.44.0). Fast mode also returns nothing unless the port's conventional service answers, which is the port-number inference this project does not report as identification. Checked sources: https://github.com/praetorian-inc/fingerprintx/blob/main/LICENSE, https://github.com/praetorian-inc/fingerprintx/blob/main/go.mod, https://github.com/praetorian-inc/fingerprintx/blob/main/README.md, https://pkg.go.dev/github.com/praetorian-inc/fingerprintx
+
+zgrab2 is actively maintained and its license is compatible, but it is a survey framework. The caller names the protocol (`zgrab2 http`). The module requires `github.com/zmap/zcrypto`, Prometheus, RabbitMQ, JARM and a flag library. This repository already limits zcrypto to certificate parsing for zlint and records "no legacy handshake client". Importing zgrab2 would expand that use. Checked sources: https://github.com/zmap/zgrab2/blob/master/LICENSE, https://github.com/zmap/zgrab2/blob/v1.0.0/go.mod, https://pkg.go.dev/github.com/zmap/zgrab2
+
+naabu is a port scanner. Its SYN mode needs libpcap or Npcap. Its connect mode repeats native TCP discovery and does not identify the protocol. masscan is AGPL and is built around high-rate SYN scanning. Ullaakut/nmap still executes Nmap, so the NPSL execute-and-parse wording still applies.
+
+The accepted implementation is standard-library TCP, a capped banner classification, one TLS handshake and one HTTP/1.1 request. It runs on Windows, Linux and macOS because it uses `net` and `crypto/tls`. It adds no module, no Nmap code and no Nmap data file. It does not claim Nmap or fingerprintx coverage: a silent port that is neither TLS nor HTTP is reported open and unidentified.
 
 ## 4. Capability catalog by category
 
@@ -154,14 +172,14 @@ In the architecture, each category maps to one module under `internal/modules/` 
 
 - **Native Go:**
   - TCP connect (done);
+  - service identification by banner, one TLS handshake and one HTTP request (ADR 006);
   - OS neighbor cache per OS;
-  - read-only mDNS/SSDP/SNMP inventory;
-  - port-number service hints, labelled as inference.
-- **Optional adapter:** Nmap, under the NPSL decision in §3.1. masscan is not recommended (AGPL, scan-rate focus).
+  - read-only mDNS/SSDP/SNMP inventory.
+- **Not used:** Nmap, under the decision in §3.1. masscan is not recommended (AGPL, scan-rate focus). A port number is not reported as a service.
 - **Out of scope:**
   - half-open SYN scanning;
   - OS fingerprinting;
-  - service-probe databases.
+  - service-probe databases, including `nmap-service-probes`.
 
 **(d) Platform and permission boundaries.**
 
@@ -416,7 +434,7 @@ Prefer `ek` or `fields` for bounded streaming. Source: https://www.wireshark.org
 | TCP connect, DNS, HTTP, certificates | Go core | network / future tls | A TLS summary is not a vulnerability audit |
 | Ping and traceroute | Platform adapters | probe | Privileges and ICMP behavior differ by OS |
 | Passive traffic rate | Counter deltas | network | Resets, interface replacement, monotonic time |
-| Advanced port/service discovery | Optional Nmap | tools | NPSL decision (§3.1); versioned parser |
+| TCP service identification | Native banner, TLS and HTTP | tools | ADR 006; no Nmap execution or data files |
 | Protocol inspection | Go decoding + optional TShark | capture / tools | Bounded output, file size, filters |
 | Built-in Windows capture | Optional Pktmon | capture | Elevation; ETL→pcapng conversion limits |
 | Wi-Fi metadata and saved key | Native adapter | wifi | Location consent, network type, OS authorization |
@@ -465,11 +483,11 @@ Keep the UI and ordinary diagnostics unprivileged. If a privileged helper become
 
 1. **Process isolation and licensing.**
    - A GPL/AGPL tool run as a separate process with argv arrays keeps the MIT core clean.
-   - NPSL is the exception (§3.1).
+   - NPSL is not accepted (§3.1). Do not execute Nmap.
    - Never bundle Nmap, Npcap, Wireshark or masscan.
 2. **Bounded parsing.**
    - Wrap adapter stdout in `io.LimitReader`.
-   - Use streaming decoders: `json.Decoder` for JSONL and `ek`, `xml.Decoder` token loops for Nmap XML.
+   - Use streaming decoders: `json.Decoder` for JSONL and `ek`. Do not parse Nmap XML.
    - Apply `exec.CommandContext` deadlines.
    - Send results to the event queue through a bounded channel.
 3. **Single capability probe.** One capability service, shared by CLI, desktop and web, reports:
@@ -479,9 +497,9 @@ Keep the UI and ordinary diagnostics unprivileged. If a privileged helper become
    - location consent;
    - BPF access on macOS;
    - `CAP_NET_RAW` on Linux;
-   - Nmap, TShark and iperf3 versions.
+   - TShark and iperf3 versions. Nmap is not inventoried.
 4. **Normalized result model.**
-   - Map Nmap XML, naabu JSONL, TShark `ek`, tlsx JSONL and iperf3 JSON into domain structs, so the UI never depends on adapter schemas.
+   - Map naabu JSONL, TShark `ek`, tlsx JSONL and iperf3 JSON into domain structs, so the UI never depends on adapter schemas. Service inspection already returns the application result directly.
    - Keep raw adapter output in memory, or in an explicit user export only.
 5. **Dependency watch list** (record in `docs/dependencies.md`):
 
@@ -555,7 +573,7 @@ Repository: https://github.com/AlexGalhardo/vukem-marketplace-reactjs (snapshot 
 
 ## 11. Open decisions and native verification items
 
-- NPSL position for the Nmap adapter: accept, waiver, or XML import only.
+- NPSL position for the Nmap adapter: decided on 2026-10-23. Nmap service inspection is cancelled (ADR 006).
 - `miekg/dns`: GitHub v1 vs the Codeberg module.
 - JA4+ (FoxIO License) implementation.
 - Whether `IcmpSendEcho2` and pro-bing work unelevated on Windows 10/11 targets.

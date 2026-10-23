@@ -187,20 +187,15 @@ if filepath.Base(filename) != filename {
 }
 ```
 
-kali-tools rules for Nmap, TShark and future tools:
+kali-tools rules for optional executables. Service inspection does not run Nmap (ADR 006):
 
 ```go
 // ✗ Never: shell, or a user-controlled argument list
-exec.CommandContext(ctx, "sh", "-c", "nmap "+target)
-exec.CommandContext(ctx, nmapPath, userArgs...)
+exec.CommandContext(ctx, "sh", "-c", "tshark "+target)
+exec.CommandContext(ctx, toolPath, userArgs...)
 
 // ✓ Fixed argv built from validated domain values; path resolved at bootstrap
-addr, err := netip.ParseAddr(target) // or a validated hostname/prefix
-if err != nil {
-    return domain.Invalid("invalid target")
-}
-argv := []string{"-sV", "-p", ports.String(), "-oX", "-", addr.String()}
-out, err := runner.Run(ctx, nmapPath, argv) // deadline, output caps, descendant kill
+out, err := runner.Run(ctx, toolPath, []string{"--version"}) // deadline, output caps, descendant kill
 ```
 
 Reject any value that starts with `-`, so a target can never become a tool option.

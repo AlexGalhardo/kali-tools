@@ -79,10 +79,10 @@ func TestNativeProviderAdapters(t *testing.T) {
 	if _, err := (wifi.Native{}).Reveal(ctx); !errors.Is(err, context.Canceled) {
 		t.Fatal(err)
 	}
-	if got := (tools.Runner{}).Inventory(ctx); len(got) != 2 {
+	if got := (tools.Runner{}).Inventory(ctx); len(got) != 1 || got[0].Name != "tshark" {
 		t.Fatalf("tool inventory = %+v", got)
 	}
-	if _, err := (tools.Runner{}).RunNmap(ctx, "0.0.0.0/0", []int{80}); err == nil {
+	if _, err := (tools.Runner{}).InspectServices(ctx, "0.0.0.0/0", []int{80}); err == nil {
 		t.Fatal("invalid scope accepted")
 	}
 	if _, _, err := (capture.Native{}).Capture(ctx, capture.LiveRequest{}); err == nil {

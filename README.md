@@ -8,7 +8,7 @@ A local network and security toolkit inspired by the Kali Linux ecosystem, built
 
 - Lists interfaces, addresses, gateways and DNS; monitors native traffic counters.
 - Runs DNS record queries, bounded TCP/HTTP/TLS checks and Windows IPv4 ping/traceroute.
-- Discovers explicitly selected IPv4 scopes and optionally inspects service signatures with separately installed Nmap.
+- Discovers explicitly selected IPv4 scopes and identifies services with built-in TCP, banner and TLS checks. It does not run Nmap.
 - Inspects Windows Wi-Fi metadata and reveals the current saved key only on explicit request; the display clears automatically.
 - Imports PCAP/PCAPNG, summarizes packets and explicitly saves retained packet data in either format.
 - Keeps preferences and redacted operation history locally in SQLite. No cloud runtime or telemetry is required.
@@ -261,7 +261,7 @@ Formatting and linting are enforced: run `lefthook install` once; each commit ru
 
 ## License and contribution
 
-Project code is licensed under [MIT](LICENSE.md). Bundled dependencies and vendored development skills retain their own licenses; see [the inventory](docs/dependencies.md). Nmap/TShark are optional separate installations and are not redistributed.
+Project code is licensed under [MIT](LICENSE.md). Bundled dependencies and vendored development skills retain their own licenses; see [the inventory](docs/dependencies.md). Nmap is not used. TShark is an optional separate installation and is not redistributed.
 
 Contributions follow [CONTRIBUTING.md](CONTRIBUTING.md). Report bugs through [GitHub issues](https://github.com/AlexGalhardo/kali-tools/issues) and security concerns through [SECURITY.md](SECURITY.md). Do not attach passwords, tokens or private packet contents.
 

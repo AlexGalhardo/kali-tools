@@ -1,6 +1,5 @@
 exit=0
 stdout:
-NOME    ESTADO               VERSÃO   CAMINHO
-nmap    disponível           fixture  /fixture/nmap
-tshark  dependência ausente           
+NOME    ESTADO               VERSÃO  CAMINHO
+tshark  dependência ausente          
 stderr:

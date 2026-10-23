@@ -30,7 +30,7 @@ type HostNetwork interface {
 
 type ToolRunner interface {
 	Inventory(context.Context) []Tool
-	RunNmap(context.Context, string, []int) (Nmap, error)
+	InspectServices(context.Context, string, []int) (Nmap, error)
 }
 
 type WiFiProvider interface {

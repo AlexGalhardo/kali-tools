@@ -97,7 +97,7 @@ func TestWriteRoutes(t *testing.T) {
 		{"POST", "/api/diagnostics", `{"kind":"tcp","target":"invalid;host","port":443,"timeout_ms":100}`, 400},
 		{"POST", "/api/diagnose", `{"kind":"tcp","target":"invalid;host","port":443,"timeout_ms":100}`, 400},
 		{"POST", "/api/discovery", `{"cidr":"0.0.0.0/0","ports":[443]}`, 400},
-		{"POST", "/api/inspect", `{"cidr":"127.0.0.1/32","ports":[443]}`, 424},
+		{"POST", "/api/inspect", `{"cidr":"127.0.0.1/32","ports":[443]}`, 200},
 		{"POST", "/api/jobs/invalid/cancel", "", 400},
 		{"POST", "/api/jobs/0123456789abcdef0123456789abcdef/cancel", "", 200},
 	} {
@@ -157,7 +157,7 @@ func TestJobRoutesAndSSE(t *testing.T) {
 func testApp(t *testing.T) *app.Application {
 	t.Helper()
 	store := fake.NewStore()
-	a := app.New(app.Deps{Jobs: store, Settings: store, Host: fake.Host{}, Tools: fake.Tools{Tools: []app.Tool{{Name: "nmap", State: "dependency_missing"}, {Name: "tshark", State: "dependency_missing"}}}, WiFi: fake.WiFi{Network: wifi.Network{SSID: "Fixture Network", State: "connected"}, Secret: wifi.Secret{State: "available", Value: "synthetic-test-key"}}})
+	a := app.New(app.Deps{Jobs: store, Settings: store, Host: fake.Host{}, Tools: fake.Tools{Tools: []app.Tool{{Name: "tshark", State: "dependency_missing"}}}, WiFi: fake.WiFi{Network: wifi.Network{SSID: "Fixture Network", State: "connected"}, Secret: wifi.Secret{State: "available", Value: "synthetic-test-key"}}})
 	t.Cleanup(func() {
 		if err := a.Close(); err != nil {
 			t.Error(err)
