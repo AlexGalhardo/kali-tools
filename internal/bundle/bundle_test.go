@@ -18,7 +18,7 @@ func TestSecretFixturesNeverAppear(t *testing.T) {
 	planted := strings.Join(secrets, " ")
 	note := "router 192.0.2.10 and 192.0.2.10 via 2001:db8::10 mac AA:BB:CC:DD:EE:FF ssid=CafeWiFi hostname=lab-host.internal at 2026-10-23T18:40:00.123456789Z see https://npcap.com/#download " + planted
 	body, err := bytesOf(Input{
-		AppVersion:  "0.7.0-dev.1",
+		AppVersion:  "0.7.0-dev.2",
 		GoVersion:   "go1.27.3",
 		OS:          "linux",
 		Arch:        "amd64",
@@ -72,7 +72,7 @@ func TestLogCapAndEmptyCollections(t *testing.T) {
 	for i := range logs {
 		logs[i] = Log{ID: "id", Kind: "tcp", State: "completed", Summary: "ok", Created: "2026-10-23T18:40:00Z"}
 	}
-	body, err := bytesOf(Input{AppVersion: "0.7.0-dev.1", OS: "linux", Arch: "amd64", Settings: Settings{Language: "en", RetentionDays: 30}, Logs: logs})
+	body, err := bytesOf(Input{AppVersion: "0.7.0-dev.2", OS: "linux", Arch: "amd64", Settings: Settings{Language: "en", RetentionDays: 30}, Logs: logs})
 	if err != nil {
 		t.Fatal(err)
 	}
