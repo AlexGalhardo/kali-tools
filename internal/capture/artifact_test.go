@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -15,6 +16,33 @@ import (
 	"github.com/gopacket/gopacket/layers"
 	"github.com/gopacket/gopacket/pcapgo"
 )
+
+func TestCommittedCaptureFixtures(t *testing.T) {
+	for _, format := range []string{"pcap", "pcapng"} {
+		t.Run(format, func(t *testing.T) {
+			path := filepath.Join("..", "..", "tests", "fixtures", "synthetic."+format)
+			raw, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if strings.Contains(string(raw), "synthetic-secret") {
+				t.Fatal("capture fixture contains a secret")
+			}
+			summary, retained, err := ReadArtifactFile(path)
+			if err != nil || retained == nil || len(summary.Packets) != 1 || summary.Packets[0].Protocol != "DNS" || summary.Packets[0].Source != "192.0.2.1" {
+				t.Fatalf("import %+v, %v", summary, err)
+			}
+			out := filepath.Join(t.TempDir(), "again."+format)
+			if err = retained.Save(t.Context(), out, format); err != nil {
+				t.Fatal(err)
+			}
+			again, _, err := ReadArtifactFile(out)
+			if err != nil || len(again.Packets) != 1 || again.Packets[0].Protocol != "DNS" || again.Packets[0].Source != "192.0.2.1" {
+				t.Fatalf("re-export %+v, %v", again, err)
+			}
+		})
+	}
+}
 
 func TestArtifactRoundTripAndOwnedBytes(t *testing.T) {
 	data := synthetic(t)

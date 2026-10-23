@@ -130,4 +130,4 @@ Service inspection is native TCP, banner, TLS and one HTTP request: an explicit 
 - Windows leads Wi-Fi and capture development. Linux and macOS binaries do not prove those features. Do not mark a PLAN.md checkbox without the evidence record.
 - Development artifacts are vendor-unsigned. macOS arm64 binaries keep the Go linker's ad-hoc signature, which is not a Developer ID signature. Do not create a release tag. Do not add Apple or Microsoft signing.
 - GitHub Actions were authorized on 2026-10-19. Actions under `.github/workflows/` stay pinned to full commit SHAs. `pull_request_target` is rejected by `node scripts/task.mjs workflows`.
-- `*.pcap`, `*.pcapng`, and `*.db` are gitignored, except `tests/fixtures/*.pcap`. `frontend/dist/` keeps only `.gitkeep`. `frontend/wailsjs/` is tracked generated source.
+- `*.pcap`, `*.pcapng`, and `*.db` are gitignored, except synthetic files in `tests/fixtures/`. `frontend/dist/` keeps only `.gitkeep`. `frontend/wailsjs/` is tracked generated source.

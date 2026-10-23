@@ -2,7 +2,9 @@ package storage
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -142,6 +144,108 @@ func TestStoredSettingsAreValidatedAndBounded(t *testing.T) {
 		if strings.Contains(err.Error(), "synthetic-secret") {
 			t.Fatal("settings error exposed input")
 		}
+	}
+}
+
+func TestClosedDatabaseCopyKeepsSettingsAndJob(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "history.db")
+	store, err := Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	created := time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC)
+	finished := created.Add(time.Second)
+	if err = store.SaveSettings(t.Context(), Settings{Language: "pt-BR", RetentionDays: 14}); err != nil {
+		t.Fatal(err)
+	}
+	if err = store.PutJob(t.Context(), Job{ID: "backup-job", Kind: "tcp", State: "completed", Created: created, Finished: &finished, Summary: "fixture kept"}); err != nil {
+		t.Fatal(err)
+	}
+	if err = store.Close(); err != nil {
+		t.Fatal(err)
+	}
+	backup := filepath.Join(dir, "backup.db")
+	for _, suffix := range []string{"", "-wal", "-shm"} {
+		src := path + suffix
+		if _, err = os.Stat(src); err != nil {
+			continue
+		}
+		copyDBFile(t, src, backup+suffix)
+	}
+	store, err = Open(backup)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = store.Close() }()
+	assertKeptFixture(t, store, "backup-job")
+	original, err := Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = original.Close() }()
+	assertKeptFixture(t, original, "backup-job")
+}
+
+func TestSchemaVersionOneFixtureReopens(t *testing.T) {
+	script, err := os.ReadFile("testdata/schema-v1.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(script), "synthetic-secret") {
+		t.Fatal("schema fixture contains a secret")
+	}
+	path := filepath.Join(t.TempDir(), "history.db")
+	db, err := sql.Open("sqlite", path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.Exec(string(script)); err != nil {
+		t.Fatal(err)
+	}
+	if err = db.Close(); err != nil {
+		t.Fatal(err)
+	}
+	store, err := Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = store.Close() }()
+	assertKeptFixture(t, store, "fixture-job")
+}
+
+func assertKeptFixture(t *testing.T, store *Store, id string) {
+	t.Helper()
+	settings, err := store.Settings(t.Context())
+	if err != nil || settings.Language != "pt-BR" || settings.RetentionDays != 14 {
+		t.Fatalf("settings = %+v, err = %v", settings, err)
+	}
+	history, err := store.History(t.Context())
+	if err != nil || len(history) != 1 || string(history[0].ID) != id || history[0].State != "completed" || history[0].Summary != "fixture kept" {
+		t.Fatalf("history = %+v, err = %v", history, err)
+	}
+	if strings.Contains(history[0].Summary, "synthetic-secret") {
+		t.Fatal("history exposed a secret")
+	}
+}
+
+func copyDBFile(t *testing.T, src, dst string) {
+	t.Helper()
+	in, err := os.Open(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = in.Close() }()
+	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = io.Copy(out, in); err != nil {
+		_ = out.Close()
+		t.Fatal(err)
+	}
+	if err = out.Close(); err != nil {
+		t.Fatal(err)
 	}
 }
 

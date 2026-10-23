@@ -1,0 +1,2 @@
+schema_version,interface_index,interface_name,family,address,mac,state,router
+1,2,eth0,ipv4,192.0.2.10,00:00:5e:00:53:0a,reachable,false

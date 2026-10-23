@@ -19,6 +19,7 @@
 *.pcap
 *.pcapng
 !/tests/fixtures/*.pcap
+!/tests/fixtures/*.pcapng
 
 # Local Windows development preview
 /kali-tools-desktop.exe
