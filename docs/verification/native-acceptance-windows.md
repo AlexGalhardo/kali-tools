@@ -6,6 +6,8 @@ Record `winver` once. Save screenshots and command output under a folder you kee
 
 H07's Windows neighbor, ICMP, inventory and elevated-capture data branches already have evidence from 2026-10-21. This list does not repeat them. B09 has no separate Windows gate; step 12 only confirms the panel is present. Step 13 is the B10 native check.
 
+There is no privileged helper ([ADR 011](../adr/011-no-privileged-helper.md)). Install Npcap yourself from https://npcap.com/#download. kali-tools detects it and never bundles or redistributes it. Pktmon and raw IPv4 capture need an elevated terminal. kali-tools never elevates itself.
+
 1. **Record the host.** Run `winver`. Expected: Windows 11, build 26100 or newer for the location-consent steps. Evidence: `01-winver.png`. Supports every step below.
 
 2. **Launch the desktop app.** Open the CI desktop build. Expected: Overview lists this machine's adapters and the sidebar does not say "Not connected". Open Interfaces and confirm the addresses, gateway and DNS match `Get-NetIPConfiguration`. Evidence: `02-overview.png`, `02-interfaces.png`, and the PowerShell output. Closes the practical native-bridge check for H01 AC-10, H03 AC-11, H04 AC-12, H05 AC-17/18 and H06 AC-17 on the installed artifact. A source checkout can also run `node scripts/task.mjs bridge`; the CI artifact does not include that test binary.

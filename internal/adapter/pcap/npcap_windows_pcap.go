@@ -124,7 +124,7 @@ func (n *Npcap) Capture(ctx context.Context, r capture.LiveRequest) (capture.Liv
 
 func openError(err error) error {
 	if strings.Contains(strings.ToLower(err.Error()), "access is denied") {
-		return &domain.Error{Code: domain.CodePermissionRequired, Message: "Npcap could not open the device: access denied"}
+		return &domain.Error{Code: domain.CodePermissionRequired, Message: "Npcap could not open the device. Start kali-tools from an elevated terminal. kali-tools never elevates itself and never redistributes Npcap."}
 	}
 	return &domain.Error{Code: domain.CodeFailed, Message: "Npcap could not open the device"}
 }

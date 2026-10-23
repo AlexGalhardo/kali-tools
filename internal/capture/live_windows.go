@@ -19,7 +19,7 @@ import (
 
 func (Native) Status(context.Context) domain.Capability {
 	c := domain.Capability{ID: "capture_live", Provider: "windows", State: domain.CapabilityPermissionRequired,
-		Detail: "Administrator permission; raw IPv4 only, no Ethernet frames or drop counts"}
+		Detail: "Start kali-tools from an elevated terminal. Raw IPv4 only, no Ethernet frames or drop counts. kali-tools never elevates itself."}
 	if windows.GetCurrentProcessToken().IsElevated() {
 		c.State = domain.CapabilityAvailable
 	}
@@ -46,7 +46,7 @@ func live(ctx context.Context, r LiveRequest, artifact *Artifact) (LiveResult, e
 	socket, e := windows.Socket(windows.AF_INET, windows.SOCK_RAW, windows.IPPROTO_IP)
 	if e != nil {
 		if errors.Is(e, windows.WSAEACCES) {
-			return result, &domain.Error{Code: "permission_required", Message: "Raw IPv4 capture requires Windows administrator authorization"}
+			return result, &domain.Error{Code: "permission_required", Message: "Raw IPv4 capture requires Windows administrator authorization. Start kali-tools from an elevated terminal. kali-tools never elevates itself."}
 		}
 		return result, e
 	}

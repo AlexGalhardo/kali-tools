@@ -65,11 +65,11 @@ func capability(s NpcapStatus, built, elevated bool) domain.Capability {
 	case !s.Installed && s.LegacyWinPcap:
 		c.State, c.Detail = domain.CapabilityUnsupported, "WinPcap is not supported; install Npcap yourself from "+NpcapDownloadURL
 	case !s.Installed:
-		c.State, c.Detail = domain.CapabilityDependencyMissing, "Npcap is not installed. kali-tools never bundles or installs it; install it yourself from "+NpcapDownloadURL
+		c.State, c.Detail = domain.CapabilityDependencyMissing, "Npcap is not installed. Install it yourself from "+NpcapDownloadURL+". kali-tools never bundles or redistributes Npcap; the free license forbids redistribution without a commercial license."
 	case !built:
 		c.State, c.Detail = domain.CapabilityUnsupported, fmt.Sprintf("Npcap %s detected; this build does not include the Npcap backend (build tag pcap)", s.Version)
 	case s.AdminOnly && !elevated:
-		c.State, c.Detail = domain.CapabilityPermissionRequired, "Npcap is installed in Administrators-only mode; start kali-tools as Administrator"
+		c.State, c.Detail = domain.CapabilityPermissionRequired, "Npcap is installed in Administrators-only mode. Start kali-tools from an elevated terminal. kali-tools never elevates itself and never redistributes Npcap."
 	default:
 		c.State, c.Detail = domain.CapabilityAvailable, fmt.Sprintf("Npcap %s; Ethernet frames with drop counters", s.Version)
 	}

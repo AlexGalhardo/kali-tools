@@ -321,6 +321,8 @@ C01 provides the command tree, strict flags, stable exit codes, human output by 
 
 Add `<name>_<goos>.go` beside the existing files, keeping the same constructor and method set. Keep the `_other.go` fallback returning an explicit unsupported error. Run `GOOS=windows|linux|darwin go vet ./...`. Never mark native acceptance from cross-compilation.
 
+B03 ships no privileged helper and no helper IPC ([ADR 011](adr/011-no-privileged-helper.md)). Linux capture privilege is `sudo setcap cap_net_raw+eip` on the binary. macOS `capture_live` reports whether this user can open `/dev/bpf` and never changes device permissions. Windows detects a user-installed Npcap and never redistributes it. A missing permission is a capability state plus the fix. The UI and the web server stay unprivileged. Native acceptance remains open.
+
 B01's documented Linux baseline is Ubuntu 24.04 LTS ([ADR 010](adr/010-linux-baseline.md)). Debian 13 and Kali are best-effort and come with no guarantee. Linux routes and counters come from netlink, with the procfs readers as fallback. Neighbors already use netlink. Native acceptance remains open.
 
 ### 7.3 Moving or renaming packages
