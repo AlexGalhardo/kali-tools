@@ -5,9 +5,9 @@ stdout:
     "arch": "ARCH",
     "go": "goX",
     "os": "OS",
-    "version": "0.7.0-dev.1"
+    "version": "0.7.0-dev.2"
   },
   "schema_version": 1,
-  "version": "0.7.0-dev.1"
+  "version": "0.7.0-dev.2"
 }
 stderr:

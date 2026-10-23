@@ -4,13 +4,17 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [0.7.0-dev.2] - 2026-10-23
+
+Unsigned development preview; hardware qualification remains open. Not a release-qualified build.
+
 ### Added
 
-- **Release environment.** The steps to create a protected `release` environment for AlexGalhardo are documented. The token used here received 403, so the environment was not created and the workflow was not changed.
-- **Qualification notes.** Install, upgrade, rollback, accessibility and the web-server threat model are written down for review. None of those R02 checks was run or accepted.
-- **Contract freeze.** CLI commands, HTTP routes, schema version 1, settings `language` and `retention_days`, and the packaging matrix are the supported surface. An operating system outside that matrix is not supported. kali-tools does not promise every Kali tool or every protocol payload.
-- **Packaging.** The archive matrix names Windows x64, Ubuntu 24.04 x64 and macOS Apple Silicon. Intel Mac, Windows ARM, Debian and Kali are not supported baselines. There is no installer. Deleting the unpacked directory leaves `history.db` in the per-user config directory. Each archive includes third-party notices.
-- **Connections and throughput.** `connections` and `GET /api/connections` list Linux sockets with the owning process. A missing inode is omitted. An unreadable socket table is `permission_required`. Windows and macOS report `unsupported`. The table has no interface counters and no bandwidth estimate. `throughput --duration` and `POST /api/throughput` exchange bytes on `127.0.0.1` for 1ms..10s and report the endpoint, duration and byte count. Cancellation stops the exchange. An iperf3 `-J` report can be parsed; iperf3 is not executed and the exchange is not wire-compatible.
+- **Connections and throughput.** `connections` and `GET /api/connections` list Linux sockets with the owning process. A missing inode is omitted. An unreadable socket table is `permission_required`. Windows and macOS report `unsupported`. The table has no interface counters and no bandwidth estimate. `throughput --duration` and `POST /api/throughput` exchange bytes on `127.0.0.1` for 1ms..10s and report the endpoint, duration and byte count. Cancellation stops the exchange. An iperf3 `-J` report can be parsed; iperf3 is not executed and the exchange is not wire-compatible ([#20](https://github.com/AlexGalhardo/kali-tools/pull/20)).
+- **Packaging.** The archive matrix names Windows x64, Ubuntu 24.04 x64 and macOS Apple Silicon. Intel Mac, Windows ARM, Debian and Kali are not supported baselines. There is no installer. Deleting the unpacked directory leaves `history.db` in the per-user config directory. Each archive includes third-party notices ([#21](https://github.com/AlexGalhardo/kali-tools/pull/21)).
+- **Contract freeze.** CLI commands, HTTP routes, schema version 1, settings `language` and `retention_days`, and the packaging matrix are the supported surface. An operating system outside that matrix is not supported. kali-tools does not promise every Kali tool or every protocol payload ([#22](https://github.com/AlexGalhardo/kali-tools/pull/22)).
+- **Qualification notes.** Install, upgrade, rollback, accessibility and the web-server threat model are written down for review. None of those R02 checks was run or accepted ([#23](https://github.com/AlexGalhardo/kali-tools/pull/23)).
+- **Release environment.** The steps to create a protected `release` environment for AlexGalhardo are documented. The token used here received 403, so the environment was not created and the workflow was not changed ([#24](https://github.com/AlexGalhardo/kali-tools/pull/24)).
 
 ## [0.7.0-dev.1] - 2026-10-23
 

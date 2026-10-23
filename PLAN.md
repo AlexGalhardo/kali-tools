@@ -647,6 +647,7 @@ The plan does not claim feature parity with every Kali package.
 
 **Checklist reviews.**
 
+- 2026-10-23: development preview `0.7.0-dev.2` records pull requests [#20](https://github.com/AlexGalhardo/kali-tools/pull/20) through [#24](https://github.com/AlexGalhardo/kali-tools/pull/24). Hardware qualification remains open. See [evidence](docs/verification/0.7.0-dev.2.md). No `v1.0.0` tag.
 - 2026-10-19: Go tests/vet, capture race tests and 11 frontend workflow tests passed. See [development evidence](docs/verification/0.1.0-alpha.1-dev.md).
 - 2026-10-21: architecture review and S10 reorganization, verified as recorded in S10.
 - 2026-10-21: S11 code review and formatting enforcement. Version bumped to `0.1.0-alpha.2-dev`. See [evidence](docs/verification/0.1.0-alpha.2-dev.md). Owner instruction: CI/CD runs on GitHub, not locally.
