@@ -1,0 +1,19 @@
+---
+description: React UI layout, Biome, and the Go bridge
+globs: "frontend/**/*.{ts,tsx,css}"
+alwaysApply: false
+---
+
+# Frontend
+
+Biome (`frontend/biome.json`) formats TypeScript and CSS with two-space indent and double quotes. Check with `npm --prefix frontend run lint`. The production build is `npm --prefix frontend run build`. Tailwind v4 is enabled via `tailwindDirectives` in that Biome config.
+
+Pages live in `frontend/src/features/<capability>/` and are composed by `frontend/src/app/App.tsx`. Page ids are the union in `frontend/src/app/shell.ts`. Shared widgets live in `frontend/src/shared/ui/`. Interactive controls use `@base-ui/react`.
+
+All Go calls go through `frontend/src/shared/api/bridge.ts` (Wails `window.go` or authenticated HTTP and SSE). Feature code does not import `frontend/wailsjs`. That tree is generated; `node scripts/task.mjs bindings` regenerates it and fails on drift.
+
+User-visible copy is `en` and `pt` in `frontend/src/shared/i18n/i18n.ts`. Add a key to both catalogs. Error and capability states use the stable codes from `internal/domain`.
+
+Playwright config is `frontend/playwright.config.ts`: one worker, projects `wails-fake` and `http`, `PW_PORT` default 4173, `PW_HTTP_PORT` default 4174. `node scripts/task.mjs web` runs lint, build, and `npm test`.
+
+Keep `frontend/package-lock.json` and `frontend/bun.lock` in sync. Bun is pinned to 1.4.3. Do not commit `frontend/dist` except `.gitkeep`.
