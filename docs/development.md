@@ -79,7 +79,7 @@ Run `node scripts/task.mjs arch` to prove each of eight dependency rules rejects
 
 The owner authorized workflow activation on 2026-10-19. See [the CI/CD guide](ci/README.md). `node scripts/task.mjs workflows` checks active source/pins; `go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12` performs full workflow static validation.
 
-After a native CLI/desktop build, `go mod download all` and `node scripts/package.mjs` assemble that host's release archive with notices and source metadata. Go/production frontend licenses are collected from pinned installed sources; missing notice files fail packaging. Native CI supplies Windows x64, Linux x64 and both Mac architectures.
+After a native CLI/desktop build, `go mod download all` and `node scripts/package.mjs` assemble that host's release archive with notices and source metadata. Go/production frontend licenses are collected from pinned installed sources; missing notice files fail packaging. Native CI supplies Windows x64, Ubuntu 24.04 x64 and macOS Apple Silicon. The matrix, uninstall and writable-data path are in [packaging](packaging.md).
 
 DNS accepts `--record A|AAAA|CNAME|MX|NS|TXT|PTR`. Discovery and native service inspection each use at most 100 probes/second, 32 workers and a two-minute deadline. Service inspection does not run Nmap. Packet conversion is explicit: `go run ./cmd/kali-tools capture import --file input.pcap --output output.pcapng --format pcapng`.
 

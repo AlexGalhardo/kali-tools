@@ -17,7 +17,7 @@ A local network and security toolkit inspired by the Kali Linux ecosystem, built
 
 [GitHub releases](https://github.com/AlexGalhardo/kali-tools/releases) contain development release drafts assembled only after CI passes. Archives target Windows x64, Ubuntu 24.04 x64 and macOS Apple Silicon (macOS 13 or later). There is no Intel or universal macOS build for 1.0. Each archive includes the desktop, CLI, license/notices, dependency inventory and build metadata. Verify downloads against `SHA256SUMS`. The release workflow also publishes a Sigstore build attestation. See [ADR 009](docs/adr/009-signing-and-provenance.md).
 
-Windows uses Edge WebView2. Linux requires GTK3 and WebKitGTK 4.1. Releases are vendor-unsigned: no Apple Developer ID, notarization, or Windows Authenticode certificate. An Apple Silicon build keeps only the ad-hoc signature the Go linker applies so the binary can run. Read the release notes before testing; a successful native build does not qualify hardware features.
+Windows uses Edge WebView2. Linux requires GTK3 and WebKitGTK 4.1. Releases are vendor-unsigned: no Apple Developer ID, notarization, or Windows Authenticode certificate. An Apple Silicon build keeps only the ad-hoc signature the Go linker applies so the binary can run. The supported archive matrix, and the combinations that are not supported, are in [packaging](docs/packaging.md). Read the release notes before testing; a successful native build does not qualify hardware features.
 
 ## First launch of an unsigned build
 
@@ -251,6 +251,7 @@ On Windows 11 24H2+, a Wi-Fi location-consent notice points to Settings > Privac
 - [Tools, licenses and platform research](docs/tools-research.md)
 - [Development and native acceptance](docs/development.md)
 - [Dependency inventory](docs/dependencies.md)
+- [Packaging matrix](docs/packaging.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)
 - [Verification evidence](docs/verification/0.1.0-alpha.2-dev.md) ([previous](docs/verification/0.1.0-alpha.1-dev.md))

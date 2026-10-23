@@ -42,6 +42,8 @@ Privilege for 1.0 is a one-time `sudo setcap cap_net_raw+eip` on the capture bin
 
 14. **Socket inventory and loopback throughput.** While a listener you own is visible to `ss -ltnp`, run `./kali-tools connections --json`. Expected: that listener's port, pid and process name appear, and the JSON has no rate and no interface counter. A socket with no readable owner is omitted. If `/proc/net/tcp` is unreadable, the command exits 4 with `permission_required`. Then `./kali-tools throughput --duration 1 --json`. Expected: exit 0, `endpoint` is `127.0.0.1:<port>`, `duration_ms` is 1000, `byte_count` is greater than 0, and `source` is `kali-tools`. Evidence: `14-connections.json`, `14-throughput.json`. This does not close B04 until the pasted evidence is recorded.
 
+15. **Archive and data directory.** Unpack the CI `.tar.gz` on Ubuntu 24.04. Expected files: `kali-tools`, `kali-tools-desktop`, `LICENSE.md`, `README.md`, `THIRD_PARTY_NOTICES.txt`, `dependencies.json` and `BUILD.json` with `"platform": "linux"` and `"signed": false`. If the desktop app fails because WebKitGTK 4.1 is missing, save the error as `15-webview.txt`. After one successful start, `~/.config/kali-tools/history.db` exists unless `XDG_CONFIG_HOME` is set. Deleting the unpacked directory leaves that file. Evidence: `15-listing.txt`. This does not close B07. Debian or Kali output does not count as the baseline.
+
 ## Paste-back template
 
 ```text

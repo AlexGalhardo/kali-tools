@@ -6,6 +6,7 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ### Added
 
+- **Packaging.** The archive matrix names Windows x64, Ubuntu 24.04 x64 and macOS Apple Silicon. Intel Mac, Windows ARM, Debian and Kali are not supported baselines. There is no installer. Deleting the unpacked directory leaves `history.db` in the per-user config directory. Each archive includes third-party notices.
 - **Connections and throughput.** `connections` and `GET /api/connections` list Linux sockets with the owning process. A missing inode is omitted. An unreadable socket table is `permission_required`. Windows and macOS report `unsupported`. The table has no interface counters and no bandwidth estimate. `throughput --duration` and `POST /api/throughput` exchange bytes on `127.0.0.1` for 1ms..10s and report the endpoint, duration and byte count. Cancellation stops the exchange. An iperf3 `-J` report can be parsed; iperf3 is not executed and the exchange is not wire-compatible.
 
 ## [0.7.0-dev.1] - 2026-10-23
