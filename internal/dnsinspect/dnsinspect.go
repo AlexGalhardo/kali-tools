@@ -1,6 +1,7 @@
 package dnsinspect
 
 import (
+	"context"
 	"net"
 	"net/netip"
 	"net/url"
@@ -44,8 +45,7 @@ type Request struct {
 	TimeoutMS    int      `json:"timeout_ms"`
 }
 
-// Report is the inspection result. Fields other than name, type, queries and
-// limited stay empty until that check is implemented.
+// Report is the inspection result.
 type Report struct {
 	Name      string            `json:"name"`
 	Type      string            `json:"type"`
@@ -267,4 +267,105 @@ func validateDoT(raw string) error {
 		return domain.Invalid("invalid DoT endpoint")
 	}
 	return nil
+}
+
+// Inspect runs the requested read-only checks. It returns an error only for
+// invalid input, cancellation, or the overall deadline. Network failures are
+// statuses on the report.
+func Inspect(ctx context.Context, r Request, systemServers []string) (Report, error) {
+	if err := Validate(r); err != nil {
+		return Report{}, err
+	}
+	if r.Type == "" {
+		r.Type = "A"
+	}
+	parent := ctx
+	if err := doneErr(parent, parent); err != nil {
+		return Report{}, err
+	}
+	ins := newInspector(r)
+	deadline := OverallDeadline
+	if ins.deadline > 0 {
+		deadline = ins.deadline
+	}
+	ctx, cancel := context.WithTimeout(parent, deadline)
+	defer cancel()
+	stop := ins.start(ctx)
+	defer stop()
+	resolvers := mergeResolvers(r.Resolvers, systemServers)
+	report := Report{Name: r.Name, Type: r.Type}
+	for _, check := range r.Checks {
+		if err := doneErr(parent, ctx); err != nil {
+			return ins.finish(report), err
+		}
+		switch check {
+		case "compare":
+			report.Compare = ins.compare(ctx, r, resolvers)
+		case "soa_ns":
+			report.SOANS = ins.soaNS(ctx, r, resolvers)
+		case "dnssec":
+			chain, err := ins.dnssecCheck(ctx, r, resolvers)
+			if err != nil {
+				return ins.finish(report), err
+			}
+			report.DNSSEC = chain
+		case "encrypted":
+			report.Encrypted = ins.encryptedCheck(ctx, r)
+		}
+	}
+	if err := doneErr(parent, ctx); err != nil {
+		return ins.finish(report), err
+	}
+	return ins.finish(report), nil
+}
+
+func doneErr(parent, ctx context.Context) error {
+	if parent.Err() != nil {
+		return &domain.Error{Code: domain.CodeCancelled, Message: "cancelled"}
+	}
+	if ctx.Err() != nil {
+		return &domain.Error{Code: domain.CodeTimeout, Message: "timeout"}
+	}
+	return nil
+}
+
+func mergeResolvers(explicit, system []string) []string {
+	out := []string{}
+	seen := map[string]struct{}{}
+	add := func(raw string) {
+		canonical, err := canonicalResolver(raw)
+		if err != nil || len(out) >= MaxResolvers {
+			return
+		}
+		if _, ok := seen[canonical]; ok {
+			return
+		}
+		seen[canonical] = struct{}{}
+		out = append(out, canonical)
+	}
+	for _, raw := range explicit {
+		add(raw)
+	}
+	for _, raw := range system {
+		add(raw)
+	}
+	return out
+}
+
+func apex(name string) string {
+	name = strings.ToLower(strings.TrimSpace(name))
+	name = strings.TrimSuffix(name, ".")
+	if name == "" {
+		return "."
+	}
+	return name + "."
+}
+
+func parentZone(name string) string {
+	name = strings.TrimSuffix(apex(name), ".")
+	dot := strings.IndexByte(name, '.')
+	if dot < 0 || dot == len(name)-1 {
+		return "."
+	}
+	return name[dot+1:] + "."
 }

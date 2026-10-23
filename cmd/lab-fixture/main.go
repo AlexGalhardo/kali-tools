@@ -14,7 +14,7 @@ import (
 
 func main() {
 	if len(os.Args) == 2 && os.Args[1] == "--health" {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
 		req, e := http.NewRequestWithContext(ctx, http.MethodGet, "http://127.0.0.1:8080/health", nil)
 		if e != nil {
@@ -40,10 +40,21 @@ func main() {
 		if e != nil || len(addresses) != 1 || addresses[0] != "192.0.2.42" {
 			os.Exit(1)
 		}
+		if !probeLabDNS() {
+			os.Exit(1)
+		}
 		return
 	}
+	now := time.Now()
+	pemBytes, cert := labCertificate()
+	startNameServers(now)
+	startEncrypted(pemBytes, cert)
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(204) })
+	mux.HandleFunc("/lab-ca.pem", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/x-pem-file")
+		_, _ = w.Write(labCAPEM)
+	})
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(200) })
 	go func() {
 		listener, e := net.Listen("tcp", ":9090")
@@ -81,11 +92,14 @@ func serveDNS() {
 		}
 		q := query.Questions[0]
 		response := dnsmessage.Message{Header: dnsmessage.Header{ID: query.ID, Response: true, RecursionDesired: query.RecursionDesired, RecursionAvailable: true}, Questions: query.Questions}
-		if q.Name.String() == "fixture.test." {
-			if q.Type == dnsmessage.TypeA {
-				response.Answers = []dnsmessage.Resource{{Header: dnsmessage.ResourceHeader{Name: q.Name, Type: dnsmessage.TypeA, Class: dnsmessage.ClassINET, TTL: 1}, Body: &dnsmessage.AResource{A: [4]byte{192, 0, 2, 42}}}}
-			}
-		} else {
+		switch {
+		case q.Name.String() == "fixture.test." && q.Type == dnsmessage.TypeA:
+			response.Answers = []dnsmessage.Resource{{Header: dnsmessage.ResourceHeader{Name: q.Name, Type: dnsmessage.TypeA, Class: dnsmessage.ClassINET, TTL: 1}, Body: &dnsmessage.AResource{A: [4]byte{192, 0, 2, 42}}}}
+		case q.Name.String() == "differs.test." && q.Type == dnsmessage.TypeA:
+			response.Answers = []dnsmessage.Resource{{Header: dnsmessage.ResourceHeader{Name: q.Name, Type: dnsmessage.TypeA, Class: dnsmessage.ClassINET, TTL: 1}, Body: &dnsmessage.AResource{A: [4]byte{192, 0, 2, 42}}}}
+		case q.Name.String() == "fixture.test.":
+			// Other types keep NOERROR with an empty answer, as before.
+		default:
 			response.RCode = dnsmessage.RCodeNameError
 		}
 		raw, e := response.Pack()

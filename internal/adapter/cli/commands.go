@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/contract"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
+	"github.com/AlexGalhardo/kali-tools/internal/dnsinspect"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/job"
 	"github.com/AlexGalhardo/kali-tools/internal/tlsaudit"
@@ -33,6 +35,7 @@ var commands = []command{
 	{path: "diagnose", synopsis: "diagnose [dns|tcp|http|tls|ping|trace] [flags]", needsApp: true, flags: []string{"target", "kind", "port", "record", "redirects"}},
 	{path: "discover", synopsis: "Discover a bounded IPv4 scope", needsApp: true, flags: []string{"target", "ports", "format"}},
 	{path: "inspect", synopsis: "Inspect services on an explicit IPv4 scope", needsApp: true, flags: []string{"target", "ports", "format"}},
+	{path: "dns-inspect", synopsis: "Compare resolvers and check SOA, NS, DNSSEC, DoH and DoT", needsApp: true, flags: []string{"target", "record", "resolvers", "doh", "dot", "checks", "trust-anchor"}},
 	{path: "wifi", synopsis: "Show current Wi-Fi metadata", needsApp: true},
 	{path: "wifi show", synopsis: "Show current Wi-Fi metadata", needsApp: true},
 	{path: "wifi reveal", synopsis: "Print the saved key only with --confirm", needsApp: true, flags: []string{"confirm"}},
@@ -64,6 +67,42 @@ func runAdditional(ctx context.Context, a *app.Application, call invocation, std
 			return nil, err, true
 		}
 		return contract.FromTLSAudit(value), nil, true
+	case "dns-inspect":
+		timeout := call.g.Timeout
+		if timeout == 0 {
+			timeout = 2 * time.Second
+		}
+		resolvers, err := splitList(call.values["resolvers"])
+		if err != nil {
+			return nil, err, true
+		}
+		doh, err := splitList(call.values["doh"])
+		if err != nil {
+			return nil, err, true
+		}
+		dot, err := splitList(call.values["dot"])
+		if err != nil {
+			return nil, err, true
+		}
+		checks, err := splitList(call.values["checks"])
+		if err != nil {
+			return nil, err, true
+		}
+		var anchors []string
+		if call.values["trust-anchor"] != "" {
+			if len(call.values["trust-anchor"]) > 1024 {
+				return nil, domain.Invalid("list is too long"), true
+			}
+			anchors = []string{call.values["trust-anchor"]}
+		}
+		value, err := a.InspectDNS(ctx, dnsinspect.Request{
+			Name: call.values["target"], Type: call.values["record"], Resolvers: resolvers, DoH: doh, DoT: dot,
+			Checks: checks, TrustAnchors: anchors, TimeoutMS: int(timeout.Milliseconds()),
+		})
+		if err != nil {
+			return nil, err, true
+		}
+		return contract.FromDNSInspect(value), nil, true
 	case "serve":
 		return nil, domain.Invalid("serve is handled by the kali-tools binary"), true
 	case "capabilities":
@@ -177,4 +216,14 @@ func deprecation(call invocation) (string, string) {
 		}
 	}
 	return "", ""
+}
+
+func splitList(value string) ([]string, error) {
+	if len(value) > 1024 {
+		return nil, domain.Invalid("list is too long")
+	}
+	if value == "" {
+		return nil, nil
+	}
+	return strings.Split(value, ","), nil
 }

@@ -305,3 +305,16 @@ test("HTTP diagnostic shows phases, headers and the redirect target", async ({pa
   expect(await page.evaluate(() => document.documentElement.dataset.redirects)).toBe("0");
  }
 });
+
+test("DNS inspection renders comparison, SOA/NS and DNSSEC verdicts", async ({page, connect}, info) => {
+ const report = {name:"differs.test",type:"A",queries:4,limited:false,compare:{agree:false,groups:[["192.0.2.1:5353"],["192.0.2.1:5356"]],results:[{resolver:"192.0.2.1:5353",transport:"udp",status:"ok",ad:false,answers:["differs.test. 0 in a 192.0.2.42"],elapsed_ms:1},{resolver:"192.0.2.1:5356",transport:"udp",status:"ok",ad:false,answers:["differs.test. 0 in a 192.0.2.43"],elapsed_ms:1}]},soa_ns:{zone:"mismatch.test.",servers:[{ns:"ns1.mismatch.test.",address:"192.0.2.10",status:"ok",serial:100,ns_set:["ns1.mismatch.test.","ns2.mismatch.test."],aa:true},{ns:"ns2.mismatch.test.",address:"192.0.2.10",status:"ok",serial:101,ns_set:["ns1.mismatch.test.","ns2.mismatch.test."],aa:true}],serials_agree:false,ns_sets_agree:true,verdict:"serial_mismatch"},dnssec:{links:[{zone:"signed.test.",ds_matches:true,key_tag:38590,algorithm:"ED25519",sig_valid:true,status:"secure"}],answer_sig:true,verdict:"secure",resolver:"192.0.2.1:5356"},encrypted:[{endpoint:"https://fixture:8443/dns-query",protocol:"doh",status:"ok",rcode:"NOERROR",elapsed_ms:1}]};
+ await page.route("**/api/dns/inspect", route => route.fulfill({json: report}));
+ await connect(page);
+ if (info.project.name === "wails-fake") await page.evaluate(value => Object.assign(window.go!.wailsui!.Bindings!, {InspectDNS: async () => value}), report);
+ await page.getByRole("button", {name: "Diagnostics", exact: true}).click();
+ await page.getByRole("tab", {name: "DNS inspection", exact: true}).click();
+ await page.getByRole("button", {name: "Inspect DNS", exact: true}).click();
+ await expect(page.getByText("Disagree", {exact: true})).toBeVisible();
+ await expect(page.getByText("Serial numbers differ", {exact: true})).toBeVisible();
+ await expect(page.getByText("Signed and validated", {exact: true})).toBeVisible();
+});

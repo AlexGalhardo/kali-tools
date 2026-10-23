@@ -22,6 +22,8 @@ export function History():Promise<Array<contract.Job>>;
 
 export function ImportCapture():Promise<contract.Capture>;
 
+export function InspectDNS(arg1:contract.DNSInspectRequest):Promise<contract.DNSInspectReport>;
+
 export function InspectServices(arg1:string,arg2:Array<number>):Promise<contract.ServiceInspection>;
 
 export function Interfaces():Promise<Array<contract.Interface>>;

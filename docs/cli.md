@@ -508,3 +508,9 @@ Development artifacts remain unsigned. Native SSH, Wi-Fi, capture and desktop ac
 `kali-tools tls-audit --target <host> [--port 443] [--server-name <sni>] [--timeout 5000] [--lint=true] [--json]`
 
 Reports certificate metadata, explicit verification, protocol support and zlint findings. SNI must be a DNS name. Per-attempt timeout is 500..15000 ms and the overall audit is bounded to 60 seconds. No application data or exploit probes are sent. Certificate distrust and lint findings still exit 0; connection failure exits 1 and invalid input exits 2. History contains state and certificate/error/warning counts only. The Windows/macOS verifier follows the platform trust store; native acceptance is tracked separately.
+
+## dns-inspect
+
+`kali-tools dns-inspect --target <name> [--record A] [--resolvers ip[:port],…] [--doh url,…] [--dot host[:port],…] [--checks compare,soa_ns,dnssec,encrypted] [--trust-anchor "<DS RR>"] [--timeout 2000] [--json]`
+
+Compares the system resolver with explicit resolvers and can check SOA/NS consistency, a read-only DNSSEC chain, and DoH/DoT reachability. `--record` defaults to A. `--checks` defaults to `compare`. Each comma-separated list and the trust-anchor text is limited to 1,024 bytes. The per-query timeout is 200..5000 ms and reuses the global `--timeout` flag; the overall inspection stops at 30 seconds. Invalid input exits 2. Network failures stay on the result and still exit 0. History stores the state, query count and check count only. Observed DNSSEC validation is not a trust decision. Zone transfer, NSEC walking and name guessing are not implemented.

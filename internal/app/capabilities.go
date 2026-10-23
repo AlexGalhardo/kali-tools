@@ -44,5 +44,6 @@ func capabilities() []domain.Capability {
 	}
 	all = append(all, c)
 	all = append(all, domain.Capability{ID: "tls_audit", State: domain.CapabilityAvailable, Provider: "go/crypto+zlint", Detail: "Chain, protocol matrix (TLS 1.0–1.3) and zlint; no exploit checks"})
+	all = append(all, domain.Capability{ID: "dns_inspect", State: domain.CapabilityAvailable, Provider: "miekg/dns", Detail: "Resolver comparison, SOA/NS, DNSSEC chain, DoH/DoT; read-only"})
 	return all
 }

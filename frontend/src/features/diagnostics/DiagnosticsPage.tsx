@@ -12,6 +12,7 @@ import {
 import { Empty } from "../../shared/ui/Empty";
 import { Field } from "../../shared/ui/Field";
 import { NavIcon } from "../../shared/ui/Icon";
+import { DNSInspectPanel } from "../dns/DNSInspectPanel";
 import { TLSAuditPanel } from "../tls/TLSAuditPanel";
 import { HTTPMetadataView } from "./HTTPMetadataView";
 
@@ -59,6 +60,7 @@ export function DiagnosticsPage({
       <Tabs.List className="actions">
         <Tabs.Tab value="diagnostics">{t.diagnostics}</Tabs.Tab>
         <Tabs.Tab value="audit">{t.tlsAudit}</Tabs.Tab>
+        <Tabs.Tab value="dns">{t.dnsInspect}</Tabs.Tab>
       </Tabs.List>
       <Tabs.Panel value="diagnostics">
         <section className="card form">
@@ -174,6 +176,9 @@ export function DiagnosticsPage({
       </Tabs.Panel>
       <Tabs.Panel value="audit">
         <TLSAuditPanel t={t} busy={busy} execute={execute} />
+      </Tabs.Panel>
+      <Tabs.Panel value="dns">
+        <DNSInspectPanel t={t} busy={busy} execute={execute} />
       </Tabs.Panel>
     </Tabs.Root>
   );

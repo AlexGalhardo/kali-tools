@@ -59,6 +59,12 @@ stdout:
         "state": "available"
       },
       {
+        "detail": "Resolver comparison, SOA/NS, DNSSEC chain, DoH/DoT; read-only",
+        "id": "dns_inspect",
+        "provider": "miekg/dns",
+        "state": "available"
+      },
+      {
         "detail": "\u003cnative\u003e",
         "id": "capture_live",
         "provider": "\u003cnative\u003e",
