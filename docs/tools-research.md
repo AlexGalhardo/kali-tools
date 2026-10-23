@@ -267,7 +267,7 @@ Prefer `ek` or `fields` for bounded streaming. Source: https://www.wireshark.org
 **(b) Go building blocks.**
 
 - Stdlib `net.Resolver`, already used, gives the OS-resolver view.
-- `github.com/miekg/dns` v1 (BSD-3-Clause). Owner decision 2026-10-23: use the latest v1.1.x (v1.1.73 at decision time), not `codeberg.org/miekg/dns`. `go.mod` requires v1.1.73. See `docs/dependencies.md`. Comparison and the other B09 checks are not implemented yet.
+- `github.com/miekg/dns` v1 (BSD-3-Clause). Owner decision 2026-10-23: use the latest v1.1.x (v1.1.73 at decision time), not `codeberg.org/miekg/dns`. `go.mod` requires v1.1.73. See `docs/dependencies.md`. B09 uses it for wire queries, DNSSEC verification and the lab fixture.
 - DoH: `net/http` plus the wire format. DoT: `crypto/tls` plus `miekg/dns`.
 
 **(c) Recommendation.**
@@ -573,7 +573,7 @@ Repository: https://github.com/AlexGalhardo/vukem-marketplace-reactjs (snapshot 
 ## 11. Open decisions and native verification items
 
 - NPSL position for the Nmap adapter: decided on 2026-10-23. Nmap service inspection is cancelled (ADR 006).
-- `miekg/dns`: decided 2026-10-23. Use `github.com/miekg/dns` v1.1.x. See `docs/dependencies.md`.
+- `miekg/dns`: decided 2026-10-23. Use `github.com/miekg/dns` v1.1.x. See `docs/dependencies.md`. Codeberg v1.0.0, or GitHub v1 being archived, is the revisit trigger.
 - JA4+ (FoxIO License) implementation.
 - Whether `IcmpSendEcho2` and pro-bing work unelevated on Windows 10/11 targets.
 - Pktmon privilege requirement and ETL→pcapng behavior.

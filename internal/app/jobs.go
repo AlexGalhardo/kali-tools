@@ -21,6 +21,8 @@ func jobSummary(kind string, state job.State, detail string) string {
 	switch kind {
 	case "tls_audit":
 		label = "TLS audit"
+	case "dns_inspect":
+		label = "DNS inspection"
 	case "discovery":
 		label = "Discovery"
 	case "inspect":

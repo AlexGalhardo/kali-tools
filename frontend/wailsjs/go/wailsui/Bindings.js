@@ -42,6 +42,10 @@ export function ImportCapture() {
   return window['go']['wailsui']['Bindings']['ImportCapture']();
 }
 
+export function InspectDNS(arg1) {
+  return window['go']['wailsui']['Bindings']['InspectDNS'](arg1);
+}
+
 export function InspectServices(arg1, arg2) {
   return window['go']['wailsui']['Bindings']['InspectServices'](arg1, arg2);
 }

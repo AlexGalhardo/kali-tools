@@ -184,6 +184,12 @@ func parseInvocation(args []string) (invocation, error) {
 				value = "json"
 			case "family":
 				value = "all"
+			case "checks":
+				value = "compare"
+			case "record":
+				if call.command.path == "dns-inspect" {
+					value = "A"
+				}
 			}
 			fs.String(name, value, name)
 		}

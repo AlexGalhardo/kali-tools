@@ -5,7 +5,7 @@ Development baseline: 2026-10-19. Exact Go dependencies are in go.mod/go.sum; fr
 | Dependency | Purpose | Upstream license |
 | --- | --- | --- |
 | Go standard library | Portable diagnostics and networking | BSD-3-Clause |
-| github.com/miekg/dns v1.1.73 | DNS wire format and DS parsing in `internal/dnsinspect` | BSD-3-Clause |
+| github.com/miekg/dns v1.1.73 | DNS wire format, DNSSEC verification and lab DNS fixtures | BSD-3-Clause |
 | github.com/zmap/zlint/v3 v3.7.2 | Certificate linting in `internal/tlsaudit` | Apache-2.0 |
 | github.com/zmap/zcrypto v0.0.0-20260906180147-3ed30b1e9340 | zlint certificate parser only; no legacy handshake client | Apache-2.0 AND ISC AND MIT |
 | github.com/sirupsen/logrus v1.10.2 | zlint transitive logger; process-global output silenced before linting | MIT |
@@ -36,6 +36,6 @@ The module requires Go 1.27.3 and pins x/net 0.60.0, x/crypto 0.57.0 and x/text 
 
 The owner chose `github.com/miekg/dns` v1 (BSD-3-Clause). The newest v1.1 tag on `proxy.golang.org` at decision time was **v1.1.73**. The Codeberg module `codeberg.org/miekg/dns` is not used. 1.0 needs a stable API. The Codeberg module is pre-1.0 (0.6.x), so breaking changes are allowed until about 2028, and its dependency set is heavier.
 
-`go.mod` requires `github.com/miekg/dns v1.1.73`. The module cache `LICENSE` and `COPYRIGHT` identify BSD-3-Clause; packaging collects them through `scripts/notices.mjs`. The import is confined to `internal/dnsinspect/anchors.go`. Comparison, SOA/NS, DNSSEC and DoH/DoT are not implemented yet.
+`go.mod` requires `github.com/miekg/dns v1.1.73`. The module cache `LICENSE` and `COPYRIGHT` identify BSD-3-Clause; packaging collects them through `scripts/notices.mjs`. Production imports are `internal/dnsinspect/wire.go`, `dnssec.go` and `anchors.go`. `cmd/lab-fixture` also imports it. Comparison, SOA/NS, DNSSEC and DoH/DoT are implemented.
 
 Revisit when `codeberg.org/miekg/dns` tags v1.0.0, or if the GitHub v1 repository is archived or stops receiving fixes.

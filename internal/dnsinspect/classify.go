@@ -29,3 +29,10 @@ func isTimeout(err error) bool {
 func isRefused(err error) bool {
 	return errors.Is(err, syscall.ECONNREFUSED)
 }
+
+// netTimeout is a timeout that does not carry a query or address.
+type netTimeout struct{}
+
+func (netTimeout) Error() string   { return "timeout" }
+func (netTimeout) Timeout() bool   { return true }
+func (netTimeout) Temporary() bool { return true }

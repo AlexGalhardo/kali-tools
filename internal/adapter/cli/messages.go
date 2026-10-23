@@ -21,6 +21,7 @@ var portuguese = messages{
 	"permission_required": "permissão necessária", "location_consent_required": "consentimento de localização necessário", "disconnected": "desconectado",
 	"invalid_input": "entrada inválida", "not_found": "não encontrado", "timeout": "tempo esgotado", "conflict": "conflito", "unauthorized": "não autorizado", "forbidden": "proibido", "certificate_invalid": "certificado inválido", "no_connection": "sem conexão",
 	"error": "erro", "saved": "salvo", "packets": "pacotes", "format": "formato", "limited": "limitado",
+	"DNS inspection": "Inspeção DNS", "queries": "consultas", "agree": "concorda", "verdict": "veredito", "dnssec": "dnssec",
 	"Open":                   "Abrir",
 	"cancellation requested": "cancelamento solicitado", "history cleared (queued and running jobs are kept)": "histórico limpo (jobs na fila e em execução são mantidos)",
 	"warning: the saved Wi-Fi key will be printed to standard output. Terminal scrollback, shell logs and SSH session recordings may retain it.": "aviso: a chave Wi-Fi salva será impressa na saída padrão. O histórico do terminal, logs do shell e gravações de sessões SSH podem retê-la.",

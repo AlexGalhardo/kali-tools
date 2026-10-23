@@ -129,6 +129,281 @@ export namespace contract {
 	        this.sent = source["sent"];
 	    }
 	}
+	export class DNSAuthServer {
+	    ns: string;
+	    address: string;
+	    status: string;
+	    serial?: number;
+	    ns_set: string[];
+	    aa: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new DNSAuthServer(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ns = source["ns"];
+	        this.address = source["address"];
+	        this.status = source["status"];
+	        this.serial = source["serial"];
+	        this.ns_set = source["ns_set"];
+	        this.aa = source["aa"];
+	    }
+	}
+	export class DNSResolverAnswer {
+	    resolver: string;
+	    transport: string;
+	    status: string;
+	    rcode?: string;
+	    ad: boolean;
+	    answers: string[];
+	    min_ttl?: number;
+	    elapsed_ms: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new DNSResolverAnswer(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.resolver = source["resolver"];
+	        this.transport = source["transport"];
+	        this.status = source["status"];
+	        this.rcode = source["rcode"];
+	        this.ad = source["ad"];
+	        this.answers = source["answers"];
+	        this.min_ttl = source["min_ttl"];
+	        this.elapsed_ms = source["elapsed_ms"];
+	    }
+	}
+	export class DNSComparison {
+	    results: DNSResolverAnswer[];
+	    agree: boolean;
+	    groups: string[][];
+	
+	    static createFrom(source: any = {}) {
+	        return new DNSComparison(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.results = this.convertValues(source["results"], DNSResolverAnswer);
+	        this.agree = source["agree"];
+	        this.groups = source["groups"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class DNSConsistency {
+	    zone: string;
+	    servers: DNSAuthServer[];
+	    serials_agree: boolean;
+	    ns_sets_agree: boolean;
+	    verdict: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DNSConsistency(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.zone = source["zone"];
+	        this.servers = this.convertValues(source["servers"], DNSAuthServer);
+	        this.serials_agree = source["serials_agree"];
+	        this.ns_sets_agree = source["ns_sets_agree"];
+	        this.verdict = source["verdict"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class DNSEncryptedResult {
+	    endpoint: string;
+	    protocol: string;
+	    status: string;
+	    http_code?: number;
+	    rcode?: string;
+	    elapsed_ms: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new DNSEncryptedResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.endpoint = source["endpoint"];
+	        this.protocol = source["protocol"];
+	        this.status = source["status"];
+	        this.http_code = source["http_code"];
+	        this.rcode = source["rcode"];
+	        this.elapsed_ms = source["elapsed_ms"];
+	    }
+	}
+	export class DNSSECLink {
+	    zone: string;
+	    ds_matches: boolean;
+	    key_tag: number;
+	    algorithm: string;
+	    sig_valid: boolean;
+	    status: string;
+	    detail?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DNSSECLink(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.zone = source["zone"];
+	        this.ds_matches = source["ds_matches"];
+	        this.key_tag = source["key_tag"];
+	        this.algorithm = source["algorithm"];
+	        this.sig_valid = source["sig_valid"];
+	        this.status = source["status"];
+	        this.detail = source["detail"];
+	    }
+	}
+	export class DNSSECChain {
+	    links: DNSSECLink[];
+	    answer_sig: boolean;
+	    verdict: string;
+	    resolver: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DNSSECChain(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.links = this.convertValues(source["links"], DNSSECLink);
+	        this.answer_sig = source["answer_sig"];
+	        this.verdict = source["verdict"];
+	        this.resolver = source["resolver"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class DNSInspectReport {
+	    name: string;
+	    type: string;
+	    compare?: DNSComparison;
+	    soa_ns?: DNSConsistency;
+	    dnssec?: DNSSECChain;
+	    encrypted?: DNSEncryptedResult[];
+	    queries: number;
+	    limited: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new DNSInspectReport(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.type = source["type"];
+	        this.compare = this.convertValues(source["compare"], DNSComparison);
+	        this.soa_ns = this.convertValues(source["soa_ns"], DNSConsistency);
+	        this.dnssec = this.convertValues(source["dnssec"], DNSSECChain);
+	        this.encrypted = this.convertValues(source["encrypted"], DNSEncryptedResult);
+	        this.queries = source["queries"];
+	        this.limited = source["limited"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class DNSInspectRequest {
+	    name: string;
+	    type: string;
+	    resolvers?: string[];
+	    doh?: string[];
+	    dot?: string[];
+	    checks: string[];
+	    trust_anchors?: string[];
+	    timeout_ms: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new DNSInspectRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.type = source["type"];
+	        this.resolvers = source["resolvers"];
+	        this.doh = source["doh"];
+	        this.dot = source["dot"];
+	        this.checks = source["checks"];
+	        this.trust_anchors = source["trust_anchors"];
+	        this.timeout_ms = source["timeout_ms"];
+	    }
+	}
+	
+	
+	
 	export class DiagnosticRequest {
 	    record_type?: string;
 	    kind: string;

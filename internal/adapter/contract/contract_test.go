@@ -9,6 +9,7 @@ import (
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/contract"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
+	"github.com/AlexGalhardo/kali-tools/internal/dnsinspect"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/job"
 	"github.com/AlexGalhardo/kali-tools/internal/network"
@@ -66,6 +67,8 @@ func mapping[S, D any](f func(S) D) mappingCase {
 }
 func mappings() []mappingCase {
 	return []mappingCase{
+		mapping(contract.FromDNSInspect),
+		mapping(func(v contract.DNSInspectRequest) dnsinspect.Request { return v.Request() }),
 		mapping(contract.FromTLSAudit),
 		mapping(func(v contract.TLSAuditRequest) tlsaudit.Request { return v.Request() }),
 		mapping(contract.FromNeighborTable),

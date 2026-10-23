@@ -495,6 +495,29 @@ td small {
 .tls-audit .form-grid {
   margin-bottom: 20px;
 }
+.dns-inspect {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+.dns-inspect > section,
+.dns-inspect > form {
+  min-width: 0;
+}
+.dns-inspect h2 {
+  margin: 0 0 20px;
+  font-size: 16px;
+}
+.dns-inspect table {
+  min-width: 640px;
+}
+.dns-inspect .form-grid {
+  margin-bottom: 20px;
+}
+.dns-inspect ol {
+  margin: 0;
+  padding-left: 1.2rem;
+}
 table {
   width: 100%;
   border-collapse: collapse;

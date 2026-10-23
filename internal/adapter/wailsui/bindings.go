@@ -108,6 +108,15 @@ func (b *Bindings) AuditTLS(r contract.TLSAuditRequest) (contract.TLSAuditReport
 	return contract.FromTLSAudit(value), fail(err)
 }
 
+func (b *Bindings) InspectDNS(r contract.DNSInspectRequest) (contract.DNSInspectReport, error) {
+	ctx, err := b.ready()
+	if err != nil {
+		return contract.DNSInspectReport{}, fail(err)
+	}
+	value, err := b.app.InspectDNS(ctx, r.Request())
+	return contract.FromDNSInspect(value), fail(err)
+}
+
 func (b *Bindings) Neighbors(family string) (contract.NeighborTable, error) {
 	ctx, err := b.ready()
 	if err != nil {

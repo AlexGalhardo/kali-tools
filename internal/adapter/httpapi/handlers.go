@@ -12,6 +12,7 @@ import (
 )
 
 const maxTLSAuditBody = 4 << 10
+const maxDNSInspectBody = 8 << 10
 
 func handleTLSAudit(a *app.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -26,6 +27,22 @@ func handleTLSAudit(a *app.Application) http.HandlerFunc {
 			return
 		}
 		writeJSON(w, http.StatusOK, contract.FromTLSAudit(value))
+	}
+}
+
+func handleDNSInspect(a *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var request contract.DNSInspectRequest
+		if err := decodeJSON(w, r, &request, maxDNSInspectBody); err != nil {
+			writeError(w, r, err)
+			return
+		}
+		value, err := a.InspectDNS(r.Context(), request.Request())
+		if err != nil {
+			writeError(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, contract.FromDNSInspect(value))
 	}
 }
 

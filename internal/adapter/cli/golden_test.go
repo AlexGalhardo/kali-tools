@@ -53,6 +53,7 @@ func goldenCases(t *testing.T) []goldenCase {
 	}
 	return []goldenCase{
 		{"tls-audit", []string{"tls-audit", "--target", "invalid/host"}},
+		{"dns-inspect", []string{"dns-inspect", "--target", "invalid/host"}},
 		{"version", []string{"version"}}, {"doctor", []string{"doctor"}}, {"capabilities", []string{"capabilities"}}, {"interfaces", []string{"interfaces"}},
 		{"inventory", []string{"inventory"}}, {"neighbors", []string{"neighbors"}}, {"diagnose", []string{"diagnose", "ping", "--target", "fixture.invalid"}},
 		{"discover", []string{"discover", "--target", "127.0.0.1/32", "--ports", port}}, {"inspect", []string{"inspect", "--target", "127.0.0.1/32"}},

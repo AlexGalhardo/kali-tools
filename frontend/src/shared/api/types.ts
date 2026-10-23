@@ -140,6 +140,7 @@ export type ServiceInspection = {
 };
 export type Backend = {
   AuditTLS(r: TLSAuditRequest): Promise<TLSAuditReport>;
+  InspectDNS(r: DNSInspectRequest): Promise<DNSInspectReport>;
   Version(): Promise<string>;
   Capabilities(): Promise<Capability[]>;
   CaptureBackends(): Promise<Capability[]>;
@@ -174,6 +175,73 @@ export type Backend = {
   StopCapture(): Promise<void>;
 };
 
+export type DNSInspectRequest = {
+  name: string;
+  type: string;
+  resolvers?: string[];
+  doh?: string[];
+  dot?: string[];
+  checks: string[];
+  trust_anchors?: string[];
+  timeout_ms: number;
+};
+export type DNSResolverAnswer = {
+  resolver: string;
+  transport: string;
+  status: string;
+  rcode?: string;
+  ad: boolean;
+  answers: string[];
+  min_ttl?: number | null;
+  elapsed_ms: number;
+};
+export type DNSInspectReport = {
+  name: string;
+  type: string;
+  compare?: {
+    results: DNSResolverAnswer[];
+    agree: boolean;
+    groups: string[][];
+  } | null;
+  soa_ns?: {
+    zone: string;
+    servers: {
+      ns: string;
+      address: string;
+      status: string;
+      serial?: number | null;
+      ns_set: string[];
+      aa: boolean;
+    }[];
+    serials_agree: boolean;
+    ns_sets_agree: boolean;
+    verdict: string;
+  } | null;
+  dnssec?: {
+    links: {
+      zone: string;
+      ds_matches: boolean;
+      key_tag: number;
+      algorithm: string;
+      sig_valid: boolean;
+      status: string;
+      detail?: string;
+    }[];
+    answer_sig: boolean;
+    verdict: string;
+    resolver: string;
+  } | null;
+  encrypted?: {
+    endpoint: string;
+    protocol: string;
+    status: string;
+    http_code?: number;
+    rcode?: string;
+    elapsed_ms: number;
+  }[];
+  queries: number;
+  limited: boolean;
+};
 export type TLSAuditRequest = {
   host: string;
   port: number;

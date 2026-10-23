@@ -8,6 +8,7 @@ diagnostics disponível go/net DNS, bounded TCP, HTTP (phase timings, security h
 discovery disponível go/net IPv4 TCP connect, /24 or narrower, at most 32 ports
 capture_import disponível gopacket PCAP and PCAPNG, 64 MiB and 10000 decoded packets
 tls_audit        disponível     go/crypto+zlint  Chain, protocol matrix (TLS 1.0–1.3) and zlint; no exploit checks
+dns_inspect      disponível     miekg/dns        Resolver comparison, SOA/NS, DNSSEC chain, DoH/DoT; read-only
 
 NOME    ESTADO               VERSÃO  CAMINHO
 tshark  dependência ausente          

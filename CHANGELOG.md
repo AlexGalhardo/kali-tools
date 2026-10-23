@@ -6,7 +6,7 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ### Added
 
-- DNS inspection validates a bounded read-only request and classifies a blocked port 53. It does not query resolvers yet.
+- DNS inspection compares resolvers, checks SOA/NS consistency, validates a read-only DNSSEC chain, and checks DoH/DoT reachability. The CLI command is `dns-inspect`, the HTTP route is `POST /api/dns/inspect`, and the Diagnostics page has an English/PT-BR panel. A blocked port 53 stays a distinct result. History stores the state, query count and check count only.
 - HTTP diagnostics report phase timings, an allowlisted security-header report and an explicit redirect trace of at most five hops. Redirects are not followed unless that trace is requested.
 
 ### Changed
@@ -14,7 +14,7 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 - Renamed the service-inspection result types from `Nmap` to `ServiceInspection` and the nested types to `Inspection*`. JSON field names are unchanged. Wails models were regenerated and now include the HTTP metadata types. Shared phase fields accept both JSON null and an omitted value. ADR 006 records the names.
 - Service inspection no longer runs Nmap. Explicit TCP scopes are identified with built-in banner, TLS and HTTP checks. TShark remains inventory-only. ADR 006 supersedes ADR 003.
 - Accepted ADR 004: the CLI keeps the standard-library flag parser. Cobra is not adopted (owner, 2026-10-23).
-- Pinned `github.com/miekg/dns` v1.1.73 (BSD-3-Clause) for DNS inspection. DS trust anchors are parsed with that module. Resolver comparison and the other DNS checks are not implemented yet.
+- Pinned `github.com/miekg/dns` v1.1.73 (BSD-3-Clause) for DNS wire format, DNSSEC verification and the lab DNS fixture.
 - Set the 1.0 macOS baseline to macOS 13 or later on Apple Silicon, with a cgo Objective-C bridge. No Intel or universal build.
 - Accepted 100-row pagination as the 1.0 stand-in for virtualized packet and result tables.
 - Recorded the signing decision: vendor-unsigned releases, SHA-256 checksums and GitHub artifact attestations. No Apple or Microsoft certificate.

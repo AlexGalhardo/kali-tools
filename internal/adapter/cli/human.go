@@ -100,6 +100,24 @@ func renderHuman(out io.Writer, call invocation, data any) error {
 		}
 	}
 	switch v := data.(type) {
+	case contract.DNSInspectReport:
+		field("DNS inspection", v.Name+" "+v.Type)
+		line("%d %s", v.Queries, l("queries"))
+		if v.Compare != nil {
+			line("%s %t", l("agree"), v.Compare.Agree)
+			for _, result := range v.Compare.Results {
+				line("%s\t%s\t%s", result.Resolver, result.Status, result.Transport)
+			}
+		}
+		if v.SOANS != nil {
+			line("%s %s", l("verdict"), v.SOANS.Verdict)
+		}
+		if v.DNSSEC != nil {
+			line("%s %s", l("dnssec"), v.DNSSEC.Verdict)
+		}
+		for _, item := range v.Encrypted {
+			line("%s\t%s\t%s", item.Protocol, item.Status, item.Endpoint)
+		}
 	case contract.TLSAuditReport:
 		field("TLS audit", v.Host)
 		line("%s / %s / %s: %t (%s)", v.NegotiatedVersion, v.CipherSuite, l("verified"), v.Verified, v.Verifier)

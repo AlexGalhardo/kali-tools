@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | B09 (resolver comparison, SOA/NS consistency, read-only DNSSEC chain, DoH/DoT reachability, `miekg/dns` decision) |
-| Status | In progress. Validation and transport classification are tested (2026-10-23). Comparison, SOA/NS, DNSSEC, DoH/DoT, adapters and the lab fixture have not started |
+| Status | Implemented (2026-10-23). Query checks, adapters and the Diagnostics panel have unit and browser evidence. Docker AC-10 is recorded in the evidence and is not closed from a host that cannot run the lab |
 | Depends on | H02 (job manager), H03 (`app.HostNetwork` for the system DNS servers), H04, H05/H06, W01 + W04 (HTTP route) |
 | Risk | Medium: a new DNS library, DNSSEC verification code paths, and Docker lab fixtures that must stay deterministic |
 
