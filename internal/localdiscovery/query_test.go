@@ -484,7 +484,7 @@ func TestMDNSUnicastFallback(t *testing.T) {
 	}
 	if err := queryLibrary(t.Context(), &mdns.QueryParam{
 		Service: "_kali-lab._tcp", Domain: "local", Timeout: time.Millisecond,
-		Interface: &net.Interface{}, Entries: entries,
+		Interface: &net.Interface{Index: 1 << 20, Name: "missing"}, Entries: entries,
 	}); err == nil {
 		t.Fatal("expected the library error")
 	}
