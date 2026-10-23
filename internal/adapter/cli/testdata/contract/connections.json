@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "command": "connections",
+  "paths": {
+    "data.connections": "array",
+    "data.connections[].local": "string",
+    "data.connections[].pid": "number",
+    "data.connections[].process": "string",
+    "data.connections[].protocol": "string",
+    "data.connections[].remote": "string",
+    "data.connections[].state": "string",
+    "data.limited": "boolean",
+    "data.provider": "string",
+    "schema_version": "number",
+    "version": "string"
+  }
+}

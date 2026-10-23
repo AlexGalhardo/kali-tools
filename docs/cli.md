@@ -138,6 +138,22 @@ Human example (stderr for errors):
 error: unsupported: neighbor inventory is not implemented yet
 ```
 
+## connections
+
+`kali-tools connections`
+
+Flags / positional: none.
+
+JSON `data`: `ConnectionTable` with `connections`, `limited` and `provider`. Each connection has `protocol`, `local`, `remote`, `state`, `pid` and `process`. A socket whose owner is gone is omitted. Windows and macOS return `unsupported`. The table does not include interface counters or a rate.
+
+## throughput
+
+`kali-tools throughput --duration <seconds>`
+
+`kali-tools throughput --iperf-json <file>`
+
+`--duration` is 1 through 10 seconds. The exchange listens on `127.0.0.1` and reports `endpoint`, `duration_ms`, `byte_count` and `source` `kali-tools`. It does not estimate bandwidth and it is not iperf3-wire-compatible. `--iperf-json` reads one iperf3 `-J` file, at most 1 MiB, and does not execute iperf3. `bits_per_second` is ignored. Pass duration or the file, not both.
+
 ## diagnose
 
 [JSON paths and types](../internal/adapter/cli/testdata/contract/diagnose.json).

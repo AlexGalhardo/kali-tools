@@ -2,14 +2,17 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/contract"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
+	"github.com/AlexGalhardo/kali-tools/internal/conn"
 	"github.com/AlexGalhardo/kali-tools/internal/dnsinspect"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/job"
@@ -31,6 +34,8 @@ var commands = []command{
 	{path: "capabilities", synopsis: "List capabilities and availability states", needsApp: true},
 	{path: "tools", synopsis: "List separately installed optional tools", needsApp: true},
 	{path: "neighbors", synopsis: "Read the passive OS ARP/ND cache", needsApp: true, flags: []string{"family", "format"}},
+	{path: "connections", synopsis: "List sockets and the owning process", needsApp: true},
+	{path: "throughput", synopsis: "Measure loopback throughput or parse an iperf3 -J report", needsApp: true, flags: []string{"duration", "iperf-json"}},
 	{path: "interfaces", synopsis: "List local network interfaces", needsApp: true},
 	{path: "inventory", synopsis: "Show routes, DNS and traffic counters", needsApp: true},
 	{path: "diagnose", synopsis: "diagnose [dns|tcp|http|tls|ping|trace] [flags]", needsApp: true, flags: []string{"target", "kind", "port", "record", "redirects"}},
@@ -220,6 +225,12 @@ func runAdditional(ctx context.Context, a *app.Application, call invocation, std
 			return nil, err, true
 		}
 		return map[string]string{"path": output, "format": format}, nil, true
+	case "connections":
+		value, err := a.Connections(ctx)
+		return contract.FromConnectionTable(value), err, true
+	case "throughput":
+		sample, err := runThroughput(ctx, a, call)
+		return contract.FromThroughput(sample), err, true
 	default:
 		return nil, nil, false
 	}
@@ -285,6 +296,48 @@ func runSNMP(ctx context.Context, a *app.Application, call invocation) (localdis
 		request.Community = community
 	}
 	return a.QuerySNMP(ctx, request)
+}
+
+func runThroughput(ctx context.Context, a *app.Application, call invocation) (conn.Sample, error) {
+	var duration time.Duration
+	if call.set["duration"] {
+		seconds, err := strconv.Atoi(call.values["duration"])
+		if err != nil || seconds < 1 || seconds > 10 {
+			return conn.Sample{}, domain.Invalid("throughput duration must be 1..10 seconds")
+		}
+		duration = time.Duration(seconds) * time.Second
+	}
+	var report []byte
+	if call.set["iperf-json"] {
+		body, err := readIperf(call.values["iperf-json"])
+		if err != nil {
+			return conn.Sample{}, err
+		}
+		report = body
+	}
+	return a.Throughput(ctx, duration, report)
+}
+
+func readIperf(path string) ([]byte, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, &domain.Error{Code: domain.CodeNotFound, Message: "iperf report was not found"}
+		}
+		if errors.Is(err, os.ErrPermission) {
+			return nil, &domain.Error{Code: domain.CodePermissionRequired, Message: "iperf report is not readable"}
+		}
+		return nil, domain.Invalid("iperf report could not be read")
+	}
+	defer file.Close()
+	body, err := io.ReadAll(io.LimitReader(file, 1<<20+1))
+	if err != nil {
+		return nil, domain.Invalid("iperf report could not be read")
+	}
+	if len(body) > 1<<20 {
+		return nil, domain.Invalid("iperf report is empty or too large")
+	}
+	return body, nil
 }
 
 func splitList(value string) ([]string, error) {

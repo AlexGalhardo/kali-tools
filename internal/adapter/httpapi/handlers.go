@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"regexp"
 	"runtime"
+	"time"
 
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/contract"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
@@ -119,6 +120,44 @@ func handleInterfaces(a *app.Application) http.HandlerFunc {
 			return
 		}
 		writeJSON(w, http.StatusOK, contract.FromInterfaces(value))
+	}
+}
+
+func handleConnections(a *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		value, err := a.Connections(r.Context())
+		if err != nil {
+			writeError(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, contract.FromConnectionTable(value))
+	}
+}
+
+func handleThroughput(a *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			DurationMS int64  `json:"duration_ms"`
+			IperfJSON  string `json:"iperf_json"`
+		}
+		if err := decodeJSON(w, r, &body, maxJSONBody); err != nil {
+			writeError(w, r, err)
+			return
+		}
+		var duration time.Duration
+		if body.DurationMS != 0 {
+			if body.DurationMS < 1 || body.DurationMS > 10_000 {
+				writeError(w, r, domain.Invalid("throughput duration must be 1ms..10s"))
+				return
+			}
+			duration = time.Duration(body.DurationMS) * time.Millisecond
+		}
+		value, err := a.Throughput(r.Context(), duration, []byte(body.IperfJSON))
+		if err != nil {
+			writeError(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, contract.FromThroughput(value))
 	}
 }
 

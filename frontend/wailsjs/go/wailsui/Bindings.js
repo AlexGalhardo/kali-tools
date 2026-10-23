@@ -22,6 +22,10 @@ export function ClearHistory() {
   return window['go']['wailsui']['Bindings']['ClearHistory']();
 }
 
+export function Connections() {
+  return window['go']['wailsui']['Bindings']['Connections']();
+}
+
 export function CurrentWiFi() {
   return window['go']['wailsui']['Bindings']['CurrentWiFi']();
 }
@@ -108,6 +112,10 @@ export function StartDiagnostic(arg1) {
 
 export function StopCapture() {
   return window['go']['wailsui']['Bindings']['StopCapture']();
+}
+
+export function Throughput(arg1) {
+  return window['go']['wailsui']['Bindings']['Throughput'](arg1);
 }
 
 export function Tools() {

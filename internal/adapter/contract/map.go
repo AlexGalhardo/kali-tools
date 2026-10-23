@@ -5,6 +5,7 @@ import (
 
 	"github.com/AlexGalhardo/kali-tools/internal/app"
 	"github.com/AlexGalhardo/kali-tools/internal/capture"
+	"github.com/AlexGalhardo/kali-tools/internal/conn"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/job"
 	"github.com/AlexGalhardo/kali-tools/internal/network"
@@ -32,6 +33,16 @@ func FromCapabilities(v []domain.Capability) []Capability {
 	return mapSlice(v, func(c domain.Capability) Capability {
 		return Capability{ID: c.ID, State: c.State, Detail: c.Detail, Provider: c.Provider}
 	})
+}
+
+func FromConnectionTable(v conn.Table) ConnectionTable {
+	return ConnectionTable{Connections: mapSlice(v.Connections, func(row conn.Connection) Connection {
+		return Connection{Protocol: row.Protocol, Local: row.Local, Remote: row.Remote, State: row.State, PID: row.PID, Process: row.Process}
+	}), Limited: v.Limited, Provider: v.Provider}
+}
+
+func FromThroughput(v conn.Sample) ThroughputSample {
+	return ThroughputSample{Endpoint: v.Endpoint, DurationMS: v.DurationMS, ByteCount: v.ByteCount, Source: v.Source}
 }
 
 func FromNeighborTable(v network.NeighborTable) NeighborTable {

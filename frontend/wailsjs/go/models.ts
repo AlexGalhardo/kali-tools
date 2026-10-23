@@ -113,6 +113,62 @@ export namespace contract {
 		    return a;
 		}
 	}
+	export class Connection {
+	    protocol: string;
+	    local: string;
+	    remote: string;
+	    state: string;
+	    pid: number;
+	    process: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Connection(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.protocol = source["protocol"];
+	        this.local = source["local"];
+	        this.remote = source["remote"];
+	        this.state = source["state"];
+	        this.pid = source["pid"];
+	        this.process = source["process"];
+	    }
+	}
+	export class ConnectionTable {
+	    connections: Connection[];
+	    limited: boolean;
+	    provider: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ConnectionTable(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.connections = this.convertValues(source["connections"], Connection);
+	        this.limited = source["limited"];
+	        this.provider = source["provider"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class Counter {
 	    id: string;
 	    received: number;
@@ -1405,6 +1461,24 @@ export namespace contract {
 	    }
 	}
 	
+	export class ThroughputSample {
+	    endpoint: string;
+	    duration_ms: number;
+	    byte_count: number;
+	    source: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ThroughputSample(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.endpoint = source["endpoint"];
+	        this.duration_ms = source["duration_ms"];
+	        this.byte_count = source["byte_count"];
+	        this.source = source["source"];
+	    }
+	}
 	export class Tool {
 	    name: string;
 	    state: string;

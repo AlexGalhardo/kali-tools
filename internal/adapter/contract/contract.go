@@ -35,6 +35,28 @@ type NeighborTable struct {
 	Provider  string     `json:"provider"`
 }
 
+type Connection struct {
+	Protocol string `json:"protocol"`
+	Local    string `json:"local"`
+	Remote   string `json:"remote"`
+	State    string `json:"state"`
+	PID      int    `json:"pid"`
+	Process  string `json:"process"`
+}
+
+type ConnectionTable struct {
+	Connections []Connection `json:"connections"`
+	Limited     bool         `json:"limited"`
+	Provider    string       `json:"provider"`
+}
+
+type ThroughputSample struct {
+	Endpoint   string `json:"endpoint"`
+	DurationMS int64  `json:"duration_ms"`
+	ByteCount  uint64 `json:"byte_count"`
+	Source     string `json:"source"`
+}
+
 type Interface struct {
 	Index     int      `json:"index"`
 	Name      string   `json:"name"`

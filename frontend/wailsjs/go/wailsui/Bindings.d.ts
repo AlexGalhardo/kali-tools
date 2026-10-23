@@ -12,6 +12,8 @@ export function CaptureBackends():Promise<Array<contract.Capability>>;
 
 export function ClearHistory():Promise<void>;
 
+export function Connections():Promise<contract.ConnectionTable>;
+
 export function CurrentWiFi():Promise<contract.WiFi>;
 
 export function Diagnose(arg1:contract.DiagnosticRequest):Promise<contract.DiagnosticResult>;
@@ -55,6 +57,8 @@ export function StartCapture(arg1:contract.LiveCaptureRequest):Promise<void>;
 export function StartDiagnostic(arg1:contract.DiagnosticRequest):Promise<contract.Job>;
 
 export function StopCapture():Promise<void>;
+
+export function Throughput(arg1:number):Promise<contract.ThroughputSample>;
 
 export function Tools():Promise<Array<contract.Tool>>;
 

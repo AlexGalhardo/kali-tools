@@ -34,6 +34,8 @@ There is no privileged helper ([ADR 011](../adr/011-no-privileged-helper.md)). I
 
 13. **Local discovery and SNMP.** On your own LAN, open Discovery & tools. Pick the Wi-Fi or Ethernet adapter, set the scope to that adapter's IPv4 /24, and run local discovery for a few seconds. Expected: responders stay inside that prefix, and a LOCATION value is text, not a fetched page. Then run `.\kali-tools.exe local-discover --interface <name> --scope <cidr> --json`. For SNMP, tick **I own or administer this device** and query one device you administer, using `--secret-file` (a mode-600 file). Expected: system and interface rows appear, and the command line, history and logs do not contain the community or passphrase. Evidence: `13-local-discover.json`, `13-snmp.json` with the secret redacted. Closes B10 AC-11 and AC-12. Skip SNMP if you have no device you administer, and say so.
 
+14. **Socket inventory is unsupported.** Run `.\kali-tools.exe connections --json`. Expected: exit 3 and `error.code` is `unsupported`. Then `.\kali-tools.exe throughput --duration 1 --json`. Expected: exit 0, `endpoint` starts with `127.0.0.1:`, `duration_ms` is 1000, and `byte_count` is greater than 0. Evidence: `14-connections.json`, `14-throughput.json`. This does not close B04. Windows socket-to-process mapping was not implemented.
+
 ## Paste-back template
 
 ```text
