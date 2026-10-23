@@ -27,7 +27,7 @@ type command struct {
 var commands = []command{
 	{path: "tls-audit", synopsis: "Report TLS chain, protocols and certificate findings", needsApp: true, flags: []string{"target", "port", "server-name", "lint"}},
 	{path: "version", synopsis: "Show version and build platform"},
-	{path: "doctor", synopsis: "Show capabilities and optional dependencies", needsApp: true},
+	{path: "doctor", synopsis: "Show capabilities and optional dependencies", needsApp: true, flags: []string{"bundle"}},
 	{path: "capabilities", synopsis: "List capabilities and availability states", needsApp: true},
 	{path: "tools", synopsis: "List separately installed optional tools", needsApp: true},
 	{path: "neighbors", synopsis: "Read the passive OS ARP/ND cache", needsApp: true, flags: []string{"family", "format"}},

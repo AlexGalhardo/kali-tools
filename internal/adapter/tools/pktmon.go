@@ -74,7 +74,7 @@ func pktmonCapability(status PktmonStatus) domain.Capability {
 	case status.Build < PktmonMinBuild || status.Path == "":
 		c.State, c.Detail = domain.CapabilityUnsupported, "Pktmon requires Windows 10 2004 (build 19041) or later"
 	case !status.Elevated:
-		c.State, c.Detail = domain.CapabilityPermissionRequired, "Pktmon requires an elevated (Administrator) kali-tools process; kali-tools never self-elevates"
+		c.State, c.Detail = domain.CapabilityPermissionRequired, "Start kali-tools from an elevated terminal. Pktmon requires an Administrator process. kali-tools never elevates itself."
 	default:
 		c.State, c.Detail = domain.CapabilityAvailable, "Built-in Pktmon; all NICs, packets truncated to 512 bytes"
 	}

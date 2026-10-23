@@ -54,6 +54,7 @@ kali-tools/
 │   ├── tlsaudit/                   capability: TLS audit request validation and certificate reports (B08); native verifier acceptance pending
 │   ├── dnsinspect/                 capability: DNS inspection (B09)
 │   ├── localdiscovery/             capability: mDNS, SSDP and owned-device SNMP (B10)
+│   ├── bundle/                     redacted diagnostic zip; no network and no Wi-Fi key read (B06)
 │   ├── adapter/                    all adapters, named by technology
 │   │   ├── contract/               shared frontend DTOs, explicit mappers and safe error mapping
 │   │   ├── storage/                driven: SQLite store, migrations, settings, retention
@@ -193,6 +194,8 @@ A06's inspector selects an available backend, renders translated stable loss cod
 
 B05 records the decode contract in [capture decoding](capture-decoding.md). Each packet is decoded alone: a complete IPv6 hop-by-hop header is followed, truncation is reported, and TCP streams and IPv6 fragments are not reassembled. Payloads stay out of summaries and history. Artifact growth stops at 10000 packets or the reserved 64 MiB budget. TShark stays inventory-only (ADR 006). Pulling a cable remains a native runbook check.
 
+B06's diagnostic bundle is a pure writer in `internal/bundle`. `Application.DiagnosticBundle` gathers version, doctor text, capability states, language, retention and at most 50 history rows. It does not call Wi-Fi or capture. CLI `doctor --bundle`, authenticated `GET /api/doctor/bundle` and the Settings action all write that same zip locally. Addresses and hostnames become per-archive pseudonyms. Known secrets are deleted. Nothing is uploaded ([ADR 012](adr/012-diagnostic-bundle.md)).
+
 A01 step 1 adds passive neighbor value types and pure normalization in network: discard unusable/broadcast rows, deduplicate by interface/address, sort deterministically and return at most 4,096 rows with an explicit Limited flag. This group adds no OS query, port extension or public route.
 
 A01 step 2 adds untagged netlink/procfs parsing inside adapter/platform. Length/alignment checks precede slicing, inputs are capped at 4 MiB/1 MiB and raw rows at 65,536, and summaries retain no borrowed input bytes. These parsers are tested on the host independently of Linux OS access; the OS glue follows separately.
@@ -320,6 +323,8 @@ C01 provides the command tree, strict flags, stable exit codes, human output by 
 ### 7.2 Add a platform implementation
 
 Add `<name>_<goos>.go` beside the existing files, keeping the same constructor and method set. Keep the `_other.go` fallback returning an explicit unsupported error. Run `GOOS=windows|linux|darwin go vet ./...`. Never mark native acceptance from cross-compilation.
+
+B03 ships no privileged helper and no helper IPC ([ADR 011](adr/011-no-privileged-helper.md)). Linux capture privilege is `sudo setcap cap_net_raw+eip` on the binary. macOS `capture_live` reports whether this user can open `/dev/bpf` and never changes device permissions. Windows detects a user-installed Npcap and never redistributes it. A missing permission is a capability state plus the fix. The UI and the web server stay unprivileged. Native acceptance remains open.
 
 B01's documented Linux baseline is Ubuntu 24.04 LTS ([ADR 010](adr/010-linux-baseline.md)). Debian 13 and Kali are best-effort and come with no guarantee. Linux routes and counters come from netlink, with the procfs readers as fallback. Neighbors already use netlink. Wi-Fi metadata comes from nl80211 (`github.com/mdlayher/wifi`). The saved key is read only through NetworkManager `GetSecrets`; a missing NetworkManager is `dependency_missing` and does not hide metadata. Native acceptance remains open.
 

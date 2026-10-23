@@ -1,11 +1,13 @@
 package httpapi
 
 import (
+	"archive/zip"
 	"bytes"
 	"encoding/json"
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -295,7 +297,7 @@ func TestReadRouteErrors(t *testing.T) {
 func TestRoutesMatchApplication(t *testing.T) {
 	// Lifecycle and preflight helpers are not remotely callable operations.
 	excluded := map[string]bool{"Close": true, "StartMetrics": true, "CanImportCapture": true, "CanExportCapture": true, "RunMetricsForTest": true, "PublishForTest": true, "WaitForTest": true}
-	operations := map[string]string{"AuditTLS": "POST /api/tls/audit", "InspectDNS": "POST /api/dns/inspect", "DiscoverLocal": "POST /api/discovery/local", "QuerySNMP": "POST /api/snmp", "Capabilities": "GET /api/capabilities", "CaptureBackendStatus": "GET /api/capture/backends", "Interfaces": "GET /api/interfaces", "Neighbors": "GET /api/neighbors", "Inventory": "GET /api/inventory", "Tools": "GET /api/tools", "Diagnose": "POST /api/diagnose", "StartDiagnostic": "POST /api/diagnostics", "CancelJob": "POST /api/jobs/{id}/cancel", "JobSnapshot": "GET /api/jobs/{id}", "Subscribe": "GET /api/events", "History": "GET /api/history", "ClearHistory": "DELETE /api/history", "Settings": "GET /api/settings", "SaveSettings": "PUT /api/settings", "CurrentWiFi": "GET /api/wifi", "RevealWiFi": "POST /api/wifi/reveal", "Discover": "POST /api/discovery", "InspectServices": "POST /api/inspect", "StartCapture": "POST /api/capture/start", "StopCapture": "POST /api/capture/stop", "ImportCapture": "POST /api/capture/import", "ExportCapture": "GET /api/capture/export"}
+	operations := map[string]string{"AuditTLS": "POST /api/tls/audit", "InspectDNS": "POST /api/dns/inspect", "DiscoverLocal": "POST /api/discovery/local", "QuerySNMP": "POST /api/snmp", "Capabilities": "GET /api/capabilities", "CaptureBackendStatus": "GET /api/capture/backends", "Interfaces": "GET /api/interfaces", "Neighbors": "GET /api/neighbors", "Inventory": "GET /api/inventory", "Tools": "GET /api/tools", "Diagnose": "POST /api/diagnose", "StartDiagnostic": "POST /api/diagnostics", "CancelJob": "POST /api/jobs/{id}/cancel", "JobSnapshot": "GET /api/jobs/{id}", "Subscribe": "GET /api/events", "History": "GET /api/history", "ClearHistory": "DELETE /api/history", "Settings": "GET /api/settings", "SaveSettings": "PUT /api/settings", "CurrentWiFi": "GET /api/wifi", "RevealWiFi": "POST /api/wifi/reveal", "Discover": "POST /api/discovery", "InspectServices": "POST /api/inspect", "StartCapture": "POST /api/capture/start", "StopCapture": "POST /api/capture/stop", "ImportCapture": "POST /api/capture/import", "ExportCapture": "GET /api/capture/export", "DiagnosticBundle": "GET /api/doctor/bundle"}
 	file, err := parser.ParseFile(token.NewFileSet(), "routes.go", nil, 0)
 	if err != nil {
 		t.Fatal(err)
@@ -331,5 +333,41 @@ func TestRoutesMatchApplication(t *testing.T) {
 		if !ok || routes[route] != 1 {
 			t.Errorf("%s has no unique route (%q count=%d)", name, route, routes[route])
 		}
+	}
+}
+
+func TestDiagnosticBundleDownload(t *testing.T) {
+	application := testApp(t)
+	if _, err := application.RevealWiFi(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	mux := testMux(t, application)
+	response := httptest.NewRecorder()
+	mux.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/api/doctor/bundle", nil))
+	if response.Code != http.StatusOK || response.Header().Get("Content-Type") != "application/zip" || response.Header().Get("Cache-Control") != "no-store" {
+		t.Fatalf("status=%d headers=%v body=%s", response.Code, response.Header(), response.Body.Bytes())
+	}
+	if !strings.Contains(response.Header().Get("Content-Disposition"), `filename="kali-tools-diagnostic.zip"`) {
+		t.Fatal(response.Header().Get("Content-Disposition"))
+	}
+	body := response.Body.Bytes()
+	if bytes.Contains(body, []byte("synthetic-test-key")) {
+		t.Fatal("wifi secret leaked into the zip")
+	}
+	reader, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(reader.File) != 2 || reader.File[0].Name != "summary.txt" || reader.File[1].Name != "report.json" {
+		t.Fatalf("files=%v", reader.File)
+	}
+	rc, err := reader.File[0].Open()
+	if err != nil {
+		t.Fatal(err)
+	}
+	summary, err := io.ReadAll(rc)
+	_ = rc.Close()
+	if err != nil || !bytes.Contains(summary, []byte("Nothing in this archive was uploaded.")) {
+		t.Fatalf("summary=%s err=%v", summary, err)
 	}
 }
