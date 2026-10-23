@@ -31,7 +31,7 @@ func capabilities() []domain.Capability {
 			c.Detail = "Native Windows API; operational permission checks occur on request"
 		} else if runtime.GOOS == "linux" && id == "routes_counters" {
 			c.State = domain.CapabilityAvailable
-			c.Detail = "procfs counters and IPv4 default route"
+			c.Detail = "netlink routes and counters; procfs fallback"
 		}
 		all = append(all, c)
 	}

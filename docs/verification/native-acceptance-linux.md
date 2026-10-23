@@ -2,13 +2,13 @@
 
 Use this on a real Linux machine. Download the unsigned CI artifact `native-linux-x64` (a `.tar.gz` or `.zip` in the workflow artifacts). It contains the desktop build and the `kali-tools` binary. Development builds are unsigned and are not a qualified release.
 
-The CI artifact is linux/amd64. Do not treat an aarch64 run of that binary as a pass. Record the distro once. Save screenshots and command output under a folder you keep with the verification notes. Redact SSIDs, BSSIDs, keys and packet payloads. Do not tick PLAN boxes from this file; tick a box only after the captured evidence is written into `docs/verification`.
+The CI artifact is linux/amd64. Do not treat an aarch64 run of that binary as a pass. Ubuntu 24.04 LTS is the documented baseline ([ADR 010](../adr/010-linux-baseline.md)). Debian 13 and Kali are best-effort and come with no guarantee; a run on either does not close B01. Record the distro once. Save screenshots and command output under a folder you keep with the verification notes. Redact SSIDs, BSSIDs, keys and packet payloads. Do not tick PLAN boxes from this file; tick a box only after the captured evidence is written into `docs/verification`.
 
 Wi-Fi and live capture have no Linux provider yet. Those steps record the honest `unsupported` state. They do not close A05, A06 or B01.
 
 Privilege for 1.0 is a one-time `sudo setcap cap_net_raw+eip` on the capture binary ([ADR 011](../adr/011-no-privileged-helper.md)). Do not run the UI or `kali-tools serve` as root. There is no privileged helper. The current artifact still reports live capture as `unsupported`; `setcap` does not make this build capture. `capture_live` in `doctor` names that command.
 
-1. **Record the host.** Run `cat /etc/os-release` and `uname -m`. Expected: a current desktop distro and `x86_64`. Evidence: `01-os-release.txt`. Supports every step below.
+1. **Record the host.** Run `cat /etc/os-release` and `uname -m`. Expected for a B01 baseline run: Ubuntu 24.04 and `x86_64`. If the file says Debian 13 or Kali, record that and mark the run best-effort. Evidence: `01-os-release.txt`. Supports every step below.
 
 2. **Launch the desktop app.** Install WebKitGTK 4.1 if the app fails to start (`libwebkit2gtk-4.1-0` on Debian/Ubuntu). Open the desktop build. Expected: Overview lists this machine's adapters and the sidebar does not say "Not connected". Evidence: `02-overview.png`. If the library is missing, save the error text as `02-start.txt` and stop; that does not close a PLAN box. A successful launch closes the practical native-bridge check for H01 AC-10, H03 AC-11, H04 AC-12, H05 AC-17/18 and H06 AC-17 on the installed artifact.
 
@@ -16,7 +16,7 @@ Privilege for 1.0 is a one-time `sudo setcap cap_net_raw+eip` on the capture bin
 
 4. **Exercise a desktop job.** In Diagnostics, run a TCP check to `127.0.0.1` port `8080` (or another closed local port). Open History. Expected: the job reaches a terminal state and History shows the redacted summary, not the target. Evidence: `04-history.png`. Closes H02 AC-16 for job state on Linux.
 
-5. **Compare neighbors with the kernel cache.** `ping -c 1 <gateway>`, then `./kali-tools neighbors --family ipv4 --json`, then `ip neigh show <gateway>`. Expected: exit 0, `provider` is `Linux netlink RTM_GETNEIGH`, and the gateway address and MAC match. The command reads the cache; it does not scan. Evidence: `05-neighbors.txt`. Closes A01 AC-8 and AC-9 on Linux.
+5. **Compare neighbors, routes and counters with the kernel.** `ping -c 1 <gateway>`, then `./kali-tools neighbors --family ipv4 --json`, then `ip neigh show <gateway>`. Expected: exit 0, `provider` is `Linux netlink RTM_GETNEIGH`, and the gateway address and MAC match. The command reads the cache; it does not scan. Then `./kali-tools inventory --json`, `ip -4 route show default` and `ip -s link`. Expected: the default gateway matches, and a counter name matches an interface. Evidence: `05-neighbors.txt`, `05-inventory.json`. This is the B01 routes, counters and neighbors check. It does not close B01 until the pasted evidence is recorded, and a best-effort distro does not close it.
 
 6. **Wi-Fi stays unsupported.** Run `./kali-tools wifi show --json`. Expected: exit 3 and `error.code` is `unsupported`. The Wi-Fi page says the provider is not implemented. Evidence: `06-wifi.json`. This does not close A05 or B01.
 

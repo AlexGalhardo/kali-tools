@@ -155,7 +155,12 @@ func renderHuman(out io.Writer, call invocation, data any) error {
 		}
 	case map[string]any:
 		if call.command.path == "doctor" {
-			line("%s: %s/%s\n", l("System"), v["os"], v["arch"])
+			line("%s: %s/%s", l("System"), v["os"], v["arch"])
+			if text, _ := v["baseline"].(string); text != "" {
+				line("%s\n", l(text))
+			} else {
+				line("")
+			}
 			caps, _ := v["capabilities"].([]contract.Capability)
 			capabilities(caps)
 			line("")
