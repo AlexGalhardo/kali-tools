@@ -3,7 +3,7 @@ import type { en } from "../../shared/i18n/i18n";
 
 type Copy = typeof en;
 
-function phase(value: number | null, empty: string) {
+function phase(value: number | null | undefined, empty: string) {
   return value == null ? empty : `${value.toFixed(1)} ms`;
 }
 

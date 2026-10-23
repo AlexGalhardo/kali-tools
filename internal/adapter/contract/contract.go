@@ -235,35 +235,35 @@ type Tool struct {
 }
 
 type ServiceInspection struct {
-	Scanner  string       `json:"scanner"`
-	Version  string       `json:"version"`
-	Finished NmapFinished `json:"finished"`
-	Hosts    []NmapHost   `json:"hosts"`
+	Scanner  string             `json:"scanner"`
+	Version  string             `json:"version"`
+	Finished InspectionFinished `json:"finished"`
+	Hosts    []InspectionHost   `json:"hosts"`
 }
-type NmapFinished struct {
+type InspectionFinished struct {
 	Exit string `json:"exit"`
 }
-type NmapState struct {
+type InspectionState struct {
 	State string `json:"state"`
 }
-type NmapAddress struct {
+type InspectionAddress struct {
 	Address string `json:"address"`
 	Type    string `json:"type"`
 }
-type NmapService struct {
+type InspectionService struct {
 	Name    string `json:"name"`
 	Product string `json:"product"`
 	Version string `json:"version"`
 	Method  string `json:"method"`
 }
-type NmapPort struct {
-	Service  NmapService `json:"service"`
-	Port     int         `json:"port"`
-	Protocol string      `json:"protocol"`
-	State    NmapState   `json:"state"`
+type InspectionPort struct {
+	Service  InspectionService `json:"service"`
+	Port     int               `json:"port"`
+	Protocol string            `json:"protocol"`
+	State    InspectionState   `json:"state"`
 }
-type NmapHost struct {
-	Status    NmapState     `json:"status"`
-	Addresses []NmapAddress `json:"addresses"`
-	Ports     []NmapPort    `json:"ports"`
+type InspectionHost struct {
+	Status    InspectionState     `json:"status"`
+	Addresses []InspectionAddress `json:"addresses"`
+	Ports     []InspectionPort    `json:"ports"`
 }

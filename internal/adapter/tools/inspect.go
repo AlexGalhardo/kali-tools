@@ -44,9 +44,9 @@ func supportedVersion(name, line string) bool {
 // InspectServices identifies the protocol on explicitly scoped TCP ports.
 // It reads a banner, then tries one TLS handshake and one HTTP/1.1 request.
 // Raw probe bytes stay in this function. History records only the summary built by the application.
-func InspectServices(parent context.Context, cidr string, ports []int) (app.Nmap, error) {
+func InspectServices(parent context.Context, cidr string, ports []int) (app.ServiceInspection, error) {
 	if err := network.ValidateDiscovery(cidr, ports, time.Second); err != nil {
-		return app.Nmap{}, err
+		return app.ServiceInspection{}, err
 	}
 	ctx, cancel := context.WithTimeout(parent, 2*time.Minute)
 	defer cancel()
@@ -56,7 +56,7 @@ func InspectServices(parent context.Context, cidr string, ports []int) (app.Nmap
 		port int
 	}
 	tasks := make(chan task)
-	hits := map[string][]app.NmapPort{}
+	hits := map[string][]app.InspectionPort{}
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 	for range 32 {
@@ -101,8 +101,8 @@ outer:
 	return result, nil
 }
 
-func inspectionResult(hits map[string][]app.NmapPort) app.Nmap {
-	hosts := make([]app.NmapHost, 0, len(hits))
+func inspectionResult(hits map[string][]app.InspectionPort) app.ServiceInspection {
+	hosts := make([]app.InspectionHost, 0, len(hits))
 	for host, ports := range hits {
 		sort.Slice(ports, func(i, j int) bool { return ports[i].Port < ports[j].Port })
 		state := "down"
@@ -112,9 +112,9 @@ func inspectionResult(hits map[string][]app.NmapPort) app.Nmap {
 				break
 			}
 		}
-		hosts = append(hosts, app.NmapHost{
-			Status:    app.NmapState{State: state},
-			Addresses: []app.NmapAddress{{Address: host, Type: "ipv4"}},
+		hosts = append(hosts, app.InspectionHost{
+			Status:    app.InspectionState{State: state},
+			Addresses: []app.InspectionAddress{{Address: host, Type: "ipv4"}},
 			Ports:     ports,
 		})
 	}
@@ -123,15 +123,15 @@ func inspectionResult(hits map[string][]app.NmapPort) app.Nmap {
 		b, _ := netip.ParseAddr(hosts[j].Addresses[0].Address)
 		return a.Less(b)
 	})
-	return app.Nmap{
+	return app.ServiceInspection{
 		Scanner:  inspectionScanner,
 		Version:  inspectionVersion,
-		Finished: app.NmapFinished{Exit: "success"},
+		Finished: app.InspectionFinished{Exit: "success"},
 		Hosts:    hosts,
 	}
 }
 
-func inspectPort(ctx context.Context, host string, port int) app.NmapPort {
+func inspectPort(ctx context.Context, host string, port int) app.InspectionPort {
 	address := net.JoinHostPort(host, strconv.Itoa(port))
 	conn, err := dial(ctx, address)
 	if err != nil {
@@ -154,15 +154,15 @@ func inspectPort(ctx context.Context, host string, port int) app.NmapPort {
 	return tcpPort(port, "open", "", "", "", "")
 }
 
-func tcpPort(port int, state, name, product, version, method string) app.NmapPort {
+func tcpPort(port int, state, name, product, version, method string) app.InspectionPort {
 	if method != "banner" && method != "tls" && method != "http" {
 		method = ""
 	}
-	return app.NmapPort{
+	return app.InspectionPort{
 		Port:     port,
 		Protocol: "tcp",
-		State:    app.NmapState{State: state},
-		Service: app.NmapService{
+		State:    app.InspectionState{State: state},
+		Service: app.InspectionService{
 			Name:    label(name),
 			Product: label(product),
 			Version: label(version),

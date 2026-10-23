@@ -52,6 +52,7 @@ kali-tools/
 │   ├── capture/                    capability: live capture (Windows raw IPv4), PCAP/PCAPNG import/export, gopacket decoding
 │   ├── wifi/                       capability: current Wi-Fi metadata and explicit key reveal (Windows)
 │   ├── tlsaudit/                   capability: TLS audit request validation and certificate reports (B08); native verifier acceptance pending
+│   ├── dnsinspect/                 capability: DNS inspection request validation (B09); queries are not implemented yet
 │   ├── adapter/                    all adapters, named by technology
 │   │   ├── contract/               shared frontend DTOs, explicit mappers and safe error mapping
 │   │   ├── storage/                driven: SQLite store, migrations, settings, retention
@@ -112,7 +113,7 @@ Folders marked *(empty)* contain only `.gitkeep`. They mark target locations fro
 | Layer | Packages | May import | Must not import |
 | --- | --- | --- | --- |
 | Shared kernel | `internal/domain` | stdlib | anything in the module |
-| Capabilities (inner hexagon) | `internal/network`, `internal/capture`, `internal/wifi` | `domain`, stdlib, pure libraries (gopacket) | `adapter/*`, `app`, Wails, `database/sql` |
+| Capabilities (inner hexagon) | `internal/network`, `internal/capture`, `internal/wifi`, `internal/tlsaudit`, `internal/dnsinspect` | `domain`, stdlib, pure libraries (gopacket, miekg/dns) | `adapter/*`, `app`, Wails, `database/sql` |
 | Application | `internal/app`, `internal/job` | `domain`, capability packages, `job` | `adapter/*`, Wails, `net/http`, `os/exec`, `database/sql` |
 | Driven adapters | `internal/adapter/{storage,tools,probe,platform,pcap}` | `domain`, capability packages, OS/driver libraries | driving adapters, `cmd`, `app` (except for types) |
 | Driving adapters | `internal/adapter/{wailsui,cli,httpapi}` | `app`, `domain`, `adapter/contract` DTO types | driven adapters directly (they go through `app`) |
@@ -158,7 +159,7 @@ A port is a small Go interface declared **in the package that consumes it**. Ada
 | `WiFiProvider` — done 2026-10-21 | `app` | `wifi.Native` |
 | `CaptureProvider` — done 2026-10-21 | `capture.LiveProvider`, alias in `app` | `capture.Native` returns a live result and retained artifact |
 
-H03 compile-time assertions live only in `internal/bootstrap/assert.go`. No inner package imports an adapter, checked across all GOOS source files by `TestCoreDoesNotImportAdapters`. `app.New(Deps)` requires job and settings stores; bootstrap owns SQLite and returns a `sync.Once` cleanup that closes the service before the store. Application-owned settings, host and tool types retain their JSON tags. Service-inspection results no longer carry XML tags (ADR 006); contract inspection DTOs carry JSON fields only. The Go result type keeps the name `Nmap` so the generated Wails models stay valid. `scanner` is `native`. H07 adds seven reusable suites in `internal/porttest` and in-memory implementations in `internal/porttest/fake`. The ICMP port adapter validates targets with `network.ValidateHost` before DNS/native delegation; the real adapter now runs the same `ProberContract` as the fake. Verification and native qualification status are recorded in [H07 evidence](verification/specs/H07.md).
+H03 compile-time assertions live only in `internal/bootstrap/assert.go`. No inner package imports an adapter, checked across all GOOS source files by `TestCoreDoesNotImportAdapters`. `app.New(Deps)` requires job and settings stores; bootstrap owns SQLite and returns a `sync.Once` cleanup that closes the service before the store. Application-owned settings, host and tool types retain their JSON tags. Service-inspection results no longer carry XML tags (ADR 006); contract inspection DTOs carry JSON fields only. The Go result type is `ServiceInspection`, with nested `Inspection*` types. JSON field names stay neutral and `scanner` is `native`. Wails models are generated from those names. H07 adds seven reusable suites in `internal/porttest` and in-memory implementations in `internal/porttest/fake`. The ICMP port adapter validates targets with `network.ValidateHost` before DNS/native delegation; the real adapter now runs the same `ProberContract` as the fake. Verification and native qualification status are recorded in [H07 evidence](verification/specs/H07.md).
 
 H07 suite wiring:
 
@@ -292,6 +293,8 @@ C01 provides the command tree, strict flags, stable exit codes, human output by 
 ## 7. How to extend
 
 ### 7.1 Add a new tool or capability
+
+[B09 DNS inspection](specs/B09-dns-inspection.md) introduces `internal/dnsinspect` below the application layer. `Validate` enforces the request bounds, and `classifyTransport` distinguishes a blocked port 53 from a timeout. `github.com/miekg/dns` is imported only by `anchors.go`, to parse DS trust anchors. Resolver comparison, SOA/NS consistency, the DNSSEC chain, DoH/DoT and the driving adapters are not implemented. No query is sent.
 
 [B08 TLS audit](specs/B08-tls-audit.md) introduces `internal/tlsaudit` below the application layer. It observes certificates without sending application data, verifies trust explicitly, probes TLS 1.0–1.3 sequentially under per-attempt and overall deadlines, and runs the pinned zlint parser. Local capability self-tests distinguish client refusal from endpoint rejection. The capability depguard rule covers the package. `Application.AuditTLS` uses the shared operation-job cap and stores counts only; hostnames, SNI, certificate subjects and findings remain ephemeral. Separate DTOs feed Wails, authenticated `POST /api/tls/audit` (4 KiB body), `tls-audit` CLI and the Diagnostics TLS tab. Native platform trust-store and GUI acceptance remain open.
 

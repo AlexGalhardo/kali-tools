@@ -10,7 +10,7 @@ Commands:
   inventory        Show routes, DNS and traffic counters
   diagnose         diagnose [dns|tcp|http|tls|ping|trace] [flags]
   discover         Discover a bounded IPv4 scope
-  inspect          Inspect services with separately installed Nmap
+  inspect          Inspect services on an explicit IPv4 scope
   wifi             Show current Wi-Fi metadata
   wifi show        Show current Wi-Fi metadata
   wifi reveal      Print the saved key only with --confirm

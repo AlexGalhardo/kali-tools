@@ -10,7 +10,7 @@ Each requested endpoint gets one connection. A short read classifies a banner th
 
 Scope remains an explicit IPv4 prefix of /24 or narrower and at most 32 unique ports. The run has a two-minute deadline, 32 workers and a 10 ms pace. Banner and response reads are capped. History stores the provider name, the probe-set version and the host count. Targets and probe bytes are not stored.
 
-The JSON field names stay those already generated for the Wails bridge. `scanner` is `native` and `version` is the probe-set revision `1`. The Go type is still named `Nmap` so `frontend/wailsjs` does not need a hand edit. It is not an Nmap document and it no longer carries XML tags.
+The JSON field names stay `scanner`, `version`, `finished`, `hosts`, `service`, `state` and `addresses`. `scanner` is `native` and `version` is the probe-set revision `1`. The Go result type is `ServiceInspection`. Nested types are `InspectionFinished`, `InspectionState`, `InspectionAddress`, `InspectionService`, `InspectionPort` and `InspectionHost`, in both `app` and `contract`. Wails models are regenerated from those names. The value is not an Nmap document and it carries no XML tags. An earlier draft kept the Go type name `Nmap` only so generated models would not need a hand edit; that name is not part of the 1.0 schema.
 
 Rejected replacements, with the reasons recorded in tools research §3.1: `praetorian-inc/fingerprintx` (Apache-2.0, but a vendored `crypto/ssh` fork and a heavy module graph), `zmap/zgrab2` (Apache-2.0 and ISC, but a survey framework that requires the caller to name the protocol and pulls `zcrypto` into handshake use), and any probe set copied from Nmap data files.
 

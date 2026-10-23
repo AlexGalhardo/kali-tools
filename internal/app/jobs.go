@@ -65,7 +65,7 @@ func (a *Application) Discover(parent context.Context, cidr string, ports []int,
 	return results, err
 }
 
-func (a *Application) InspectServices(parent context.Context, cidr string, ports []int) (result Nmap, err error) {
+func (a *Application) InspectServices(parent context.Context, cidr string, ports []int) (result ServiceInspection, err error) {
 	if err = network.ValidateDiscovery(cidr, ports, time.Second); err != nil {
 		return result, err
 	}

@@ -41,6 +41,6 @@ func Inventory(ctx context.Context) []Tool {
 type Runner struct{}
 
 func (Runner) Inventory(ctx context.Context) []app.Tool { return Inventory(ctx) }
-func (Runner) InspectServices(ctx context.Context, cidr string, ports []int) (app.Nmap, error) {
+func (Runner) InspectServices(ctx context.Context, cidr string, ports []int) (app.ServiceInspection, error) {
 	return InspectServices(ctx, cidr, ports)
 }

@@ -4,6 +4,7 @@ go 1.27.3
 
 require (
 	github.com/gopacket/gopacket v1.7.4
+	github.com/miekg/dns v1.1.73
 	github.com/sirupsen/logrus v1.10.2
 	github.com/wailsapp/wails/v2 v2.17.0
 	github.com/zmap/zcrypto v0.0.0-20260906180147-3ed30b1e9340

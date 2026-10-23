@@ -74,7 +74,7 @@ func TestFakeReturnedValuesAreCopies(t *testing.T) {
 		}
 	})
 	t.Run("tools", func(t *testing.T) {
-		f := Tools{Tools: []app.Tool{{Name: "tshark", State: "available"}}, Result: app.Nmap{Hosts: []app.NmapHost{{Addresses: []app.NmapAddress{{Address: "192.0.2.1"}}, Ports: []app.NmapPort{{Port: 80}}}}}}
+		f := Tools{Tools: []app.Tool{{Name: "tshark", State: "available"}}, Result: app.ServiceInspection{Hosts: []app.InspectionHost{{Addresses: []app.InspectionAddress{{Address: "192.0.2.1"}}, Ports: []app.InspectionPort{{Port: 80}}}}}}
 		v, err := f.InspectServices(t.Context(), "192.0.2.0/24", []int{80})
 		if err != nil {
 			t.Fatal(err)

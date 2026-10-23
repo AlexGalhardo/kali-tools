@@ -121,10 +121,12 @@ func FromWiFiSecret(v wifi.Secret) WiFiSecret { return WiFiSecret{State: v.State
 func FromTools(v []app.Tool) []Tool {
 	return mapSlice(v, func(t app.Tool) Tool { return Tool{Name: t.Name, State: t.State, Version: t.Version, Path: t.Path} })
 }
-func FromServiceInspection(v app.Nmap) ServiceInspection {
-	return ServiceInspection{Scanner: v.Scanner, Version: v.Version, Finished: NmapFinished{Exit: v.Finished.Exit}, Hosts: mapSlice(v.Hosts, func(h app.NmapHost) NmapHost {
-		return NmapHost{Status: NmapState{State: h.Status.State}, Addresses: mapSlice(h.Addresses, func(a app.NmapAddress) NmapAddress { return NmapAddress{Address: a.Address, Type: a.Type} }), Ports: mapSlice(h.Ports, func(p app.NmapPort) NmapPort {
-			return NmapPort{Service: NmapService{Name: p.Service.Name, Product: p.Service.Product, Version: p.Service.Version, Method: p.Service.Method}, Port: p.Port, Protocol: p.Protocol, State: NmapState{State: p.State.State}}
+func FromServiceInspection(v app.ServiceInspection) ServiceInspection {
+	return ServiceInspection{Scanner: v.Scanner, Version: v.Version, Finished: InspectionFinished{Exit: v.Finished.Exit}, Hosts: mapSlice(v.Hosts, func(h app.InspectionHost) InspectionHost {
+		return InspectionHost{Status: InspectionState{State: h.Status.State}, Addresses: mapSlice(h.Addresses, func(a app.InspectionAddress) InspectionAddress {
+			return InspectionAddress{Address: a.Address, Type: a.Type}
+		}), Ports: mapSlice(h.Ports, func(p app.InspectionPort) InspectionPort {
+			return InspectionPort{Service: InspectionService{Name: p.Service.Name, Product: p.Service.Product, Version: p.Service.Version, Method: p.Service.Method}, Port: p.Port, Protocol: p.Protocol, State: InspectionState{State: p.State.State}}
 		})}
 	})}
 }

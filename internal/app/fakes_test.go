@@ -81,7 +81,7 @@ func TestDiagnosticJobWithFakes(t *testing.T) {
 
 func TestInspectServicesUsesToolRunner(t *testing.T) {
 	deps := fakeDeps()
-	deps.Tools = fakeTools{Result: app.Nmap{Scanner: "native", Version: "1", Hosts: []app.NmapHost{{Ports: []app.NmapPort{{Service: app.NmapService{Product: "SECRET-BANNER"}}}}, {}}}}
+	deps.Tools = fakeTools{Result: app.ServiceInspection{Scanner: "native", Version: "1", Hosts: []app.InspectionHost{{Ports: []app.InspectionPort{{Service: app.InspectionService{Product: "SECRET-BANNER"}}}}, {}}}}
 	s := app.New(deps)
 	defer func() { _ = s.Close() }()
 	result, err := s.InspectServices(t.Context(), "127.0.0.1/32", []int{80})
