@@ -11,6 +11,7 @@ import (
 
 	"github.com/AlexGalhardo/kali-tools/internal/adapter/contract"
 	"github.com/AlexGalhardo/kali-tools/internal/app"
+	"github.com/AlexGalhardo/kali-tools/internal/conn"
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 	"github.com/AlexGalhardo/kali-tools/internal/job"
 )
@@ -138,6 +139,27 @@ func (b *Bindings) QuerySNMP(r contract.SNMPRequest) (contract.SNMPResult, error
 	}
 	value, err := b.app.QuerySNMP(ctx, query)
 	return contract.FromSNMP(value), fail(err)
+}
+
+func (b *Bindings) Connections() (contract.ConnectionTable, error) {
+	ctx, err := b.ready()
+	if err != nil {
+		return contract.ConnectionTable{}, fail(err)
+	}
+	value, err := b.app.Connections(ctx)
+	return contract.FromConnectionTable(value), fail(err)
+}
+
+func (b *Bindings) Throughput(durationMS int) (contract.ThroughputSample, error) {
+	ctx, err := b.ready()
+	if err != nil {
+		return contract.ThroughputSample{}, fail(err)
+	}
+	if durationMS < 1 || durationMS > 10_000 {
+		return contract.ThroughputSample{}, fail(domain.Invalid("throughput duration must be 1ms..10s"))
+	}
+	value, err := b.app.Throughput(ctx, conn.Request{Duration: time.Duration(durationMS) * time.Millisecond})
+	return contract.FromThroughput(value), fail(err)
 }
 
 func (b *Bindings) Neighbors(family string) (contract.NeighborTable, error) {

@@ -82,7 +82,7 @@ func mappings() []mappingCase {
 		}),
 		mapping(contract.FromTLSAudit),
 		mapping(func(v contract.TLSAuditRequest) tlsaudit.Request { return v.Request() }),
-		mapping(contract.FromNeighborTable),
+		mapping(contract.FromNeighborTable), mapping(contract.FromConnectionTable), mapping(contract.FromThroughput),
 		mapping(contract.FromCapabilities), mapping(contract.FromInterfaces), mapping(contract.FromInventory),
 		mapping(func(v network.Request) contract.DiagnosticRequest {
 			return contract.DiagnosticRequest{RecordType: v.RecordType, Kind: v.Kind, Target: v.Target, Port: v.Port, TimeoutMS: v.TimeoutMS, Redirects: v.Redirects}

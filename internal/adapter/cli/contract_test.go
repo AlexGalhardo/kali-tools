@@ -236,7 +236,7 @@ func TestPerCommandFlagsAndHelp(t *testing.T) {
 }
 
 func TestDetachRejected(t *testing.T) {
-	for _, command := range []string{"version", "doctor", "capabilities", "interfaces", "inventory", "neighbors", "diagnose tcp", "discover", "inspect", "wifi show", "wifi reveal", "capture live", "capture import", "capture export", "jobs list", "jobs show", "jobs cancel", "history list", "history clear", "settings get", "settings set", "tools", "serve"} {
+	for _, command := range []string{"version", "doctor", "capabilities", "interfaces", "inventory", "neighbors", "connections", "throughput", "diagnose tcp", "discover", "inspect", "wifi show", "wifi reveal", "capture live", "capture import", "capture export", "jobs list", "jobs show", "jobs cancel", "history list", "history clear", "settings get", "settings set", "tools", "serve"} {
 		t.Run(command, func(t *testing.T) {
 			var out, stderr bytes.Buffer
 			args := append([]string{"--json"}, strings.Fields(command)...)
@@ -254,7 +254,7 @@ func TestHelpListsEveryCommand(t *testing.T) {
 	if code := runJSON(t.Context(), nil, []string{"help"}, &list, &stderr); code != 0 {
 		t.Fatal(code, stderr.String())
 	}
-	for _, name := range []string{"version", "doctor", "interfaces", "inventory", "diagnose", "discover", "inspect", "wifi", "capture", "import", "capabilities", "tools", "neighbors", "wifi show", "jobs list", "jobs show", "history list", "settings get", "jobs cancel", "history clear", "settings set", "wifi reveal", "capture live", "capture import", "capture export", "serve"} {
+	for _, name := range []string{"version", "doctor", "interfaces", "inventory", "diagnose", "discover", "inspect", "wifi", "capture", "import", "capabilities", "tools", "neighbors", "connections", "throughput", "wifi show", "jobs list", "jobs show", "history list", "settings get", "jobs cancel", "history clear", "settings set", "wifi reveal", "capture live", "capture import", "capture export", "serve"} {
 		t.Run(name, func(t *testing.T) {
 			if !strings.Contains(list.String(), name) {
 				t.Fatal("missing command", name)

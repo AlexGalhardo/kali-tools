@@ -174,6 +174,9 @@ func parseInvocation(args []string) (invocation, error) {
 			if call.command.path == "local-discover" {
 				seconds = 3
 			}
+			if call.command.path == "throughput" {
+				seconds = 0
+			}
 			fs.Int(name, seconds, "seconds")
 		case "redirects":
 			fs.Int(name, 0, "HTTP redirect hops to trace, 0..5")

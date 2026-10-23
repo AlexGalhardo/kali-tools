@@ -502,10 +502,10 @@ Interfaces exit: a parity matrix (capability × desktop/CLI/web) is recorded in 
   - [x] Authenticated local IPC, restricted operations, caller verification and bounded requests. Resolved by ADR 011: helper IPC is out of scope for 1.0. There is no helper to call.
   - [ ] Install/update/uninstall and recovery behavior per OS.
   - Assert: unauthorized caller and malformed request fail; ordinary UI and web server remain unprivileged.
-- [ ] B04 Connection/process inventory and throughput.
-  - [ ] Native per-OS socket-to-process mapping with permission and race handling.
-  - [ ] Separate per-interface counters from per-process attribution; no invented bandwidth estimates.
-  - [ ] Bounded Go throughput client/server for owned endpoints (not iperf3-wire-compatible); optional iperf3 `-J` adapter.
+- [ ] B04 Connection/process inventory and throughput. Linux `/proc` mapping, loopback throughput and the iperf3 `-J` parser are in [B04 evidence](docs/verification/specs/B04.md). Live Windows and macOS socket mapping are `unsupported`. Hardware confirmation remains open.
+  - [x] Native per-OS socket-to-process mapping with permission and race handling. Linux maps `/proc` socket inodes to a process. A missing inode is omitted. An unreadable socket table is `permission_required`. Windows and macOS return `unsupported`. Native acceptance remains open.
+  - [x] Separate per-interface counters from per-process attribution; no invented bandwidth estimates. The connection table has neither interface counters nor a rate.
+  - [x] Bounded Go throughput client/server for owned endpoints (not iperf3-wire-compatible); optional iperf3 `-J` adapter. The exchange is `127.0.0.1` only, 1ms..10s, cancellable, and reports endpoint, duration and byte count. The `-J` parser does not execute iperf3 and does not copy `bits_per_second`.
   - Assert: fixture processes match reported connections; active throughput has explicit endpoint/duration and cancellation.
 - [x] B05 Capture and adapter resilience. Automated bounds and loss reporting are in [B05 evidence](docs/verification/specs/B05.md). Pulling a cable is not covered.
   - [x] Reassembly limits, IPv6 extensions, truncated packets and sustained capture backpressure. Decode reports truncation, follows a complete IPv6 hop-by-hop header, and does not reassemble TCP or IPv6 fragments. Artifact growth stops at 10000 packets or the reserved 64 MiB budget.

@@ -7,6 +7,7 @@ type messages map[string]string
 var portuguese = messages{
 	"TLS audit": "Auditoria TLS", "verified": "verificado", "accepted": "aceito", "rejected": "rejeitado", "client_unsupported": "não suportado pelo cliente", "fatal": "fatal", "warn": "aviso", "info": "informação",
 	"neighbors": "vizinhos", "INTERFACE": "INTERFACE", "FAMILY": "FAMÍLIA", "ADDRESS": "ENDEREÇO", "ROUTER": "ROTEADOR",
+	"LOCAL": "LOCAL", "REMOTE": "REMOTO", "PROCESS": "PROCESSO", "endpoint": "endpoint", "duration_ms": "duração_ms", "byte_count": "octetos", "source": "origem",
 	"CAPABILITY": "CAPACIDADE", "STATE": "ESTADO", "PROVIDER": "PROVEDOR", "DETAIL": "DETALHE",
 	"NAME": "NOME", "INDEX": "ÍNDICE", "UP": "ATIVA", "MTU": "MTU", "MAC": "MAC", "ADDRESSES": "ENDEREÇOS",
 	"ADAPTER": "ADAPTADOR", "GATEWAYS": "GATEWAYS", "DNS": "DNS", "COUNTER": "CONTADOR", "RECEIVED": "RECEBIDO", "SENT": "ENVIADO",

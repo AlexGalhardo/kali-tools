@@ -34,6 +34,8 @@ Neighbors have no macOS provider yet. Wi-Fi metadata comes from CoreWLAN when th
 
 13. **Install, upgrade, uninstall.** Opening the CI `.app` is not the qualified install path. If you only opened it, write "not run" for R02's native install, upgrade, rollback and uninstall checks.
 
+14. **Socket inventory is unsupported.** Run `./kali-tools connections --json`. Expected: exit 3 and `error.code` is `unsupported`. Then `./kali-tools throughput --duration 1 --json`. Expected: exit 0, `endpoint` starts with `127.0.0.1:`, `duration_ms` is 1000, and `byte_count` is greater than 0. Evidence: `14-connections.json`, `14-throughput.json`. This does not close B02 or B04. macOS socket-to-process mapping was not implemented.
+
 ## Paste-back template
 
 ```text

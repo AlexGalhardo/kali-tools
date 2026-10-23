@@ -40,6 +40,8 @@ Privilege for 1.0 is a one-time `sudo setcap cap_net_raw+eip` on the capture bin
 
 13. **Install, upgrade, uninstall.** Unpacking the CI archive is not the qualified install path. If you only unpacked it, write "not run" for R02's native install, upgrade, rollback and uninstall checks.
 
+14. **Socket inventory and loopback throughput.** While a listener you own is visible to `ss -ltnp`, run `./kali-tools connections --json`. Expected: that listener's port, pid and process name appear, and the JSON has no rate and no interface counter. A socket with no readable owner is omitted. If `/proc/net/tcp` is unreadable, the command exits 4 with `permission_required`. Then `./kali-tools throughput --duration 1 --json`. Expected: exit 0, `endpoint` is `127.0.0.1:<port>`, `duration_ms` is 1000, `byte_count` is greater than 0, and `source` is `kali-tools`. Evidence: `14-connections.json`, `14-throughput.json`. This does not close B04 until the pasted evidence is recorded.
+
 ## Paste-back template
 
 ```text

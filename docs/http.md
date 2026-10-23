@@ -21,6 +21,8 @@ There is no CORS. A cross-site request is `403` `forbidden`. One token is one op
 | `GET /api/capture/backends` | yes | 200 |
 | `GET /api/interfaces` | yes | 200 |
 | `GET /api/neighbors` | yes | 200 |
+| `GET /api/connections` | yes | 200 |
+| `POST /api/throughput` | yes | 200 |
 | `GET /api/inventory` | yes | 200 |
 | `GET /api/tools` | yes | 200 |
 | `GET /api/jobs/{id}` | yes | 200 |
@@ -53,6 +55,10 @@ There is no CORS. A cross-site request is `403` `forbidden`. One token is one op
 `POST /api/capture/import` requires `Content-Type: application/octet-stream`. `GET /api/capture/export` with query `format=pcap` or `format=pcapng` returns that file with `Cache-Control: no-store`. The server does not accept a filesystem path.
 
 `GET /api/doctor/bundle` returns `application/zip` with `Cache-Control: no-store` and filename `kali-tools-diagnostic.zip`. The body is the same local archive as `kali-tools doctor --bundle`. The server does not upload it.
+
+`GET /api/connections` returns the socket table. Windows and macOS are `unsupported`. An unreadable Linux socket table is `permission_required`. The JSON has no interface counters and no rate.
+
+`POST /api/throughput` accepts `duration_ms` (1 through 10000) or `iperf_json` (an iperf3 `-J` document), not both. The response fields are `endpoint`, `duration_ms`, `byte_count` and `source`. That is not a bandwidth estimate. The server does not execute iperf3. A loopback measurement uses `127.0.0.1` and stops when the request context is cancelled.
 
 `POST /api/snmp` reads a community or SNMPv3 secret from the JSON body and does not log that body.
 

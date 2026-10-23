@@ -37,6 +37,7 @@ linters:
             - "**/internal/dnsinspect/**"
             - "**/internal/localdiscovery/**"
             - "**/internal/bundle/**"
+            - "**/internal/conn/**"
             - "!$test"
           deny:
             - pkg: github.com/AlexGalhardo/kali-tools/internal/adapter

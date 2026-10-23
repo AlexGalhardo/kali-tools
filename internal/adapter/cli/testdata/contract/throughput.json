@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "command": "throughput",
+  "paths": {
+    "data.byte_count": "number",
+    "data.duration_ms": "number",
+    "data.endpoint": "string",
+    "data.source": "string",
+    "schema_version": "number",
+    "version": "string"
+  }
+}

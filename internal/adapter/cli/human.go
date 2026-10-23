@@ -257,6 +257,19 @@ func renderHuman(out io.Writer, call invocation, data any) error {
 		packets(v.Packets, v.Format, v.Limited)
 	case contract.LiveCapture:
 		packets(v.Packets, "live", v.Limited)
+	case contract.ConnectionTable:
+		header("PROTOCOL LOCAL REMOTE STATE PID PROCESS")
+		for _, row := range v.Connections {
+			line("%s\t%s\t%s\t%s\t%d\t%s", row.Protocol, row.Local, row.Remote, row.State, row.PID, row.Process)
+		}
+		if v.Limited {
+			line("%s", l("limited"))
+		}
+	case contract.ThroughputSample:
+		field("endpoint", v.Endpoint)
+		field("duration_ms", v.DurationMS)
+		field("byte_count", v.ByteCount)
+		field("source", v.Source)
 	default:
 		return fmt.Errorf("unsupported CLI presentation type %T", data)
 	}

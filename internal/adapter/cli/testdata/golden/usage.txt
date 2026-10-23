@@ -6,6 +6,8 @@ Commands:
   capabilities     List capabilities and availability states
   tools            List separately installed optional tools
   neighbors        Read the passive OS ARP/ND cache
+  connections      List sockets and the owning process
+  throughput       Measure loopback throughput or parse an iperf3 -J report
   interfaces       List local network interfaces
   inventory        Show routes, DNS and traffic counters
   diagnose         diagnose [dns|tcp|http|tls|ping|trace] [flags]

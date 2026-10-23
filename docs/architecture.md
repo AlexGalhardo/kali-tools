@@ -55,6 +55,7 @@ kali-tools/
 │   ├── dnsinspect/                 capability: DNS inspection (B09)
 │   ├── localdiscovery/             capability: mDNS, SSDP and owned-device SNMP (B10)
 │   ├── bundle/                     redacted diagnostic zip; no network and no Wi-Fi key read (B06)
+│   ├── conn/                       socket-to-process inventory and loopback throughput (B04)
 │   ├── adapter/                    all adapters, named by technology
 │   │   ├── contract/               shared frontend DTOs, explicit mappers and safe error mapping
 │   │   ├── storage/                driven: SQLite store, migrations, settings, retention
@@ -115,7 +116,7 @@ Folders marked *(empty)* contain only `.gitkeep`. They mark target locations fro
 | Layer | Packages | May import | Must not import |
 | --- | --- | --- | --- |
 | Shared kernel | `internal/domain` | stdlib | anything in the module |
-| Capabilities (inner hexagon) | `internal/network`, `internal/capture`, `internal/wifi`, `internal/tlsaudit`, `internal/dnsinspect` | `domain`, stdlib, pure libraries (gopacket, miekg/dns) | `adapter/*`, `app`, Wails, `database/sql` |
+| Capabilities (inner hexagon) | `internal/network`, `internal/capture`, `internal/wifi`, `internal/tlsaudit`, `internal/dnsinspect`, `internal/conn` | `domain`, stdlib, pure libraries (gopacket, miekg/dns) | `adapter/*`, `app`, Wails, `database/sql` |
 | Application | `internal/app`, `internal/job` | `domain`, capability packages, `job` | `adapter/*`, Wails, `net/http`, `os/exec`, `database/sql` |
 | Driven adapters | `internal/adapter/{storage,tools,probe,platform,pcap}` | `domain`, capability packages, OS/driver libraries | driving adapters, `cmd`, `app` (except for types) |
 | Driving adapters | `internal/adapter/{wailsui,cli,httpapi}` | `app`, `domain`, `adapter/contract` DTO types | driven adapters directly (they go through `app`) |
@@ -195,6 +196,8 @@ A06's inspector selects an available backend, renders translated stable loss cod
 B05 records the decode contract in [capture decoding](capture-decoding.md). Each packet is decoded alone: a complete IPv6 hop-by-hop header is followed, truncation is reported, and TCP streams and IPv6 fragments are not reassembled. Payloads stay out of summaries and history. Artifact growth stops at 10000 packets or the reserved 64 MiB budget. TShark stays inventory-only (ADR 006). Pulling a cable remains a native runbook check.
 
 B06's diagnostic bundle is a pure writer in `internal/bundle`. `Application.DiagnosticBundle` gathers version, doctor text, capability states, language, retention and at most 50 history rows. It does not call Wi-Fi or capture. CLI `doctor --bundle`, authenticated `GET /api/doctor/bundle` and the Settings action all write that same zip locally. Addresses and hostnames become per-archive pseudonyms. Known secrets are deleted. Nothing is uploaded ([ADR 012](adr/012-diagnostic-bundle.md)).
+
+B04 lists sockets and measures loopback throughput in `internal/conn`. Linux reads `/proc/net/tcp`, `tcp6`, `udp` and `udp6`, then maps inodes through `/proc/<pid>/fd`. A missing inode is omitted. An unreadable socket table is `permission_required`. One unreadable process is skipped. Windows and macOS return `unsupported`. The table has no interface counters and no bandwidth estimate. `Exchange` listens on `127.0.0.1` for 1ms..10s, stops when the context is cancelled, and reports the endpoint, duration and byte count. `ParseIperfJSON` reads an iperf3 `-J` document and ignores `bits_per_second`. iperf3 is not executed and the exchange is not iperf3-wire-compatible. CLI, authenticated HTTP and Wails call the same use cases. A hardware check of the Linux reader, and live Windows or macOS socket mapping, stay on the runbooks.
 
 A01 step 1 adds passive neighbor value types and pure normalization in network: discard unusable/broadcast rows, deduplicate by interface/address, sort deterministically and return at most 4,096 rows with an explicit Limited flag. This group adds no OS query, port extension or public route.
 
