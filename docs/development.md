@@ -3,14 +3,14 @@
 ## Prerequisites
 
 - Go 1.27.3 on PATH.
-- Node 24.20.0 and Bun 1.4.3.
+- Node 24.21.0 and Bun 1.4.3.
 - Wails v2.17.0: `go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.0`.
 - golangci-lint v2.15.0: `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0`.
 - govulncheck v1.9.0: `go install golang.org/x/vuln/cmd/govulncheck@v1.9.0`.
 - A native C compiler for `-race`; Windows verification uses w64devkit GCC 16.2.0.
 - Docker Desktop with its Linux engine running for the private lab.
 
-Run `wails doctor`. Windows needs WebView2; Linux needs GTK3 and WebKitGTK 4.1 development packages and the `webkit2_41` tag; macOS needs its native development toolchain. Cross compilation does not prove runtime support.
+Run `wails doctor`. Windows needs WebView2; Linux needs GTK3 and WebKitGTK 4.1 development packages and the `webkit2_41` tag; macOS 13 or later on Apple Silicon needs its native development toolchain. Intel macOS is not a 1.0 target. Cross compilation does not prove runtime support. Releases stay vendor-unsigned ([ADR 008](adr/008-signing-and-provenance.md)).
 
 ## Commands
 

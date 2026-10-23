@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | B11 (`httptrace` phase timings, security-header presence report, redirect chain without following) |
-| Status | Ready |
+| Status | Done (2026-10-23). Evidence: docs/verification/specs/B11.md. Native hardware acceptance is not part of this spec |
 | Depends on | H04 (`app.Application`), H05/H06 (adapters, DTOs), W01 + W04 (HTTP route) |
 | Risk | Low: an additive extension of an existing, well-tested diagnostic; the main risk is breaking the "redirects are not followed" guarantee |
 

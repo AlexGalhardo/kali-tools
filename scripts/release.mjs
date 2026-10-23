@@ -18,7 +18,7 @@ run("git",["archive","--format=tar.gz","HEAD","-o",path.join(directory,`kali-too
 cpSync(path.join(root,"LICENSE.md"),path.join(directory,"LICENSE.md"));
 for(const file of ["THIRD_PARTY_NOTICES.txt","dependencies.json"]){cpSync(path.join(root,"build/notices",file),path.join(directory,file));}
 const assets=readdirSync(directory).filter(f=>f!=="SHA256SUMS").sort();
-for(const target of ["windows-x64.zip","linux-x64.tar.gz","macos-x64.zip","macos-arm64.zip"]){if(!assets.some(f=>f.endsWith(target)))throw Error(`Missing native asset: ${target}`);}
+for(const target of ["windows-x64.zip","linux-x64.tar.gz","macos-arm64.zip"]){if(!assets.some(f=>f.endsWith(target)))throw Error(`Missing native asset: ${target}`);}
 writeFileSync(path.join(directory,"SHA256SUMS"),assets.map(file=>createHash("sha256").update(readFileSync(path.join(directory,file))).digest("hex")+"  "+file).join("\n")+"\n");
 const notes=path.join(root,"docs/releases",version+".md");
 if(release){run("gh",["release","edit",tag,"--repo",repo,"--draft","--prerelease","--target",sha,"--notes-file",notes]);}

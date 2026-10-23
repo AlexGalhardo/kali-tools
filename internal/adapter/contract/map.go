@@ -51,10 +51,38 @@ func FromInventory(v app.HostSnapshot) Inventory {
 	}), Counters: mapSlice(v.Counters, func(c network.Counter) Counter { return Counter{ID: c.ID, Received: c.Received, Sent: c.Sent} })}
 }
 func (r DiagnosticRequest) Request() network.Request {
-	return network.Request{RecordType: r.RecordType, Kind: r.Kind, Target: r.Target, Port: r.Port, TimeoutMS: r.TimeoutMS}
+	return network.Request{RecordType: r.RecordType, Kind: r.Kind, Target: r.Target, Port: r.Port, TimeoutMS: r.TimeoutMS, Redirects: r.Redirects}
 }
 func FromDiagnosticResult(v network.Result) DiagnosticResult {
-	return DiagnosticResult{ErrorCode: v.ErrorCode, Kind: v.Kind, Target: v.Target, Status: v.Status, ElapsedMS: v.ElapsedMS, Values: slices.Clone(v.Values), Provider: v.Provider}
+	return DiagnosticResult{ErrorCode: v.ErrorCode, Kind: v.Kind, Target: v.Target, Status: v.Status, ElapsedMS: v.ElapsedMS, Values: slices.Clone(v.Values), Provider: v.Provider, HTTP: fromHTTP(v.HTTP)}
+}
+func fromHTTP(v *network.HTTPMetadata) *HTTPMetadata {
+	if v == nil {
+		return nil
+	}
+	out := &HTTPMetadata{StatusCode: v.StatusCode, FinalURL: v.FinalURL, Phases: clonePhases(v.Phases), SecurityHeaders: make([]SecurityHeader, len(v.SecurityHeaders)), Chain: make([]RedirectHop, len(v.Chain)), ChainStatus: v.ChainStatus}
+	for i, h := range v.SecurityHeaders {
+		out.SecurityHeaders[i] = SecurityHeader{Name: h.Name, Present: h.Present, Value: h.Value, Notes: slices.Clone(h.Notes)}
+	}
+	for i, hop := range v.Chain {
+		out.Chain[i] = RedirectHop{URL: hop.URL, StatusCode: hop.StatusCode, Status: hop.Status}
+	}
+	if v.Redirect != nil {
+		redir := *v.Redirect
+		redir.Notes = slices.Clone(v.Redirect.Notes)
+		out.Redirect = &RedirectTarget{Location: redir.Location, Valid: redir.Valid, SelfLoop: redir.SelfLoop, CrossHost: redir.CrossHost, Downgrade: redir.Downgrade, Notes: redir.Notes}
+	}
+	return out
+}
+func clonePhases(v network.HTTPPhases) HTTPPhases {
+	return HTTPPhases{DNSMS: cloneMS(v.DNSMS), ConnectMS: cloneMS(v.ConnectMS), TLSMS: cloneMS(v.TLSMS), TTFBMS: cloneMS(v.TTFBMS), TotalMS: v.TotalMS}
+}
+func cloneMS(v *float64) *float64 {
+	if v == nil {
+		return nil
+	}
+	n := *v
+	return &n
 }
 func FromStatus(v job.Status) Job {
 	return Job{ID: string(v.ID), Kind: v.Kind, State: string(v.State), Created: v.Created, Finished: copyPointer(v.Finished), Summary: v.Summary}

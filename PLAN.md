@@ -291,11 +291,11 @@ These are reusable delivery requirements, not a separate completed milestone. De
   - [x] Add `scripts/depguard-check.mjs` and `node scripts/task.mjs arch`; prove each of the eight rules rejects a deliberate violation and cleans up.
   - [x] Wire the architecture check into the existing pinned CI job; record QG/AC/DA evidence in `docs/verification/specs/H08.md`.
   - Assert: a deliberately forbidden import fails the check locally and in CI.
-- [ ] H09 Decide the CLI parser.
-  - ADR 004 selects stdlib using the specified rule, with verified alternative licenses/pins and concrete revisit triggers. Status stays proposed pending owner approval. [ADR](docs/adr/004-cli-parser.md).
+- [x] H09 Decide the CLI parser.
+  - [x] ADR 004 keeps stdlib `flag`. The owner accepted it on 2026-10-23. Cobra is not adopted. [ADR](docs/adr/004-cli-parser.md).
   - Spec: [H08-dependency-rule](docs/specs/H08-dependency-rule.md)
-  - [ ] Record an ADR: stdlib `flag` versus Cobra, based on the C-phase command tree, completion needs and license review.
-  - [ ] Write ADR 004 using H08 §4.5's decision rule and revisit triggers; keep its status `proposed` until owner approval.
+  - [x] Record an ADR: stdlib `flag` versus Cobra, based on the C-phase command tree, completion needs and license review.
+  - [x] Write ADR 004 using H08 §4.5's decision rule and revisit triggers. Accepted by the owner on 2026-10-23.
   - Assert: the ADR names the trigger for revisiting the decision.
 
 ## 6. Alpha — Windows-first integrated toolkit
@@ -337,7 +337,7 @@ These are reusable delivery requirements, not a separate completed milestone. De
   - [ ] Windows WLAN metadata: current profile, SSID/BSSID, signal/channel when available.
     - [x] Channel query and bounded native-structure decoding implemented; synthetic Windows metadata/layout tests passed.
     - [ ] Controlled native Wi-Fi network acceptance.
-  - [ ] Windows 11 24H2 location consent: implementation maps opcode-7 `ERROR_ACCESS_DENIED` on build >= 26100, reports `location_consent_required` and offers the fixed settings URI; no automatic retry. `AppCapability.CheckAccess` remains a WinRT follow-up. Native consent acceptance and Linux coverage remain open. [Evidence](docs/verification/specs/A05.md).
+  - [ ] Windows 11 24H2 location consent: implementation maps opcode-7 `ERROR_ACCESS_DENIED` on build >= 26100, reports `location_consent_required` and offers the fixed settings URI; no automatic retry. `AppCapability.CheckAccess` remains a WinRT follow-up. Linux-host pure-function coverage now meets the spec gate (`consent.go` 100%, `profile.go` 90%). Native consent acceptance remains open. [Evidence](docs/verification/specs/A05.md).
     - [x] Synthetic consent/reveal mapping, observed capability state, fixed-URI desktop opener, HTTP/CLI error hints and translated UI recovery; key/metadata discarded on provider errors.
   - [ ] Explicit reveal action for the current saved network; native authorization as required.
   - [ ] Distinguish open network, enterprise authentication, no saved key, denied and unsupported.
@@ -375,12 +375,13 @@ These are reusable delivery requirements, not a separate completed milestone. De
   - [x] Owner-requested black/neon-green terminal theme, bundled JetBrains Mono, mobile layout and Impeccable review. [Theme spec](docs/specs/A08-terminal-theme.md); [evidence](docs/verification/specs/A08-theme.md). Shared styling applies to desktop and browser; HTTP implementation and security are present; open acceptance is recorded in W01/W04.
   - [x] Dashboard, interfaces, diagnostics, Wi-Fi, packet inspector, toolkit, history and settings.
   - [ ] PT-BR/English catalogs, keyboard access, focus states and Base UI primitives.
-  - [ ] Virtualized packet/result tables, loading/error/permission states and cancel controls.
-    - [x] Packet and discovery tables render at most 100 rows per page; discovery pagination verified with 205 synthetic endpoints. Pagination is implemented; virtualization remains pending.
+  - [ ] Paginated packet/result tables, loading/error/permission states and cancel controls.
+    - [x] Packet and discovery tables render at most 100 rows per page; discovery pagination verified with 205 synthetic endpoints. Owner decision 2026-10-23: this pagination satisfies the 1.0 virtualization requirement. Do not add a virtualization library. [ADR 007](docs/adr/007-paginated-tables.md).
     - [x] Diagnostics cancellation, capture stop and discovery cancellation controls; browser discovery test uses the emitted service job ID.
     - [x] Actual provider capability states, bounded-import notice and metric sample timestamps.
     - [x] Translated states, permission/diagnostic reasons, capture start failure recovery and optional-adapter dependency flows.
-    - [ ] Complete all permission/error acceptance and decide whether pagination satisfies the virtualization requirement.
+    - [x] Pagination satisfies the virtualization requirement for 1.0. [ADR 007](docs/adr/007-paginated-tables.md).
+    - [ ] Complete all permission/error acceptance.
   - [ ] SQLite preferences and history; opt-in capture save and clear-history action.
     - [x] SQLite-backed preferences/history and explicit clear-history action; restart/retention and settings validation tests pass.
     - [x] Native save-dialog integration and explicit PCAP/PCAPNG format selection; browser success/cancellation/failure and Go filesystem tests passed.
@@ -491,8 +492,8 @@ Interfaces exit: a parity matrix (capability × desktop/CLI/web) is recorded in 
   - [ ] Capture with libpcap and `CAP_NET_RAW`; avoid elevating the full UI or server.
   - Assert: native evidence covers real adapter, denied permission, restart and no saved PSK.
 - [ ] B02 macOS native adapters.
-  - [ ] Select supported macOS/architecture baseline and native bridge approach.
-  - [ ] Implement interfaces/routes/counters and current Wi-Fi metadata. CoreWLAN needs Location Services authorization in a signed `.app`.
+  - [x] Select supported macOS/architecture baseline and native bridge approach. macOS 13 Ventura or later, Apple Silicon (`darwin/arm64`) only. The bridge is cgo with a thin Objective-C layer. No Intel, universal, or Swift helper for 1.0. [ADR 006](docs/adr/006-macos-baseline.md).
+  - [ ] Implement interfaces/routes/counters and current Wi-Fi metadata. On real Apple Silicon hardware, verify whether an ad-hoc-signed `.app` can read CoreWLAN SSID/BSSID and whether Location Services prompts. Show an explicit capability state when that access is unavailable. Not accepted from documentation or cross-compilation. [ADR 006](docs/adr/006-macos-baseline.md), [ADR 008](docs/adr/008-signing-and-provenance.md).
   - [ ] Keychain feasibility spike.
   - [ ] BPF capture permissions: detect ChmodBPF group access and never change device permissions.
   - [ ] Key-reveal authorization, with an explicit unsupported state if OS policy prevents access.
@@ -534,15 +535,15 @@ Interfaces exit: a parity matrix (capability × desktop/CLI/web) is recorded in 
 - [ ] B09 DNS inspection module.
   - Spec: [B09-dns-inspection](docs/specs/B09-dns-inspection.md)
   - [ ] System vs explicit resolver comparison, SOA/NS consistency, read-only DNSSEC chain and DoH/DoT reachability.
-  - [ ] Decide `miekg/dns` GitHub v1 versus `codeberg.org/miekg/dns`; record in `docs/dependencies.md`.
+  - [x] Decide `miekg/dns`: `github.com/miekg/dns` v1 (BSD-3-Clause), latest v1.1.x at decision time v1.1.73, not `codeberg.org/miekg/dns`. The module is not in go.mod until B09 is implemented. [dependencies](docs/dependencies.md).
   - Assert: Docker lab DNS fixtures cover each check; blocked port-53 egress is a distinct result.
 - [ ] B10 Local service discovery (read-only).
   - Spec: [B10-local-discovery](docs/specs/B10-local-discovery.md)
   - [ ] mDNS/DNS-SD (hashicorp/mdns), SSDP M-SEARCH listener and SNMP read-only queries against user-declared owned devices.
   - Assert: lab fixtures announce known services; scope rules match A04.
-- [ ] B11 HTTP metadata.
+- [x] B11 HTTP metadata.
   - Spec: [B11-http-metadata](docs/specs/B11-http-metadata.md)
-  - [ ] `httptrace` phase timings, security-header presence report and redirect chain without following.
+  - [x] `httptrace` phase timings, security-header presence report and redirect chain without following. [Evidence](docs/verification/specs/B11.md).
   - Assert: fixtures cover missing/present headers and redirect loops within limits.
 
 Beta exit: the agreed capability matrix is verified on all three OSes and all three interfaces. Limitations are approved and documented. No data loss, privilege-boundary, web-server-security or critical parser defects remain unresolved.
@@ -561,9 +562,9 @@ Beta exit: the agreed capability matrix is verified on all three OSes and all th
   - [ ] External review of the web-server threat model.
   - Assert: release checklist links reproducible results; no unfinished blocker is marked complete.
 - [ ] R03 Distribution and provenance.
-  - [ ] Decide signing/notarization credentials and provisioning with the owner.
-  - [ ] Produce checksums, dependency inventory, source archive and release notes.
-  - [ ] Verify signatures where configured; clearly label unsigned development artifacts.
+  - [x] Signing decision (2026-10-23): no Apple Developer Program, Developer ID, notarization, or Windows Authenticode, EV, or Azure Trusted Signing, now or for 1.0. Releases are vendor-unsigned. macOS arm64 keeps the ad-hoc linker signature. Every artifact gets a SHA-256 checksum. GitHub artifact attestations are the provenance mechanism. [ADR 008](docs/adr/008-signing-and-provenance.md).
+  - [ ] Produce checksums, dependency inventory, source archive and release notes for the qualified 1.0. Development drafts already publish SHA-256 checksums.
+  - [x] Vendor signatures are not configured. Development artifacts stay labeled unsigned. An ad-hoc macOS signature is not a vendor signature.
   - [ ] Create RC, test it, then tag 1.0.0 only after acceptance.
   - Assert: version matches CLI, desktop metadata, tag and changelog; artifacts correspond to tagged source.
 - [ ] R04 Optional automation activation.
@@ -687,14 +688,14 @@ The plan does not claim feature parity with every Kali package.
 
 **Next tasks, in order** (each is a spec in [docs/specs](docs/specs/README.md)):
 
-1. A05 implementation is verified on Windows; Linux-host pure-function coverage and manual consent/reveal acceptance remain open. W01/W04 implementation and non-native acceptance are verified; native account/browser/desktop gates remain open.
-2. H09 owner approval: ADR 004 is proposed; H08 mechanical enforcement and hosted positive/negative proofs pass.
+1. A05 implementation is verified on Windows. Linux-host pure-function coverage meets the spec gate; manual consent/reveal acceptance remains open. W01/W04 implementation and non-native acceptance are verified; native account/browser/desktop gates remain open.
+2. H09 is accepted: ADR 004 keeps stdlib `flag` (owner, 2026-10-23). H08 mechanical enforcement and hosted positive/negative proofs pass.
 3. Retain the W01/W04 native gates; the server's shared acceptance driver, bounds and shutdown verification are recorded.
-4. A05, A06, A01, B08–B11: follow the remaining SDD execution order. Keep H01–H07 native checks and the A07 NPSL owner decision visible; do not treat them as headless passes.
+4. B11 HTTP metadata is implemented and its non-native checks pass. A05, A06, A01 and B08–B10 follow the remaining SDD execution order. B09's DNS library, B02's macOS baseline, A08's pagination decision and R03's vendor-unsigned provenance are recorded. Keep H01–H07 native checks and the A07 NPSL owner decision visible; do not treat them as headless passes.
 
 **Constraints.**
 
-- Hardware acceptance, privilege architecture, license/signing decisions and Linux/macOS parity are not inferred from compilation.
+- Hardware acceptance, privilege architecture and Linux/macOS parity are not inferred from compilation. Signing is decided: vendor-unsigned releases, SHA-256 checksums and GitHub artifact attestations ([ADR 008](docs/adr/008-signing-and-provenance.md)). Do not add Apple or Microsoft certificates.
 - Do not mark the plan complete. The owner's current explicit 0.4.0 checkpoint-publication request supersedes the earlier no-tag instruction only for that disclosed development release after its checks pass.
 
 ## 0.5.0 owner checkpoint (2026-10-22)

@@ -283,3 +283,28 @@ test("overview renders location consent state @wails-only", async({page,connect}
  await expect(row).toContainText("Consentimento de localiza\u00e7\u00e3o necess\u00e1rio");
  await page.screenshot({path:"../build/bin/h06-location-consent.png",fullPage:true});
 });
+
+test("HTTP diagnostic shows phases, headers and the redirect target", async ({page, connect}, info) => {
+ await connect(page);
+ await page.getByRole("button", {name: "Diagnostics", exact: true}).click();
+ await page.getByRole("combobox", {name: "Operation", exact: true}).selectOption("http");
+ await expect(page.getByLabel("Trace redirects (0-5)", {exact: true})).toBeVisible();
+ if (info.project.name === "http") {
+  await page.getByLabel("Target", {exact: true}).fill(new URL(page.url()).origin + "/healthz");
+ } else {
+  await page.getByLabel("Target", {exact: true}).fill("http://127.0.0.1/fixture");
+ }
+ await page.getByRole("button", {name: /Run diagnostic/}).click();
+ await expect(page.getByRole("heading", {name: "Phases", exact: true})).toBeVisible();
+ await expect(page.getByRole("heading", {name: "Security headers", exact: true})).toBeVisible();
+ await expect(page.getByRole("heading", {name: "Redirect target", exact: true})).toBeVisible();
+ if (info.project.name === "http") {
+  await expect(page.getByRole("rowheader", {name: "Strict-Transport-Security", exact: true})).toBeVisible();
+ } else {
+  await expect(page.getByText("default-src 'none'", {exact: true})).toBeVisible();
+  await expect(page.getByText("http://192.0.2.1/next", {exact: true})).toBeVisible();
+  await expect(page.getByRole("link", {name: "http://192.0.2.1/next"})).toHaveCount(0);
+  await expect(page.getByText("Cross-host", {exact: true})).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.dataset.redirects)).toBe("0");
+ }
+});

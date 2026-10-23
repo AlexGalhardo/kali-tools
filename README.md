@@ -7,7 +7,7 @@ A local network and security toolkit inspired by the Kali Linux ecosystem, built
 ## What it does
 
 - Lists interfaces, addresses, gateways and DNS; monitors native traffic counters.
-- Runs DNS record queries, bounded TCP/HTTP/TLS checks and Windows IPv4 ping/traceroute.
+- Runs DNS record queries, bounded TCP/HTTP/TLS checks and Windows IPv4 ping/traceroute. An HTTP check reports phase timings and security headers. It traces at most five redirects only when asked, and never follows one on its own.
 - Discovers explicitly selected IPv4 scopes and optionally inspects service signatures with separately installed Nmap.
 - Inspects Windows Wi-Fi metadata and reveals the current saved key only on explicit request; the display clears automatically.
 - Imports PCAP/PCAPNG, summarizes packets and explicitly saves retained packet data in either format.
@@ -15,9 +15,15 @@ A local network and security toolkit inspired by the Kali Linux ecosystem, built
 
 ## Development downloads
 
-[GitHub releases](https://github.com/AlexGalhardo/kali-tools/releases) contain development release drafts assembled only after CI passes. Archives target Windows x64, Ubuntu 24.04 x64, macOS Intel and macOS Apple Silicon. Each includes the desktop, CLI, license/notices, dependency inventory and build metadata. Verify downloads against `SHA256SUMS`.
+[GitHub releases](https://github.com/AlexGalhardo/kali-tools/releases) contain development release drafts assembled only after CI passes. Archives target Windows x64, Ubuntu 24.04 x64 and macOS Apple Silicon (macOS 13 or later). There is no Intel or universal macOS build for 1.0. Each archive includes the desktop, CLI, license/notices, dependency inventory and build metadata. Verify downloads against `SHA256SUMS`. The release workflow also publishes a Sigstore build attestation. See [ADR 008](docs/adr/008-signing-and-provenance.md).
 
-Windows uses Edge WebView2. Linux requires GTK3 and WebKitGTK 4.1. macOS previews are not notarized. Development builds have no trusted signing identity. Read the release notes before testing; a successful native build does not qualify hardware features.
+Windows uses Edge WebView2. Linux requires GTK3 and WebKitGTK 4.1. Releases are vendor-unsigned: no Apple Developer ID, notarization, or Windows Authenticode certificate. An Apple Silicon build keeps only the ad-hoc signature the Go linker applies so the binary can run. Read the release notes before testing; a successful native build does not qualify hardware features.
+
+## First launch of an unsigned build
+
+- **Windows:** SmartScreen may say the app is unrecognized. Choose **More info**, then **Run anyway**.
+- **macOS:** Gatekeeper may block the app. Open **System Settings > Privacy & Security** and choose **Open Anyway**. If it stays blocked, clear the quarantine flag with `xattr -d com.apple.quarantine` on the `.app`.
+- **Linux:** no extra first-launch prompt.
 
 ## Choose your setup
 
@@ -44,7 +50,7 @@ If GitHub requests authentication, use an account with access to the repository.
 
 ## 2. Prepare your computer without Docker
 
-The development baseline is Go **1.27.2**, Node.js **24.21.0**, Bun **1.4.3** and Wails **2.17.0**. Install Go, Node.js and Git first. Reopen your terminal after installation to load PATH changes.
+The development baseline is Go **1.27.3**, Node.js **24.21.0**, Bun **1.4.3** and Wails **2.17.0**. Install Go, Node.js and Git first. Reopen your terminal after installation to load PATH changes. macOS development for 1.0 is Apple Silicon on macOS 13 or later ([ADR 006](docs/adr/006-macos-baseline.md)).
 
 Setup installs pinned Wails, golangci-lint and govulncheck into the repository's ignored `.tools/bin` directory. It installs exact frontend dependencies from the npm lockfile and downloads Playwright Chromium. It does not change your global Go binary directory. GitHub Actions is enabled separately in the repository.
 

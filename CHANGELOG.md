@@ -4,6 +4,19 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+### Added
+
+- HTTP diagnostics report phase timings, an allowlisted security-header report and an explicit redirect trace of at most five hops. Redirects are not followed unless that trace is requested.
+
+### Changed
+
+- Accepted ADR 004: the CLI keeps the standard-library flag parser. Cobra is not adopted (owner, 2026-10-23).
+- Chose `github.com/miekg/dns` v1.1.73 for the future DNS inspection module. It is not a dependency until that work is implemented.
+- Set the 1.0 macOS baseline to macOS 13 or later on Apple Silicon, with a cgo Objective-C bridge. No Intel or universal build.
+- Accepted 100-row pagination as the 1.0 stand-in for virtualized packet and result tables.
+- Recorded the signing decision: vendor-unsigned releases, SHA-256 checksums and GitHub artifact attestations. No Apple or Microsoft certificate.
+- Aligned the documented Go and Node.js pins with go.mod and CI (Go 1.27.3, Node.js 24.21.0).
+
 ## [0.6.0-dev.2] - 2026-10-22
 
 Unsigned development preview; hardware qualification remains open. Not a release-qualified build.

@@ -4,9 +4,7 @@ import (
 	"context"
 	"crypto/x509"
 	"errors"
-	"io"
 	"net"
-	"net/http"
 	"net/netip"
 	"net/url"
 	"sort"
@@ -56,15 +54,17 @@ type Request struct {
 	Target     string `json:"target"`
 	Port       int    `json:"port"`
 	TimeoutMS  int    `json:"timeout_ms"`
+	Redirects  int    `json:"redirects,omitempty"`
 }
 type Result struct {
-	ErrorCode string   `json:"error_code,omitempty"`
-	Kind      string   `json:"kind"`
-	Target    string   `json:"target"`
-	Status    string   `json:"status"`
-	ElapsedMS float64  `json:"elapsed_ms"`
-	Values    []string `json:"values"`
-	Provider  string   `json:"provider"`
+	ErrorCode string        `json:"error_code,omitempty"`
+	Kind      string        `json:"kind"`
+	Target    string        `json:"target"`
+	Status    string        `json:"status"`
+	ElapsedMS float64       `json:"elapsed_ms"`
+	Values    []string      `json:"values"`
+	Provider  string        `json:"provider"`
+	HTTP      *HTTPMetadata `json:"http,omitempty"`
 }
 
 func ValidateHost(host string) error {
@@ -88,6 +88,12 @@ func ValidateHost(host string) error {
 	return nil
 }
 func Validate(r Request) error {
+	if r.Kind != "http" && r.Redirects != 0 {
+		return domain.Invalid("redirects apply only to HTTP diagnostics")
+	}
+	if r.Kind == "http" && (r.Redirects < 0 || r.Redirects > MaxRedirectHops) {
+		return domain.Invalid("redirects must be 0..5")
+	}
 	if r.TimeoutMS < 100 || r.TimeoutMS > 30000 {
 		return domain.Invalid("timeout must be 100..30000 ms")
 	}
@@ -178,20 +184,13 @@ func (d Diagnostics) Diagnose(ctx context.Context, r Request) (Result, error) {
 	case "tls":
 		result.Values, err = diagnoseTLS(ctx, r.Target, r.Port, nil)
 	case "http":
-		var req *http.Request
-		req, err = http.NewRequestWithContext(ctx, http.MethodGet, r.Target, nil)
-		if err == nil {
-			transport := &http.Transport{MaxResponseHeaderBytes: 64 << 10, Proxy: nil, DisableKeepAlives: true, TLSHandshakeTimeout: time.Duration(r.TimeoutMS) * time.Millisecond}
-			defer transport.CloseIdleConnections()
-			client := &http.Client{Transport: transport, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}
-			var resp *http.Response
-			resp, err = client.Do(req)
-			if resp != nil {
-				defer resp.Body.Close()
-				_, err = io.Copy(io.Discard, io.LimitReader(resp.Body, 65536))
-				result.Values = []string{resp.Status, resp.Proto}
-			}
+		var meta *HTTPMetadata
+		var values []string
+		meta, values, err = diagnoseHTTP(ctx, r)
+		if values != nil {
+			result.Values = values
 		}
+		result.HTTP = meta
 	}
 	result.ElapsedMS = float64(time.Since(start).Microseconds()) / 1000
 	if err != nil {

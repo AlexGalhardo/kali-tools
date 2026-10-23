@@ -41,4 +41,4 @@ The earlier recommendations/questions below are retained as brainstorming histor
 
 ## Planning rules
 
-Record answers here, then build PLAN.md with structure/alpha/beta/stable phases, nested tasks, delivery assertions, quality gates and evidence. Do not mark unimplemented features complete. License choice, signing credentials, minimum OS versions and redistribution policy remain explicit decisions before release packaging.
+Record answers here, then build PLAN.md with structure/alpha/beta/stable phases, nested tasks, delivery assertions, quality gates and evidence. Do not mark unimplemented features complete. The project license is MIT. Signing is vendor-unsigned ([ADR 008](adr/008-signing-and-provenance.md)). The macOS 1.0 baseline is macOS 13 or later on Apple Silicon ([ADR 006](adr/006-macos-baseline.md)). Redistribution of optional tools remains an explicit decision before release packaging.

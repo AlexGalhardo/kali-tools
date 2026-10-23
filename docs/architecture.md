@@ -41,7 +41,7 @@ kali-tools/
 ├── go.mod, go.sum                  single Go module github.com/AlexGalhardo/kali-tools
 │
 ├── cmd/
-│   ├── kali-tools/                 CLI composition root; future `serve` subcommand starts the web server
+│   ├── kali-tools/                 CLI composition root; `serve` starts the web server
 │   └── lab-fixture/                deterministic HTTP/DNS/TCP fixture server for the Docker lab
 │
 ├── internal/                       all Go logic; not importable by other modules
@@ -51,13 +51,14 @@ kali-tools/
 │   ├── network/                    capability: interfaces, DNS/TCP/HTTP/TLS/ping/trace diagnostics, TCP discovery, counter deltas
 │   ├── capture/                    capability: live capture (Windows raw IPv4), PCAP/PCAPNG import/export, gopacket decoding
 │   ├── wifi/                       capability: current Wi-Fi metadata and explicit key reveal (Windows)
-│   ├── tlsaudit/                   capability: TLS audit request validation and pure certificate reports (B08 in progress)
+│   ├── tlsaudit/                   capability: TLS audit request validation and certificate reports (B08); native verifier acceptance pending
 │   ├── adapter/                    all adapters, named by technology
 │   │   ├── contract/               shared frontend DTOs, explicit mappers and safe error mapping
 │   │   ├── storage/                driven: SQLite store, migrations, settings, retention
 │   │   ├── tools/                  driven: optional executables (Nmap/TShark), bounded process runner, Nmap XML parser
 │   │   ├── probe/                  driven: native Windows ICMP echo/traceroute
 │   │   ├── platform/               driven: OS routes, DNS servers and interface counters (windows/linux/other)
+│   │   ├── pcap/                   driven: optional Npcap detection and the tagged capture adapter
 │   │   ├── wailsui/                Wails bindings, native dialogs and event forwarder
 │   │   ├── httpapi/                REST, SSE, security middleware and bounded file transfers
 │   │   └── cli/                    CLI parsing, commands, output and bounded capture wait
@@ -68,8 +69,8 @@ kali-tools/
 │   ├── index.html                  entry HTML (loads src/main.tsx)
 │   ├── src/
 │   │   ├── main.tsx                React entry point
-│   │   ├── app/App.tsx             application shell, routes/pages (to be split into features/)
-│   │   ├── features/               (empty) target home of per-capability UI modules
+│   │   ├── app/App.tsx             application shell; composes the feature pages
+│   │   ├── features/               capability pages: capture, diagnostics, discovery, history, interfaces, neighbors, overview, settings, tls, wifi
 │   │   ├── shared/api/bridge.ts    THE transport seam: typed calls to Go (Wails or authenticated HTTP+SSE)
 │   │   ├── shared/i18n/i18n.ts     English and PT-BR catalogs
 │   │   ├── shared/ui/Icon.tsx      shared presentational components
@@ -224,6 +225,8 @@ Wails forwarder (EventsEmit "job") ◄── job.Manager.Subscribe ──► SSE
 ```
 
 The job context derives from the manager (application lifetime), never from a request. Each event carries a monotonic `seq`, so a reconnecting client can call `Snapshot` and resynchronize.
+
+An HTTP diagnostic also returns phase timings, an allowlisted security-header report and the redirect target. The client does not follow redirects. An explicit trace of at most five hops is a separate request per hop ([B11](specs/B11-http-metadata.md)).
 
 ### 5.3 Events
 

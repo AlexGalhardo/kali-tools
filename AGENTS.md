@@ -2,7 +2,7 @@
 
 Release policy: always follow SemVer 2.0.0 and Keep a Changelog 1.1.0, as specified in CONTRIBUTING.md. Run `node scripts/release-policy.mjs`; keep app/package/Wails versions, Git tags, dated changelog entries and release notes consistent. Never rewrite published release contents or tags.
 
-Use English for source, documentation and commits. Keep business logic in Go services shared by the Wails GUI, the web server and the CLI. Read docs/architecture.md before adding, moving or wiring packages, and keep it current; the reasoning is in docs/architecture-research.md. Never concatenate shell commands. Bound network operations, parser input, event queues and subprocess output. Never persist Wi-Fi secrets or packet payloads in diagnostic history. GitHub Actions activation was explicitly authorized on 2026-10-19; maintain pinned workflows under .github/workflows with minimum permissions. Mark PLAN.md tasks complete only with actual verification evidence. Run `go test ./...`, `go vet ./...` and the frontend check/build after relevant changes. Do not claim native platform acceptance from cross compilation. Use the MIT project license. No release tag before qualification and owner decisions on signing. Development artifacts must disclose unsigned status and open acceptance gates.
+Use English for source, documentation and commits. Keep business logic in Go services shared by the Wails GUI, the web server and the CLI. Read docs/architecture.md before adding, moving or wiring packages, and keep it current; the reasoning is in docs/architecture-research.md. Never concatenate shell commands. Bound network operations, parser input, event queues and subprocess output. Never persist Wi-Fi secrets or packet payloads in diagnostic history. GitHub Actions activation was explicitly authorized on 2026-10-19; maintain pinned workflows under .github/workflows with minimum permissions. Mark PLAN.md tasks complete only with actual verification evidence. Run `go test ./...`, `go vet ./...` and the frontend check/build after relevant changes. Do not claim native platform acceptance from cross compilation. Use the MIT project license. No release tag before qualification. Signing is decided: vendor-unsigned releases, SHA-256 checksums and GitHub artifact attestations (ADR 008). Do not add Apple or Microsoft certificates. Development artifacts must disclose unsigned status and open acceptance gates.
 
 ## Mandatory start of every task
 
@@ -16,7 +16,7 @@ Do this for every task, including small ones. If a skill conflicts with docs/arc
 
 ## Release naming
 
-GitHub releases follow the pattern: `kali-tools X.Y.Z — description`. All development releases are unsigned and published with status note: "unsigned development preview; hardware qualification remains open. Not a release-qualified build."
+GitHub releases follow the pattern: `kali-tools X.Y.Z — description`. All development releases are vendor-unsigned and published with status note: "unsigned development preview; hardware qualification remains open. Not a release-qualified build." macOS arm64 keeps the linker's ad-hoc signature only. Provenance is SHA-256 checksums plus GitHub artifact attestations (ADR 008).
 
 ## Implementation workflow
 
@@ -68,11 +68,11 @@ Behavior is specified in `docs/specs/`. The package map and dependency rule are 
 - `scripts/` — Node task runners. `scripts/setup/` is the per-OS setup entry point. `scripts/task.mjs` is the allowlist of task names.
 - `tests/acceptance` — in-process drivers. `tests/integration` is `//go:build integration`. `tests/e2e` is `//go:build e2e`.
 
-`docs/architecture.md` still says `frontend/src/features/` is empty. It contains the capability pages. When the map and the tree disagree, trust the tree and update the architecture doc only as part of the spec you are implementing.
+`frontend/src/features/` holds the capability pages. When the map and the tree disagree, trust the tree and update the architecture doc only as part of the spec you are implementing. The 1.0 macOS target is macOS 13 or later on Apple Silicon, with a cgo Objective-C bridge (ADR 006). Pagination, not a virtualization library, satisfies the 1.0 table requirement (ADR 007).
 
 ## Commands
 
-Pins in `go.mod` and `.github/workflows/ci.yml`: Go 1.27.3, Node.js 24.21.0, Bun 1.4.3, Wails v2.17.0, golangci-lint v2.15.0, govulncheck v1.9.0. `README.md` still says Go 1.27.2 in the setup section. `CONTRIBUTING.md` and `docs/development.md` still say Node.js 24.20.0, and `CONTRIBUTING.md` still says Go 1.27.2. Trust `go.mod` and CI when those sentences disagree.
+Pins in `go.mod` and `.github/workflows/ci.yml`: Go 1.27.3, Node.js 24.21.0, Bun 1.4.3, Wails v2.17.0, golangci-lint v2.15.0, govulncheck v1.9.0. README, CONTRIBUTING and docs/development.md use the same pins.
 
 Cursor cloud agents install dependencies with `bash .cursor/install.sh`, which is the `install` step in `.cursor/environment.json`. The script installs the pinned Node and Bun, downloads Go modules, installs golangci-lint and govulncheck, installs both frontend lockfiles, and installs Playwright Chromium. It does not install Wails, GTK, or WebKit, and it does not start a desktop or lab session. The default cloud image already provides Go 1.27.3; the script exits if `go env GOVERSION` is not `go1.27.3`.
 
@@ -128,6 +128,6 @@ Nmap itself is 7.80 or newer within major 7, TCP connect plus light version dete
 - `kali-tools serve` binds loopback unless `--allow-remote` is combined with a TLS certificate and key. Launch tokens and session cookies are credentials. Do not log or commit them.
 - `main.go` stays at the repository root. Wails v2 builds the package next to `wails.json`.
 - Windows leads Wi-Fi and capture development. Linux and macOS binaries do not prove those features. Do not mark a PLAN.md checkbox without the evidence record.
-- Development artifacts are unsigned. Do not create a release tag.
+- Development artifacts are vendor-unsigned. macOS arm64 binaries keep the Go linker's ad-hoc signature, which is not a Developer ID signature. Do not create a release tag. Do not add Apple or Microsoft signing.
 - GitHub Actions were authorized on 2026-10-19. Actions under `.github/workflows/` stay pinned to full commit SHAs. `pull_request_target` is rejected by `node scripts/task.mjs workflows`.
 - `*.pcap`, `*.pcapng`, and `*.db` are gitignored, except `tests/fixtures/*.pcap`. `frontend/dist/` keeps only `.gitkeep`. `frontend/wailsjs/` is tracked generated source.

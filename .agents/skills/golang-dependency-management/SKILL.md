@@ -114,7 +114,7 @@ kali-tools pins tools by exact version where they are invoked (`go install ...@v
 
 ### Go version
 
-The module declares `go 1.27.2`. Do not use APIs newer than the `go` directive, and do not change the directive as a side effect of another change.
+The module declares `go 1.27.3`. Do not use APIs newer than the `go` directive, and do not change the directive as a side effect of another change.
 
 ## Deep Dives
 

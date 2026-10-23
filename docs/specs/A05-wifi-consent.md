@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | A05 (location consent, reveal states, native acceptance) |
-| Status | Implementation verified on Windows (2026-10-22); Linux coverage and native consent acceptance pending |
+| Status | Implementation verified on Windows (2026-10-22). Linux-host pure-function coverage recorded 2026-10-23 (`consent.go` 100%, `profile.go` 90%). Native consent acceptance pending |
 | Depends on | H03 (`app.WiFiProvider`), H04 (`app.Application`), H05 (driving adapters), H06 (`location_consent_required` state, contract DTOs, error mapping), W01 + W04 (HTTP route) |
 | Risk | Medium: the consent behavior can only be proven on a real Windows 11 24H2 host; a wrong mapping would hide a real permission denial |
 

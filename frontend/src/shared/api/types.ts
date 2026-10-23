@@ -44,6 +44,38 @@ export type DiagnosticRequest = {
   target: string;
   port: number;
   timeout_ms: number;
+  redirects?: number;
+};
+export type HTTPPhases = {
+  dns_ms: number | null;
+  connect_ms: number | null;
+  tls_ms: number | null;
+  ttfb_ms: number | null;
+  total_ms: number;
+};
+export type SecurityHeader = {
+  name: string;
+  present: boolean;
+  value?: string;
+  notes?: string[];
+};
+export type RedirectTarget = {
+  location?: string;
+  valid: boolean;
+  self_loop: boolean;
+  cross_host: boolean;
+  downgrade: boolean;
+  notes?: string[];
+};
+export type RedirectHop = { url: string; status_code?: number; status: string };
+export type HTTPMetadata = {
+  status_code?: number;
+  final_url?: string;
+  phases: HTTPPhases;
+  security_headers: SecurityHeader[];
+  redirect?: RedirectTarget;
+  chain?: RedirectHop[];
+  chain_status?: string;
 };
 export type DiagnosticResult = {
   error_code?: string;
@@ -53,6 +85,7 @@ export type DiagnosticResult = {
   elapsed_ms: number;
   values: string[];
   provider: string;
+  http?: HTTPMetadata;
 };
 export type Job = {
   id: string;
