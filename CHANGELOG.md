@@ -6,6 +6,7 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ### Added
 
+- **Release environment.** The steps to create a protected `release` environment for AlexGalhardo are documented. The token used here received 403, so the environment was not created and the workflow was not changed.
 - **Qualification notes.** Install, upgrade, rollback, accessibility and the web-server threat model are written down for review. None of those R02 checks was run or accepted.
 - **Contract freeze.** CLI commands, HTTP routes, schema version 1, settings `language` and `retention_days`, and the packaging matrix are the supported surface. An operating system outside that matrix is not supported. kali-tools does not promise every Kali tool or every protocol payload.
 - **Packaging.** The archive matrix names Windows x64, Ubuntu 24.04 x64 and macOS Apple Silicon. Intel Mac, Windows ARM, Debian and Kali are not supported baselines. There is no installer. Deleting the unpacked directory leaves `history.db` in the per-user config directory. Each archive includes third-party notices.

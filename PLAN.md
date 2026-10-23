@@ -568,7 +568,7 @@ Beta exit: the agreed capability matrix is verified on all three OSes and all th
   - Assert: version matches CLI, desktop metadata, tag and changelog; artifacts correspond to tagged source.
 - [ ] R04 Optional automation activation.
   - [x] Owner explicitly requested full GitHub Actions activation on 2026-10-19; active source replaced dormant copies.
-  - [ ] Configure protected release environment and minimum repository permissions.
+  - [ ] Configure protected release environment and minimum repository permissions. The workflow already keeps pull requests from creating releases, and the release job is the only job with contents write. Creating environment `release` returned 403 for this token, so it is documented and not applied. [Release environment](docs/ci/release-environment.md).
   - Assert: activation follows the recorded owner instruction; pull requests cannot create releases and qualified releases retain acceptance gates.
 
 ## 10. Verification strategy

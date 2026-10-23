@@ -8,7 +8,7 @@ Native jobs build Windows x64, Linux x64 on Ubuntu 24.04 and macOS Apple Silicon
 
 Only the final main-branch release job has contents-write permission, plus the identity-token and attestation permissions that `actions/attest-build-provenance` needs. It waits for every check, downloads that run's native archives, generates a source archive and SHA-256 checksums, attests those files, and assembles a vendor-unsigned development release draft. It refuses to replace a published release. Pull requests cannot create releases. Git tags and publication remain gated by PLAN.md acceptance. Provenance is the checksum file plus the Sigstore attestation ([ADR 009](../adr/009-signing-and-provenance.md)).
 
-Actions are pinned to immutable upstream release revisions. No PAT, Apple certificate, Microsoft certificate or deployment credential is stored in the repository. The release job uses the short-lived GitHub token.
+Actions are pinned to immutable upstream release revisions. No PAT, Apple certificate, Microsoft certificate or deployment credential is stored in the repository. The release job uses the short-lived GitHub token. A protected `release` environment is not configured: the API returned 403, and the job does not name an environment. The steps are in [release environment](release-environment.md).
 
 ## Serve test isolation
 
