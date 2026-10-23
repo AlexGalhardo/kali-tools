@@ -121,6 +121,19 @@ func nsRR(zone, host string) *dns.NS {
 	return &dns.NS{Hdr: hdr(zone, dns.TypeNS, 60), Ns: dns.Fqdn(host)}
 }
 
+func portOf(t *testing.T, addr string) uint16 {
+	t.Helper()
+	_, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	n, err := strconv.Atoi(port)
+	if err != nil || n < 1 || n > 65535 {
+		t.Fatal(port)
+	}
+	return uint16(n)
+}
+
 func TestCompareResolversDisagree(t *testing.T) {
 	left := listenDNS(t, "127.0.0.1:0", dns.HandlerFunc(func(w dns.ResponseWriter, req *dns.Msg) {
 		reply(w, req, false, []dns.RR{aRR(req.Question[0].Name, "192.0.2.10", 12345)})
@@ -237,7 +250,7 @@ func TestSOANSConsistency(t *testing.T) {
 		})
 	}
 	aAddr := listenBoth(t, "127.0.0.1:0", serveAuth(authA))
-	bAddr := listenBoth(t, "127.0.0.2:0", serveAuth(authB))
+	bAddr := listenBoth(t, "127.0.0.1:0", serveAuth(authB))
 	resolver := listenBoth(t, "127.0.0.1:0", dns.HandlerFunc(func(w dns.ResponseWriter, req *dns.Msg) {
 		q := req.Question[0]
 		name := strings.ToLower(q.Name)
@@ -260,30 +273,16 @@ func TestSOANSConsistency(t *testing.T) {
 			return
 		case dns.TypeA:
 			switch name {
-			case ns1:
+			case ns1, ns2:
 				reply(w, req, false, []dns.RR{aRR(name, "127.0.0.1", 60)})
-				return
-			case ns2:
-				reply(w, req, false, []dns.RR{aRR(name, "127.0.0.2", 60)})
 				return
 			}
 		}
 		reply(w, req, false, nil)
 	}))
-	ports := map[string]uint16{}
-	for _, addr := range []string{aAddr, bAddr} {
-		host, port, err := net.SplitHostPort(addr)
-		if err != nil {
-			t.Fatal(err)
-		}
-		n, err := strconv.Atoi(port)
-		if err != nil {
-			t.Fatal(err)
-		}
-		ports[host] = uint16(n)
-	}
 	withHook(t, func(ins *inspector) {
-		ins.authPort = func(ip netip.Addr) uint16 { return ports[ip.String()] }
+		// macOS lo0 has only 127.0.0.1. Ports distinguish the two servers.
+		ins.nsPort = map[string]uint16{ns1: portOf(t, aAddr), ns2: portOf(t, bAddr)}
 	})
 	cases := []struct {
 		name, want string

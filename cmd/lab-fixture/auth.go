@@ -74,17 +74,48 @@ func aRR(owner string, ip net.IP) *dns.A {
 	return &dns.A{Hdr: dns.RR_Header{Name: dns.Fqdn(owner), Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: 60}, A: ip}
 }
 
+// fixtureIPv4 is the address other lab containers use to reach this process.
+// The compose network is internal, so a UDP dial toward 192.0.2.1 has no route
+// and must not be used: that failure used to advertise 127.0.0.1.
 func fixtureIPv4() net.IP {
-	conn, err := net.Dial("udp", "192.0.2.1:9")
+	ifaces, err := net.Interfaces()
 	if err != nil {
 		return net.IPv4(127, 0, 0, 1)
 	}
-	defer conn.Close()
-	addr, ok := conn.LocalAddr().(*net.UDPAddr)
-	if !ok || addr.IP.To4() == nil {
-		return net.IPv4(127, 0, 0, 1)
+	var addrs []net.Addr
+	for _, iface := range ifaces {
+		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+		found, err := iface.Addrs()
+		if err != nil {
+			continue
+		}
+		addrs = append(addrs, found...)
 	}
-	return addr.IP.To4()
+	return firstNonLoopbackIPv4(addrs)
+}
+
+func firstNonLoopbackIPv4(addrs []net.Addr) net.IP {
+	for _, addr := range addrs {
+		ip := ipv4Of(addr)
+		if ip == nil || ip.IsLoopback() || ip.IsLinkLocalUnicast() {
+			continue
+		}
+		return ip
+	}
+	return net.IPv4(127, 0, 0, 1)
+}
+
+func ipv4Of(addr net.Addr) net.IP {
+	switch v := addr.(type) {
+	case *net.IPNet:
+		return v.IP.To4()
+	case *net.IPAddr:
+		return v.IP.To4()
+	default:
+		return nil
+	}
 }
 
 func serveBoth(addr, role string) {
@@ -168,7 +199,23 @@ func zoneRecords(role, name string, qtype uint16) ([]dns.RR, bool) {
 }
 
 func probeLabDNS() bool {
-	return probeSOA("127.0.0.1:5354", "consistent.test.", 100) && probeA("127.0.0.1:5356", "fixture.test.", "192.0.2.42")
+	return probeSOA("127.0.0.1:5354", "consistent.test.", 100) &&
+		probeA("127.0.0.1:5356", "fixture.test.", "192.0.2.42") &&
+		probeGlue("127.0.0.1:5356", "ns1.consistent.test.")
+}
+
+func probeGlue(addr, name string) bool {
+	msg, ok := exchange(addr, name, dns.TypeA)
+	if !ok {
+		return false
+	}
+	for _, rr := range msg.Answer {
+		a, isA := rr.(*dns.A)
+		if isA && a.A.To4() != nil && !a.A.IsLoopback() {
+			return true
+		}
+	}
+	return false
 }
 
 func probeSOA(addr, name string, serial uint32) bool {
