@@ -486,8 +486,8 @@ Interfaces exit: a parity matrix (capability × desktop/CLI/web) is recorded in 
 ## 8. Beta — portability, hardening and toolkit expansion
 
 - [ ] B01 Linux native adapters. Native acceptance remains open.
-  - [ ] Select documented distro baseline; implement routes/counters/neighbors (netlink) and NetworkManager integration. Ubuntu 24.04 LTS is the baseline; Debian 13 and Kali are best-effort ([ADR 010](docs/adr/010-linux-baseline.md)). Routes and counters read netlink, with a procfs fallback. Neighbors already use netlink. NetworkManager is still open. Native acceptance is not closed by CI.
-  - [ ] Wi-Fi metadata via nl80211 (`mdlayher/wifi`) and key retrieval through authorized NetworkManager secret APIs; handle systems without NetworkManager.
+  - [x] Select documented distro baseline; implement routes/counters/neighbors (netlink) and NetworkManager integration. Ubuntu 24.04 LTS is the baseline; Debian 13 and Kali are best-effort ([ADR 010](docs/adr/010-linux-baseline.md)). Routes and counters read netlink, with a procfs fallback. Neighbors already use netlink. NetworkManager GetSecrets is the only key path and reports `dependency_missing` when NetworkManager is absent. Native acceptance is not closed by CI.
+  - [x] Wi-Fi metadata via nl80211 (`mdlayher/wifi`) and key retrieval through authorized NetworkManager secret APIs; handle systems without NetworkManager. Signal is a 0–100 value. Native acceptance remains open.
   - [ ] Capture with libpcap and `CAP_NET_RAW`; avoid elevating the full UI or server.
   - Assert: native evidence covers real adapter, denied permission, restart and no saved PSK.
 - [ ] B02 macOS native adapters.
