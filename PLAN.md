@@ -486,9 +486,9 @@ Interfaces exit: a parity matrix (capability × desktop/CLI/web) is recorded in 
 ## 8. Beta — portability, hardening and toolkit expansion
 
 - [ ] B01 Linux native adapters. Native acceptance remains open.
-  - [ ] Select documented distro baseline; implement routes/counters/neighbors (netlink) and NetworkManager integration. Ubuntu 24.04 LTS is the baseline; Debian 13 and Kali are best-effort ([ADR 010](docs/adr/010-linux-baseline.md)). Routes and counters read netlink, with a procfs fallback. Neighbors already use netlink. NetworkManager is still open. Native acceptance is not closed by CI.
-  - [ ] Wi-Fi metadata via nl80211 (`mdlayher/wifi`) and key retrieval through authorized NetworkManager secret APIs; handle systems without NetworkManager.
-  - [ ] Capture with libpcap and `CAP_NET_RAW`; avoid elevating the full UI or server.
+  - [x] Select documented distro baseline; implement routes/counters/neighbors (netlink) and NetworkManager integration. Ubuntu 24.04 LTS is the baseline; Debian 13 and Kali are best-effort ([ADR 010](docs/adr/010-linux-baseline.md)). Routes and counters read netlink, with a procfs fallback. Neighbors already use netlink. NetworkManager GetSecrets is the only key path and reports `dependency_missing` when NetworkManager is absent. Native acceptance is not closed by CI.
+  - [x] Wi-Fi metadata via nl80211 (`mdlayher/wifi`) and key retrieval through authorized NetworkManager secret APIs; handle systems without NetworkManager. Signal is a 0–100 value. Native acceptance remains open.
+  - [x] Capture with libpcap and `CAP_NET_RAW`; avoid elevating the full UI or server. The `libpcap` backend opens one interface only in a Linux build tagged `pcap`. A missing capability is `permission_required` and names `CAP_NET_RAW`. The UI and the web server are not elevated. Native acceptance remains open.
   - Assert: native evidence covers real adapter, denied permission, restart and no saved PSK.
 - [ ] B02 macOS native adapters.
   - [x] Select supported macOS/architecture baseline and native bridge approach. macOS 13 Ventura or later, Apple Silicon (`darwin/arm64`) only. The bridge is cgo with a thin Objective-C layer. No Intel, universal, or Swift helper for 1.0. [ADR 007](docs/adr/007-macos-baseline.md).
@@ -513,12 +513,12 @@ Interfaces exit: a parity matrix (capability × desktop/CLI/web) is recorded in 
   - [x] Test interface disappearance, tool termination, disk full and corrupted input. A provider loss is a failed job whose history omits packet text. Pktmon cancel always stops. Temporary-directory and export writer failures do not echo private paths. Corrupted captures are rejected. Pulling a cable stays on the Windows runbook.
   - Assert: bounded workload stays within alpha-established budgets and reports data loss accurately.
 - [ ] B06 Persistence, privacy and compatibility.
-  - [ ] SQLite upgrade/backup/recovery, retention, export and migration fixtures.
-  - [ ] Validate settings and versioned result formats; redact diagnostic bundles.
+  - [x] SQLite upgrade/backup/recovery, retention, export and migration fixtures. Schema version is 1. The committed SQL reopens without loss, and a copy of the closed database file keeps settings and a finished job. Recovery, retention and a rejected future schema were already tested. [Evidence](docs/verification/specs/B06.md).
+  - [x] Validate settings and versioned result formats; redact diagnostic bundles.
     - [x] Stored preferences reject malformed, oversized or unsupported values without echoing contents.
     - [x] Versioned CLI JSON and discovery JSON/CSV contracts tested; discovery history stores counts without targets.
-    - [ ] Redacted diagnostic bundles and compatibility fixtures for all exported formats. The on-demand zip is implemented ([ADR 012](docs/adr/012-diagnostic-bundle.md), [evidence](docs/verification/specs/B06.md)). Compatibility fixtures for other export formats remain open.
-  - [ ] Test translation key parity and all permission/error UI flows.
+    - [x] Redacted diagnostic bundles and compatibility fixtures for all exported formats. The on-demand zip is implemented ([ADR 012](docs/adr/012-diagnostic-bundle.md), [evidence](docs/verification/specs/B06.md)). pcap, pcapng, discovery CSV and neighbors CSV fixtures import.
+  - [x] Test translation key parity and all permission/error UI flows. English and PT-BR catalog keys match. Every domain error code and capability state has a UI label. Operating-system permission dialogs stay on the runbooks. [Evidence](docs/verification/specs/B06.md).
   - Assert: prior beta data upgrades without silent loss; secret fixtures appear in no ordinary artifact.
 - [ ] B07 Native packaging matrix.
   - [ ] Build Windows, Linux and macOS artifacts on native hosts; verify actual WebView prerequisites.

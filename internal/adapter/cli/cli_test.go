@@ -478,6 +478,32 @@ func TestCLICaptureConversion(t *testing.T) {
 	}
 }
 
+func TestExportCSVFixtures(t *testing.T) {
+	cases := []struct {
+		name    string
+		header  string
+		columns int
+	}{
+		{"discovery.csv", "schema_version,host,port,state", 4},
+		{"neighbors.csv", "schema_version,interface_index,interface_name,family,address,mac,state,router", 8},
+	}
+	for _, test := range cases {
+		t.Run(test.name, func(t *testing.T) {
+			raw, err := os.ReadFile(filepath.Join("testdata", "export", test.name))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if strings.Contains(string(raw), "synthetic-secret") {
+				t.Fatal("csv fixture contains a secret")
+			}
+			rows, err := csv.NewReader(strings.NewReader(string(raw))).ReadAll()
+			if err != nil || len(rows) != 2 || strings.Join(rows[0], ",") != test.header || len(rows[1]) != test.columns || rows[1][0] != "1" {
+				t.Fatalf("rows = %v, err = %v", rows, err)
+			}
+		})
+	}
+}
+
 type envelope struct {
 	SchemaVersion int           `json:"schema_version"`
 	Version       string        `json:"version"`

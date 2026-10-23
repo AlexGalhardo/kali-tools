@@ -29,9 +29,12 @@ func capabilities() []domain.Capability {
 		if runtime.GOOS == "windows" {
 			c.State = domain.CapabilityAvailable
 			c.Detail = "Native Windows API; operational permission checks occur on request"
-		} else if runtime.GOOS == "linux" && id == "routes_counters" {
+		} else if runtime.GOOS == "linux" && (id == "routes_counters" || id == "wifi") {
 			c.State = domain.CapabilityAvailable
 			c.Detail = "netlink routes and counters; procfs fallback"
+			if id == "wifi" {
+				c.Detail = "nl80211 metadata; NetworkManager GetSecrets for the saved key"
+			}
 		}
 		all = append(all, c)
 	}

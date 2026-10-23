@@ -18,7 +18,9 @@ Development baseline: 2026-10-19. Exact Go dependencies are in go.mod/go.sum; fr
 | golang.org/x/net | DNS fixture protocol | BSD-3-Clause |
 | modernc.org/sqlite | Pure Go local SQLite | BSD-3-Clause; SQLite public domain |
 | gopacket 1.7.4 | Packet decoding and PCAP/PCAPNG | BSD-3-Clause |
-| gopacket/pcap 1.7.4 | Optional Windows capture, only with the `pcap` build tag | BSD-3-Clause |
+| github.com/mdlayher/wifi v0.9.0 | Linux nl80211 Wi-Fi metadata | MIT |
+| github.com/godbus/dbus/v5 v5.1.0 | NetworkManager secret API on Linux | BSD-2-Clause |
+| gopacket/pcap 1.7.4 | Optional Npcap on Windows and libpcap on Linux, only with the `pcap` build tag | BSD-3-Clause |
 | Npcap (not redistributed) | User-installed Windows driver; detected read-only | [Npcap License](https://npcap.com/); free edition restricts redistribution and silent installation |
 | React / React DOM | Frontend | MIT |
 | JetBrains Mono 2.304 | Bundled offline terminal typography (regular and semibold WOFF2) | SIL Open Font License 1.1; [license](licenses/jetbrains-mono.txt), [upstream](https://github.com/JetBrains/JetBrainsMono/tree/v2.304) |

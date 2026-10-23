@@ -13,8 +13,8 @@ import (
 const CaptureExportTimeout = 30 * time.Second
 
 func (a *Application) CaptureBackendStatus(ctx context.Context) []domain.Capability {
-	result := make([]domain.Capability, 0, 3)
-	for _, entry := range []struct{ backend, id string }{{capture.BackendRawSocket, "capture_live"}, {capture.BackendPktmon, "capture_pktmon"}, {capture.BackendNpcap, "capture_npcap"}} {
+	result := make([]domain.Capability, 0, 4)
+	for _, entry := range []struct{ backend, id string }{{capture.BackendRawSocket, "capture_live"}, {capture.BackendPktmon, "capture_pktmon"}, {capture.BackendNpcap, "capture_npcap"}, {capture.BackendLibpcap, "capture_libpcap"}} {
 		c := domain.Capability{ID: entry.id, Provider: entry.backend, State: domain.CapabilityUnsupported, Detail: "live capture provider is not configured"}
 		if provider := a.deps.CaptureBackends[entry.backend]; provider != nil {
 			c = provider.Status(ctx)

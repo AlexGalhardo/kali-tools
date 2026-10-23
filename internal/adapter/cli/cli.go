@@ -84,7 +84,7 @@ func runLegacy(ctx context.Context, application *app.Application, call invocatio
 	format := flags.String("format", "json", "json/csv discovery; pcap/pcapng with --output")
 	duration := flags.Int("duration", 5, "capture duration seconds")
 	limit := flags.Int("limit", 1000, "capture packet limit")
-	backend := flags.String("backend", "raw_socket", "capture backend: raw_socket, pktmon or npcap")
+	backend := flags.String("backend", "raw_socket", "capture backend: raw_socket, pktmon, npcap or libpcap")
 	family := flags.String("family", "all", "neighbor family: all, ipv4 or ipv6")
 	bundlePath := flags.String("bundle", "", "write a redacted diagnostic zip; nothing is uploaded")
 	if e := flags.Parse(args[1:]); e != nil {

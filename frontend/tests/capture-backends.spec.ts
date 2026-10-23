@@ -19,6 +19,7 @@ test("capture backend selector reflects capability states and loss notes @wails-
  const selector=page.getByRole("combobox",{name:"Capture backend",exact:true});
  await expect(selector.locator('option[value="raw_socket"]')).toBeDisabled();
  await expect(selector.locator('option[value="npcap"]')).toBeDisabled();
+ await expect(selector.locator('option[value="libpcap"]')).toBeDisabled();
  await selector.selectOption("pktmon");
  await expect(page.getByText("All NICs, truncated to 512 bytes",{exact:true})).toBeVisible();
  await expect(page.getByRole("combobox",{name:"Local non-loopback IPv4",exact:true})).toHaveCount(0);
@@ -53,6 +54,7 @@ test("browser capture exposes backend states and a download address @http-only",
  await connect(page);
  await page.getByRole("button",{name:"Packet inspector",exact:true}).click();
  await expect(page.getByRole("combobox",{name:"Capture backend",exact:true}).locator('option[value="pktmon"]')).toBeDisabled();
+ await expect(page.getByRole("combobox",{name:"Capture backend",exact:true}).locator('option[value="libpcap"]')).toBeDisabled();
  await expect(page.getByRole("link",{name:"https://npcap.com/#download",exact:true})).toHaveAttribute("href","https://npcap.com/#download");
  await expect(page.getByRole("button",{name:"Install Npcap (opens npcap.com)",exact:true})).toHaveCount(0);
 });
