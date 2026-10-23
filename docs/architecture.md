@@ -197,6 +197,8 @@ B05 records the decode contract in [capture decoding](capture-decoding.md). Each
 
 B06's diagnostic bundle is a pure writer in `internal/bundle`. `Application.DiagnosticBundle` gathers version, doctor text, capability states, language, retention and at most 50 history rows. It does not call Wi-Fi or capture. CLI `doctor --bundle`, authenticated `GET /api/doctor/bundle` and the Settings action all write that same zip locally. Addresses and hostnames become per-archive pseudonyms. Known secrets are deleted. Nothing is uploaded ([ADR 012](adr/012-diagnostic-bundle.md)).
 
+R02's qualification notes in [review](review/README.md) describe install, accessibility and the web-server threat model. They do not accept those checks.
+
 R01 freezes the CLI contract, the HTTP contract, schema version 1, settings `language` and `retention_days`, and the packaging matrix. An operating system outside that matrix is not supported. The freeze does not accept hardware. `doctor` prints the Ubuntu 24.04 baseline sentence on every OS; the live capability rows stay per OS.
 
 B07 records the archive matrix in [packaging](packaging.md). Native CI builds Windows x64, Ubuntu 24.04 x64 and macOS arm64. Each archive carries the MIT license, third-party notices and `BUILD.json` with `signed` false. The release job on main adds `SHA256SUMS`, the source archive and a GitHub attestation. There is no installer. Settings and history stay in the per-user config directory as `kali-tools/history.db`. Intel Mac, Windows ARM and a clean-machine WebView check are outside the matrix.
