@@ -44,6 +44,8 @@ export function RevealWiFi():Promise<contract.WiFiSecret>;
 
 export function SaveCapture(arg1:string):Promise<boolean>;
 
+export function SaveDiagnosticBundle():Promise<boolean>;
+
 export function SaveSettings(arg1:contract.Settings):Promise<void>;
 
 export function Settings():Promise<contract.Settings>;

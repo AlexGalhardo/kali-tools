@@ -75,6 +75,7 @@ export class HttpTransport implements Transport {
     ClearHistory: () => this.request("/api/history", { method: "DELETE" }),
     Settings: () => this.request<Result<"Settings">>("/api/settings"),
     SaveSettings: (value) => this.json("PUT", "/api/settings", value),
+    SaveDiagnosticBundle: () => this.saveDiagnosticBundle(),
     CurrentWiFi: () => this.request<Result<"CurrentWiFi">>("/api/wifi"),
     RevealWiFi: () =>
       this.request<Result<"RevealWiFi">>("/api/wifi/reveal", {
@@ -215,6 +216,18 @@ export class HttpTransport implements Transport {
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = `capture.${format}`;
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return true;
+  }
+  private async saveDiagnosticBundle(): Promise<boolean> {
+    const response = await this.response("/api/doctor/bundle");
+    const url = URL.createObjectURL(await response.blob());
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "kali-tools-diagnostic.zip";
     document.body.append(anchor);
     anchor.click();
     anchor.remove();

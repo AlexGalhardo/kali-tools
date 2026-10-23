@@ -494,12 +494,12 @@ Interfaces exit: a parity matrix (capability × desktop/CLI/web) is recorded in 
   - [x] Select supported macOS/architecture baseline and native bridge approach. macOS 13 Ventura or later, Apple Silicon (`darwin/arm64`) only. The bridge is cgo with a thin Objective-C layer. No Intel, universal, or Swift helper for 1.0. [ADR 007](docs/adr/007-macos-baseline.md).
   - [ ] Implement interfaces/routes/counters and current Wi-Fi metadata. On real Apple Silicon hardware, verify whether an ad-hoc-signed `.app` can read CoreWLAN SSID/BSSID and whether Location Services prompts. Show an explicit capability state when that access is unavailable. Not accepted from documentation or cross-compilation. [ADR 007](docs/adr/007-macos-baseline.md), [ADR 009](docs/adr/009-signing-and-provenance.md).
   - [ ] Keychain feasibility spike.
-  - [ ] BPF capture permissions: detect ChmodBPF group access and never change device permissions.
+  - [x] BPF capture permissions: detect ChmodBPF group access and never change device permissions. `capture_live` on macOS reports whether this user can open `/dev/bpf` and names the `access_bpf` group when access is missing. The probe never changes device permissions. Live capture is still not implemented. Native acceptance remains open. [ADR 011](docs/adr/011-no-privileged-helper.md).
   - [ ] Key-reveal authorization, with an explicit unsupported state if OS policy prevents access.
   - Assert: native evidence records actual supported behaviors rather than inferring parity from compilation.
-- [ ] B03 Privilege boundary.
-  - [ ] Use existing OS authorization where possible; implement helper only for operations that require it.
-  - [ ] Authenticated local IPC, restricted operations, caller verification and bounded requests.
+- [ ] B03 Privilege boundary. No privileged helper and no helper IPC for 1.0 ([ADR 011](docs/adr/011-no-privileged-helper.md)). Install and recovery acceptance remains open.
+  - [x] Use existing OS authorization where possible; implement helper only for operations that require it. Resolved by ADR 011: a helper is out of scope for 1.0. Linux documents `sudo setcap cap_net_raw+eip`. macOS detects `access_bpf` and never changes device permissions. Windows detects a user-installed Npcap and never redistributes it. A missing permission is a capability state plus the fix. The UI and web server stay unprivileged.
+  - [x] Authenticated local IPC, restricted operations, caller verification and bounded requests. Resolved by ADR 011: helper IPC is out of scope for 1.0. There is no helper to call.
   - [ ] Install/update/uninstall and recovery behavior per OS.
   - Assert: unauthorized caller and malformed request fail; ordinary UI and web server remain unprivileged.
 - [ ] B04 Connection/process inventory and throughput.
@@ -514,10 +514,10 @@ Interfaces exit: a parity matrix (capability × desktop/CLI/web) is recorded in 
   - Assert: bounded workload stays within alpha-established budgets and reports data loss accurately.
 - [ ] B06 Persistence, privacy and compatibility.
   - [x] SQLite upgrade/backup/recovery, retention, export and migration fixtures. Schema version is 1. The committed SQL reopens without loss, and a copy of the closed database file keeps settings and a finished job. Recovery, retention and a rejected future schema were already tested. [Evidence](docs/verification/specs/B06.md).
-  - [ ] Validate settings and versioned result formats; redact diagnostic bundles.
+  - [x] Validate settings and versioned result formats; redact diagnostic bundles.
     - [x] Stored preferences reject malformed, oversized or unsupported values without echoing contents.
     - [x] Versioned CLI JSON and discovery JSON/CSV contracts tested; discovery history stores counts without targets.
-    - [ ] Redacted diagnostic bundles and compatibility fixtures for all exported formats. pcap, pcapng, discovery CSV and neighbors CSV fixtures import. The diagnostic zip remains open.
+    - [x] Redacted diagnostic bundles and compatibility fixtures for all exported formats. The on-demand zip is implemented ([ADR 012](docs/adr/012-diagnostic-bundle.md), [evidence](docs/verification/specs/B06.md)). pcap, pcapng, discovery CSV and neighbors CSV fixtures import.
   - [x] Test translation key parity and all permission/error UI flows. English and PT-BR catalog keys match. Every domain error code and capability state has a UI label. Operating-system permission dialogs stay on the runbooks. [Evidence](docs/verification/specs/B06.md).
   - Assert: prior beta data upgrades without silent loss; secret fixtures appear in no ordinary artifact.
 - [ ] B07 Native packaging matrix.
@@ -613,10 +613,9 @@ None of these may be reported as passed unless they actually ran.
 - user-provided targets and files;
 - Wails calls;
 - HTTP requests (Host, Origin, token, body size);
-- local helper IPC;
 - export paths.
 
-Capture happens only in an explicitly started session. No cloud account or telemetry is required.
+There is no privileged helper and no helper IPC in 1.0 ([ADR 011](docs/adr/011-no-privileged-helper.md)). Capture happens only in an explicitly started session. No cloud account or telemetry is required.
 
 ## 11. Deferred or out of scope
 
@@ -632,6 +631,7 @@ Capture happens only in an explicitly started session. No cloud account or telem
 
 **Out of scope.**
 
+- a privileged helper and local helper IPC for 1.0 ([ADR 011](docs/adr/011-no-privileged-helper.md));
 - credential attacks;
 - exploitation frameworks and exploit checks;
 - Wi-Fi monitor mode, injection, deauthentication and handshake capture;

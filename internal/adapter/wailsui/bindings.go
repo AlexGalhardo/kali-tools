@@ -2,6 +2,7 @@ package wailsui
 
 import (
 	"context"
+	"os"
 	"runtime"
 	"sync"
 	"time"
@@ -343,6 +344,25 @@ func (b *Bindings) SaveCapture(format string) (bool, error) {
 	}
 	if err := b.app.ExportCapture(ctx, path, format); err != nil {
 		return false, fail(err)
+	}
+	return true, nil
+}
+
+func (b *Bindings) SaveDiagnosticBundle() (bool, error) {
+	ctx, err := b.ready()
+	if err != nil {
+		return false, fail(err)
+	}
+	path, err := b.save(ctx, wruntime.SaveDialogOptions{Title: "Save diagnostic bundle", DefaultFilename: "kali-tools-diagnostic.zip", Filters: []wruntime.FileFilter{{DisplayName: "Zip archive", Pattern: "*.zip"}}})
+	if err != nil || path == "" {
+		return false, fail(err)
+	}
+	body, err := b.app.DiagnosticBundle(ctx)
+	if err != nil {
+		return false, fail(err)
+	}
+	if err := os.WriteFile(path, body, 0o600); err != nil {
+		return false, fail(domain.Invalid("diagnostic bundle path is not writable"))
 	}
 	return true, nil
 }

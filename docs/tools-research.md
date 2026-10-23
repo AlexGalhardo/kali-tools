@@ -470,7 +470,7 @@ Sources:
 - https://networkmanager.dev/docs/api/latest/gdbus-org.freedesktop.NetworkManager.Settings.Connection.html
 - https://developer.apple.com/documentation/security/keychain-services
 
-Keep the UI and ordinary diagnostics unprivileged. If a privileged helper becomes necessary, it requires:
+Keep the UI and ordinary diagnostics unprivileged. Owner decision for 1.0 ([ADR 011](adr/011-no-privileged-helper.md)): no privileged helper and no helper IPC. The notes below describe a helper that was not adopted:
 
 - authenticated local IPC;
 - narrowly typed operations;

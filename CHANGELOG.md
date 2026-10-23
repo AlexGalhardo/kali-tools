@@ -6,6 +6,7 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ### Added
 
+- `kali-tools doctor --bundle` and the Settings action write a local diagnostic zip (`summary.txt` and schema-version-1 `report.json`). Addresses, MAC addresses and hostnames are per-archive pseudonyms. Wi-Fi keys, scan results and capture packets are omitted. Nothing is uploaded. [ADR 012](docs/adr/012-diagnostic-bundle.md).
 - Committed a schema version 1 SQLite fixture and synthetic pcap, pcapng and CSV exports. Reopening that database, or a copy of a closed database file, keeps settings and a finished job. English and PT-BR catalogs share keys, and every domain error code has a UI label.
 - Local discovery reads mDNS and SSDP on one IPv4 link, and SNMP reads system and interface data from an owned device. The CLI commands are `local-discover` and `snmp`. SNMP secrets come from `--secret-file` only. History stores counts only.
 - DNS inspection compares resolvers, checks SOA/NS consistency, validates a read-only DNSSEC chain, and checks DoH/DoT reachability. The CLI command is `dns-inspect`, the HTTP route is `POST /api/dns/inspect`, and the Diagnostics page has an English/PT-BR panel. A blocked port 53 stays a distinct result. History stores the state, query count and check count only.
@@ -13,6 +14,7 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ### Changed
 
+- kali-tools 1.0 has no privileged helper and no helper IPC. Linux capture privilege is `sudo setcap cap_net_raw+eip` on the binary. macOS reports `/dev/bpf` access through the `access_bpf` group and does not change device permissions. Windows points at the Npcap installer and detects whether it is present. A missing permission is a capability state plus the fix. [ADR 011](docs/adr/011-no-privileged-helper.md).
 - Documented Ubuntu 24.04 LTS as the Linux baseline. Debian 13 and Kali are best-effort and come with no guarantee. `doctor` reports that sentence. Linux route and counter inventory reads netlink and falls back to procfs. [ADR 010](docs/adr/010-linux-baseline.md).
 - Capture summaries report a truncated or malformed packet, follow a complete IPv6 hop-by-hop header, and do not reassemble TCP streams or IPv6 fragments. Payloads stay omitted. Supported levels are in [capture decoding](docs/capture-decoding.md). TShark remains inventory-only.
 - Documented the HTTP API: routes, session rules, body limits, error statuses and server-account capability states. [HTTP contract](docs/http.md).
