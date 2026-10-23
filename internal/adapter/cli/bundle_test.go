@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -31,8 +32,12 @@ func TestDoctorBundleWritesLocalZip(t *testing.T) {
 		t.Fatalf("data=%v", envelope.Data)
 	}
 	info, err := os.Stat(path)
-	if err != nil || info.Mode().Perm() != 0o600 {
+	if err != nil || !info.Mode().IsRegular() {
 		t.Fatalf("mode=%v err=%v", info, err)
+	}
+	// Windows does not store the Unix mode passed to OpenFile.
+	if runtime.GOOS != "windows" && info.Mode().Perm() != 0o600 {
+		t.Fatalf("mode=%v", info.Mode().Perm())
 	}
 	body, err := os.ReadFile(path)
 	if err != nil {
