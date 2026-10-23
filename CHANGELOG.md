@@ -4,30 +4,35 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [0.7.0-dev.1] - 2026-10-23
+
+Unsigned development preview; hardware qualification remains open. Not a release-qualified build.
+
 ### Added
 
-- `kali-tools doctor --bundle` and the Settings action write a local diagnostic zip (`summary.txt` and schema-version-1 `report.json`). Addresses, MAC addresses and hostnames are per-archive pseudonyms. Wi-Fi keys, scan results and capture packets are omitted. Nothing is uploaded. [ADR 012](docs/adr/012-diagnostic-bundle.md).
-- Committed a schema version 1 SQLite fixture and synthetic pcap, pcapng and CSV exports. Reopening that database, or a copy of a closed database file, keeps settings and a finished job. English and PT-BR catalogs share keys, and every domain error code has a UI label.
-- macOS route and counter inventory reads the routing sysctl. Current Wi-Fi metadata uses CoreWLAN when cgo is enabled. An empty network name is a location-consent state. Keychain lookup does not prompt, and a denied lookup is an explicit capability state. [ADR 013](docs/adr/013-macos-wifi.md).
-- Local discovery reads mDNS and SSDP on one IPv4 link, and SNMP reads system and interface data from an owned device. The CLI commands are `local-discover` and `snmp`. SNMP secrets come from `--secret-file` only. History stores counts only.
-- DNS inspection compares resolvers, checks SOA/NS consistency, validates a read-only DNSSEC chain, and checks DoH/DoT reachability. The CLI command is `dns-inspect`, the HTTP route is `POST /api/dns/inspect`, and the Diagnostics page has an English/PT-BR panel. A blocked port 53 stays a distinct result. History stores the state, query count and check count only.
-- HTTP diagnostics report phase timings, an allowlisted security-header report and an explicit redirect trace of at most five hops. Redirects are not followed unless that trace is requested.
+- **Agent.** Cursor project settings and contributor rules for cloud agents ([#2](https://github.com/AlexGalhardo/kali-tools/pull/2)).
+- **Service inspection.** Explicit TCP scopes are identified with built-in banner, TLS and HTTP checks. Service inspection no longer runs Nmap. Result types are `ServiceInspection` and `Inspection*`. JSON field names are unchanged ([#3](https://github.com/AlexGalhardo/kali-tools/pull/3), [#5](https://github.com/AlexGalhardo/kali-tools/pull/5), [ADR 006](docs/adr/006-native-service-inspection.md)).
+- **HTTP diagnostics.** Phase timings, an allowlisted security-header report, and an explicit redirect trace of at most five hops. Redirects are not followed unless that trace is requested ([#4](https://github.com/AlexGalhardo/kali-tools/pull/4)).
+- **DNS.** `dns-inspect` and `POST /api/dns/inspect` compare resolvers, check SOA/NS consistency, validate a read-only DNSSEC chain, and check DoH/DoT reachability. A blocked port 53 stays a distinct result. History stores the state, query count and check count only ([#5](https://github.com/AlexGalhardo/kali-tools/pull/5), [#6](https://github.com/AlexGalhardo/kali-tools/pull/6)).
+- **Local discovery.** mDNS and SSDP on one IPv4 link, and SNMP system and interface data from an owned device. The CLI commands are `local-discover` and `snmp`. SNMP secrets come from `--secret-file` only. History stores counts only ([#7](https://github.com/AlexGalhardo/kali-tools/pull/7)).
+- **Runbooks.** Native acceptance steps for Windows, Linux and macOS. Hardware results stay open ([#6](https://github.com/AlexGalhardo/kali-tools/pull/6), [#8](https://github.com/AlexGalhardo/kali-tools/pull/8)).
+- **HTTP contract.** Routes, session rules, body limits, error statuses and server-account capability states ([#10](https://github.com/AlexGalhardo/kali-tools/pull/10), [HTTP contract](docs/http.md)).
+- **Capture.** Summaries report a truncated or malformed packet, follow a complete IPv6 hop-by-hop header, and do not reassemble TCP streams or IPv6 fragments. Payloads stay omitted ([#11](https://github.com/AlexGalhardo/kali-tools/pull/11), [capture decoding](docs/capture-decoding.md)).
+- **Linux.** Ubuntu 24.04 LTS is the documented baseline. Debian 13 and Kali are best-effort and come with no guarantee. `doctor` reports that sentence. Routes and counters read netlink and fall back to procfs. Wi-Fi metadata comes from nl80211. The saved key is read only through NetworkManager `GetSecrets`. Live capture uses libpcap when the binary is built with `-tags pcap` and needs `CAP_NET_RAW` on the capture process. The UI and the web server are not elevated. An untagged build reports `unsupported` ([#12](https://github.com/AlexGalhardo/kali-tools/pull/12), [#13](https://github.com/AlexGalhardo/kali-tools/pull/13), [#14](https://github.com/AlexGalhardo/kali-tools/pull/14), [ADR 010](docs/adr/010-linux-baseline.md)).
+- **Diagnostic bundle.** `kali-tools doctor --bundle` and the Settings action write a local zip (`summary.txt` and schema-version-1 `report.json`). Addresses, MAC addresses and hostnames are per-archive pseudonyms. Wi-Fi keys, scan results and capture packets are omitted. Nothing is uploaded ([#16](https://github.com/AlexGalhardo/kali-tools/pull/16), [ADR 012](docs/adr/012-diagnostic-bundle.md)).
+- **Persistence fixtures.** A schema version 1 SQLite fixture and synthetic pcap, pcapng and CSV exports. Reopening that database, or a copy of a closed database file, keeps settings and a finished job. English and PT-BR catalogs share keys, and every domain error code has a UI label ([#17](https://github.com/AlexGalhardo/kali-tools/pull/17)).
+- **macOS.** Route and counter inventory reads the routing sysctl. Current Wi-Fi metadata uses CoreWLAN when cgo is enabled. An empty network name is a location-consent state. Keychain lookup does not prompt, and a denied lookup is an explicit capability state ([#18](https://github.com/AlexGalhardo/kali-tools/pull/18), [ADR 013](docs/adr/013-macos-wifi.md)).
 
 ### Changed
 
-- kali-tools 1.0 has no privileged helper and no helper IPC. Linux capture privilege is `sudo setcap cap_net_raw+eip` on the binary. macOS reports `/dev/bpf` access through the `access_bpf` group and does not change device permissions. Windows points at the Npcap installer and detects whether it is present. A missing permission is a capability state plus the fix. [ADR 011](docs/adr/011-no-privileged-helper.md).
-- Documented Ubuntu 24.04 LTS as the Linux baseline. Debian 13 and Kali are best-effort and come with no guarantee. `doctor` reports that sentence. Linux route and counter inventory reads netlink and falls back to procfs. Linux Wi-Fi metadata comes from nl80211, and the saved key is read only through NetworkManager `GetSecrets`. [ADR 010](docs/adr/010-linux-baseline.md).
-- Linux live capture can use libpcap when the binary is built with `-tags pcap`. The capture process needs `CAP_NET_RAW`. The UI and the web server are not elevated. An untagged build reports `unsupported`.
-- Capture summaries report a truncated or malformed packet, follow a complete IPv6 hop-by-hop header, and do not reassemble TCP streams or IPv6 fragments. Payloads stay omitted. Supported levels are in [capture decoding](docs/capture-decoding.md). TShark remains inventory-only.
-- Documented the HTTP API: routes, session rules, body limits, error statuses and server-account capability states. [HTTP contract](docs/http.md).
-- Renamed the service-inspection result types from `Nmap` to `ServiceInspection` and the nested types to `Inspection*`. JSON field names are unchanged. Wails models were regenerated and now include the HTTP metadata types. Shared phase fields accept both JSON null and an omitted value. ADR 006 records the names.
-- Service inspection no longer runs Nmap. Explicit TCP scopes are identified with built-in banner, TLS and HTTP checks. TShark remains inventory-only. ADR 006 supersedes ADR 003.
-- Accepted ADR 004: the CLI keeps the standard-library flag parser. Cobra is not adopted (owner, 2026-10-23).
-- Pinned `github.com/miekg/dns` v1.1.73 (BSD-3-Clause) for DNS wire format, DNSSEC verification and the lab DNS fixture.
-- Set the 1.0 macOS baseline to macOS 13 or later on Apple Silicon, with a cgo Objective-C bridge. No Intel or universal build.
-- Accepted 100-row pagination as the 1.0 stand-in for virtualized packet and result tables.
-- Recorded the signing decision: vendor-unsigned releases, SHA-256 checksums and GitHub artifact attestations. No Apple or Microsoft certificate.
-- Aligned the documented Go and Node.js pins with go.mod and CI (Go 1.27.3, Node.js 24.21.0).
+- **Privilege.** kali-tools 1.0 has no privileged helper and no helper IPC. Linux capture privilege is `sudo setcap cap_net_raw+eip` on the binary. macOS reports `/dev/bpf` access through the `access_bpf` group and does not change device permissions. Windows points at the Npcap installer and detects whether it is present. The Npcap free license forbids redistribution, so kali-tools never bundles it. A missing permission is a capability state plus the fix ([#15](https://github.com/AlexGalhardo/kali-tools/pull/15), [ADR 011](docs/adr/011-no-privileged-helper.md)).
+- **CI.** Quality checks vet linux, darwin and windows with `CGO_ENABLED=0` ([#9](https://github.com/AlexGalhardo/kali-tools/pull/9)).
+- **CLI.** The standard-library flag parser stays. Cobra is not adopted ([#4](https://github.com/AlexGalhardo/kali-tools/pull/4), [ADR 004](docs/adr/004-cli-parser.md)).
+- **macOS baseline.** macOS 13 or later on Apple Silicon, with a cgo Objective-C bridge. No Intel or universal build ([ADR 007](docs/adr/007-macos-baseline.md)).
+- **Tables.** 100-row pagination is the 1.0 stand-in for virtualized packet and result tables ([ADR 008](docs/adr/008-paginated-tables.md)).
+- **Signing.** Vendor-unsigned releases, SHA-256 checksums and GitHub artifact attestations. No Apple or Microsoft certificate ([ADR 009](docs/adr/009-signing-and-provenance.md)).
+- **Toolchain.** Documented pins match go.mod and CI (Go 1.27.3, Node.js 24.21.0). `github.com/miekg/dns` v1.1.73 (BSD-3-Clause) parses DNS wire format and verifies DNSSEC.
+- **TLS.** The optional zcrypto legacy-protocol switch is deferred beyond 1.0. zcrypto has no releases and is research-grade. The B08 spec already excludes a handshake client. zlint still uses zcrypto only to parse certificates. It does not carry kali-tools' own connections.
 
 ## [0.6.0-dev.2] - 2026-10-22
 

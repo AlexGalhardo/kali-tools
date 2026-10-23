@@ -3,8 +3,8 @@
     "arch": "\u003carch\u003e",
     "go": "\u003cgo\u003e",
     "os": "\u003cos\u003e",
-    "version": "0.6.0-dev.2"
+    "version": "0.7.0-dev.1"
   },
   "schema_version": 1,
-  "version": "0.6.0-dev.2"
+  "version": "0.7.0-dev.1"
 }

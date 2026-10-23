@@ -168,7 +168,7 @@ export function App() {
         </nav>
         <div className="sidebar-bottom">
           <span className="status-dot" /> {t.development}
-          <small>0.6.0-dev.2</small>
+          <small>0.7.0-dev.1</small>
         </div>
       </aside>
       <div className="workspace">

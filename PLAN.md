@@ -529,7 +529,7 @@ Interfaces exit: a parity matrix (capability × desktop/CLI/web) is recorded in 
   - Spec: [B08-tls-audit](docs/specs/B08-tls-audit.md)
   - Implementation and non-native checks completed; Windows platform-verifier and native GUI acceptance remain pending. [Evidence](docs/verification/specs/B08.md).
   - [x] Chain report (validity, SAN coverage, key/signature algorithms, AIA/OCSP/CRL, stapling, SCT count), protocol matrix via `MinVersion`/`MaxVersion`, zlint findings. Local fixture tests and both browser transports verified; native checks remain open.
-  - [ ] Optional zcrypto legacy-protocol observation behind a labelled switch, isolated from kali-tools' own connections.
+  - [x] Optional zcrypto legacy-protocol observation behind a labelled switch, isolated from kali-tools' own connections. Deferred beyond 1.0 (§11). zcrypto has no releases and is research-grade. The B08 spec already excludes a handshake client. zlint still uses it only to parse certificates.
   - Assert: controlled local certificates cover expired, self-signed, mismatch, weak key and legacy-only servers; no exploit checks.
 - [x] B09 DNS inspection module.
   - Spec: [B09-dns-inspection](docs/specs/B09-dns-inspection.md)
@@ -627,7 +627,8 @@ There is no privileged helper and no helper IPC in 1.0 ([ADR 011](docs/adr/011-n
 - cloud synchronization;
 - automatic TLS interception;
 - JA4+ fingerprints under the FoxIO License;
-- OSINT/CT-log queries for third-party domains.
+- OSINT/CT-log queries for third-party domains;
+- optional zcrypto legacy-protocol observation. It is research-grade, has no releases, and [B08](docs/specs/B08-tls-audit.md) already excludes a handshake client. zlint may keep the parser. It must not carry kali-tools' own TLS connections.
 
 **Out of scope.**
 

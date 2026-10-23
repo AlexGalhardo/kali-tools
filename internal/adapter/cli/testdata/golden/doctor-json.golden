@@ -115,6 +115,6 @@ stdout:
     "wifi": "Windows WLAN API; key reveal requires wifi reveal --confirm or the desktop reveal action"
   },
   "schema_version": 1,
-  "version": "0.6.0-dev.2"
+  "version": "0.7.0-dev.1"
 }
 stderr:
