@@ -69,7 +69,7 @@ func newTestApp(t *testing.T) *app.Application {
 			Network: wifi.Network{SSID: "Fixture Network", Profile: "Fixture", BSSID: "02:00:00:00:00:02", Signal: 80, Authentication: 7, State: "connected"},
 			Secret:  wifi.Secret{State: "available", Value: "synthetic-test-key"},
 		},
-		Tools:       fake.Tools{Tools: []app.Tool{{Name: "tshark", State: "dependency_missing"}}, Result: app.Nmap{Scanner: "native", Version: "1", Finished: app.NmapFinished{Exit: "success"}, Hosts: []app.NmapHost{{Status: app.NmapState{State: "up"}, Addresses: []app.NmapAddress{{Address: "192.0.2.1", Type: "ipv4"}}, Ports: []app.NmapPort{{Port: 443, Protocol: "tcp", State: app.NmapState{State: "open"}, Service: app.NmapService{Name: "https", Method: "banner"}}}}}}},
+		Tools:       fake.Tools{Tools: []app.Tool{{Name: "tshark", State: "dependency_missing"}}, Result: app.ServiceInspection{Scanner: "native", Version: "1", Finished: app.InspectionFinished{Exit: "success"}, Hosts: []app.InspectionHost{{Status: app.InspectionState{State: "up"}, Addresses: []app.InspectionAddress{{Address: "192.0.2.1", Type: "ipv4"}}, Ports: []app.InspectionPort{{Port: 443, Protocol: "tcp", State: app.InspectionState{State: "open"}, Service: app.InspectionService{Name: "https", Method: "banner"}}}}}}},
 		Diagnostics: network.Diagnostics{Prober: fake.Prober{Values: []string{"echo reply"}}},
 	})
 	t.Cleanup(func() {

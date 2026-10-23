@@ -161,7 +161,7 @@ func (h Host) Inventory(ctx context.Context) (app.HostSnapshot, error) {
 
 type Tools struct {
 	Tools  []app.Tool
-	Result app.Nmap
+	Result app.ServiceInspection
 	Err    error
 }
 
@@ -171,12 +171,12 @@ func (f Tools) Inventory(ctx context.Context) []app.Tool {
 	}
 	return slices.Clone(f.Tools)
 }
-func (f Tools) InspectServices(ctx context.Context, cidr string, ports []int) (app.Nmap, error) {
+func (f Tools) InspectServices(ctx context.Context, cidr string, ports []int) (app.ServiceInspection, error) {
 	if err := ctx.Err(); err != nil {
-		return app.Nmap{}, fmt.Errorf("fake tools: %w", err)
+		return app.ServiceInspection{}, fmt.Errorf("fake tools: %w", err)
 	}
 	if err := network.ValidateDiscovery(cidr, ports, time.Second); err != nil {
-		return app.Nmap{}, err
+		return app.ServiceInspection{}, err
 	}
 	v := f.Result
 	v.Hosts = slices.Clone(v.Hosts)

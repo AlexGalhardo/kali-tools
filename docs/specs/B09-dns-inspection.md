@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | PLAN tasks | B09 (resolver comparison, SOA/NS consistency, read-only DNSSEC chain, DoH/DoT reachability, `miekg/dns` decision) |
-| Status | Ready. Library decision accepted 2026-10-23 (`github.com/miekg/dns` v1.1.73). Implementation has not started |
+| Status | In progress. Validation and transport classification are tested (2026-10-23). Comparison, SOA/NS, DNSSEC, DoH/DoT, adapters and the lab fixture have not started |
 | Depends on | H02 (job manager), H03 (`app.HostNetwork` for the system DNS servers), H04, H05/H06, W01 + W04 (HTTP route) |
 | Risk | Medium: a new DNS library, DNSSEC verification code paths, and Docker lab fixtures that must stay deterministic |
 

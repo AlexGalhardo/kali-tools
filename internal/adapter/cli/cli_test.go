@@ -37,7 +37,7 @@ type interruptTools struct {
 	started chan struct{}
 }
 
-func (f interruptTools) InspectServices(ctx context.Context, cidr string, ports []int) (app.Nmap, error) {
+func (f interruptTools) InspectServices(ctx context.Context, cidr string, ports []int) (app.ServiceInspection, error) {
 	result, err := f.Tools.InspectServices(ctx, cidr, ports)
 	if err != nil || f.started == nil {
 		return result, err

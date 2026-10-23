@@ -267,7 +267,7 @@ Prefer `ek` or `fields` for bounded streaming. Source: https://www.wireshark.org
 **(b) Go building blocks.**
 
 - Stdlib `net.Resolver`, already used, gives the OS-resolver view.
-- `github.com/miekg/dns` v1 (BSD-3-Clause). Owner decision 2026-10-23: use the latest v1.1.x (v1.1.73 at decision time), not `codeberg.org/miekg/dns`. The module is not a dependency until B09 is implemented. See `docs/dependencies.md`.
+- `github.com/miekg/dns` v1 (BSD-3-Clause). Owner decision 2026-10-23: use the latest v1.1.x (v1.1.73 at decision time), not `codeberg.org/miekg/dns`. `go.mod` requires v1.1.73. See `docs/dependencies.md`. Comparison and the other B09 checks are not implemented yet.
 - DoH: `net/http` plus the wire format. DoT: `crypto/tls` plus `miekg/dns`.
 
 **(c) Recommendation.**
@@ -505,7 +505,7 @@ Keep the UI and ordinary diagnostics unprivileged. If a privileged helper become
 | Dependency | Status |
 | --- | --- |
 | gopacket/gopacket | Active fork, BSD-3 |
-| miekg/dns | Decided: `github.com/miekg/dns` v1.1.73 (BSD-3-Clause). Not in go.mod until B09. Revisit if Codeberg tags v1.0.0 or GitHub v1 stops receiving fixes |
+| miekg/dns | Decided and pinned: `github.com/miekg/dns` v1.1.73 (BSD-3-Clause) in go.mod. Revisit if Codeberg tags v1.0.0 or GitHub v1 stops receiving fixes |
 | zcrypto | Research-grade, no releases |
 | zlint | Active, Apache-2.0 |
 | certificate-transparency-go | v1, Apache-2.0 |

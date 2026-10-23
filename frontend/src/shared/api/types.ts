@@ -47,10 +47,10 @@ export type DiagnosticRequest = {
   redirects?: number;
 };
 export type HTTPPhases = {
-  dns_ms: number | null;
-  connect_ms: number | null;
-  tls_ms: number | null;
-  ttfb_ms: number | null;
+  dns_ms?: number | null;
+  connect_ms?: number | null;
+  tls_ms?: number | null;
+  ttfb_ms?: number | null;
   total_ms: number;
 };
 export type SecurityHeader = {

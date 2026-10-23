@@ -135,6 +135,7 @@ export namespace contract {
 	    target: string;
 	    port: number;
 	    timeout_ms: number;
+	    redirects?: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new DiagnosticRequest(source);
@@ -147,7 +148,126 @@ export namespace contract {
 	        this.target = source["target"];
 	        this.port = source["port"];
 	        this.timeout_ms = source["timeout_ms"];
+	        this.redirects = source["redirects"];
 	    }
+	}
+	export class RedirectHop {
+	    url: string;
+	    status_code?: number;
+	    status: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new RedirectHop(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.url = source["url"];
+	        this.status_code = source["status_code"];
+	        this.status = source["status"];
+	    }
+	}
+	export class RedirectTarget {
+	    location?: string;
+	    valid: boolean;
+	    self_loop: boolean;
+	    cross_host: boolean;
+	    downgrade: boolean;
+	    notes?: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new RedirectTarget(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.location = source["location"];
+	        this.valid = source["valid"];
+	        this.self_loop = source["self_loop"];
+	        this.cross_host = source["cross_host"];
+	        this.downgrade = source["downgrade"];
+	        this.notes = source["notes"];
+	    }
+	}
+	export class SecurityHeader {
+	    name: string;
+	    present: boolean;
+	    value?: string;
+	    notes?: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new SecurityHeader(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.present = source["present"];
+	        this.value = source["value"];
+	        this.notes = source["notes"];
+	    }
+	}
+	export class HTTPPhases {
+	    dns_ms?: number;
+	    connect_ms?: number;
+	    tls_ms?: number;
+	    ttfb_ms?: number;
+	    total_ms: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new HTTPPhases(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.dns_ms = source["dns_ms"];
+	        this.connect_ms = source["connect_ms"];
+	        this.tls_ms = source["tls_ms"];
+	        this.ttfb_ms = source["ttfb_ms"];
+	        this.total_ms = source["total_ms"];
+	    }
+	}
+	export class HTTPMetadata {
+	    status_code?: number;
+	    final_url?: string;
+	    phases: HTTPPhases;
+	    security_headers: SecurityHeader[];
+	    redirect?: RedirectTarget;
+	    chain?: RedirectHop[];
+	    chain_status?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new HTTPMetadata(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.status_code = source["status_code"];
+	        this.final_url = source["final_url"];
+	        this.phases = this.convertValues(source["phases"], HTTPPhases);
+	        this.security_headers = this.convertValues(source["security_headers"], SecurityHeader);
+	        this.redirect = this.convertValues(source["redirect"], RedirectTarget);
+	        this.chain = this.convertValues(source["chain"], RedirectHop);
+	        this.chain_status = source["chain_status"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class DiagnosticResult {
 	    error_code?: string;
@@ -157,6 +277,7 @@ export namespace contract {
 	    elapsed_ms: number;
 	    values: string[];
 	    provider: string;
+	    http?: HTTPMetadata;
 	
 	    static createFrom(source: any = {}) {
 	        return new DiagnosticResult(source);
@@ -171,8 +292,158 @@ export namespace contract {
 	        this.elapsed_ms = source["elapsed_ms"];
 	        this.values = source["values"];
 	        this.provider = source["provider"];
+	        this.http = this.convertValues(source["http"], HTTPMetadata);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	
+	export class InspectionAddress {
+	    address: string;
+	    type: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new InspectionAddress(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.address = source["address"];
+	        this.type = source["type"];
 	    }
 	}
+	export class InspectionFinished {
+	    exit: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new InspectionFinished(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.exit = source["exit"];
+	    }
+	}
+	export class InspectionService {
+	    name: string;
+	    product: string;
+	    version: string;
+	    method: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new InspectionService(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.product = source["product"];
+	        this.version = source["version"];
+	        this.method = source["method"];
+	    }
+	}
+	export class InspectionPort {
+	    service: InspectionService;
+	    port: number;
+	    protocol: string;
+	    state: InspectionState;
+	
+	    static createFrom(source: any = {}) {
+	        return new InspectionPort(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.service = this.convertValues(source["service"], InspectionService);
+	        this.port = source["port"];
+	        this.protocol = source["protocol"];
+	        this.state = this.convertValues(source["state"], InspectionState);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class InspectionState {
+	    state: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new InspectionState(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.state = source["state"];
+	    }
+	}
+	export class InspectionHost {
+	    status: InspectionState;
+	    addresses: InspectionAddress[];
+	    ports: InspectionPort[];
+	
+	    static createFrom(source: any = {}) {
+	        return new InspectionHost(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.status = this.convertValues(source["status"], InspectionState);
+	        this.addresses = this.convertValues(source["addresses"], InspectionAddress);
+	        this.ports = this.convertValues(source["ports"], InspectionPort);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	
+	
 	export class Interface {
 	    index: number;
 	    name: string;
@@ -347,135 +618,6 @@ export namespace contract {
 		    return a;
 		}
 	}
-	export class NmapAddress {
-	    address: string;
-	    type: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new NmapAddress(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.address = source["address"];
-	        this.type = source["type"];
-	    }
-	}
-	export class NmapFinished {
-	    exit: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new NmapFinished(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.exit = source["exit"];
-	    }
-	}
-	export class NmapService {
-	    name: string;
-	    product: string;
-	    version: string;
-	    method: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new NmapService(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.name = source["name"];
-	        this.product = source["product"];
-	        this.version = source["version"];
-	        this.method = source["method"];
-	    }
-	}
-	export class NmapPort {
-	    service: NmapService;
-	    port: number;
-	    protocol: string;
-	    state: NmapState;
-	
-	    static createFrom(source: any = {}) {
-	        return new NmapPort(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.service = this.convertValues(source["service"], NmapService);
-	        this.port = source["port"];
-	        this.protocol = source["protocol"];
-	        this.state = this.convertValues(source["state"], NmapState);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	export class NmapState {
-	    state: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new NmapState(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.state = source["state"];
-	    }
-	}
-	export class NmapHost {
-	    status: NmapState;
-	    addresses: NmapAddress[];
-	    ports: NmapPort[];
-	
-	    static createFrom(source: any = {}) {
-	        return new NmapHost(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.status = this.convertValues(source["status"], NmapState);
-	        this.addresses = this.convertValues(source["addresses"], NmapAddress);
-	        this.ports = this.convertValues(source["ports"], NmapPort);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	
-	
-	
 	
 	export class PortResult {
 	    host: string;
@@ -493,11 +635,14 @@ export namespace contract {
 	        this.state = source["state"];
 	    }
 	}
+	
+	
+	
 	export class ServiceInspection {
 	    scanner: string;
 	    version: string;
-	    finished: NmapFinished;
-	    hosts: NmapHost[];
+	    finished: InspectionFinished;
+	    hosts: InspectionHost[];
 	
 	    static createFrom(source: any = {}) {
 	        return new ServiceInspection(source);
@@ -507,8 +652,8 @@ export namespace contract {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.scanner = source["scanner"];
 	        this.version = source["version"];
-	        this.finished = this.convertValues(source["finished"], NmapFinished);
-	        this.hosts = this.convertValues(source["hosts"], NmapHost);
+	        this.finished = this.convertValues(source["finished"], InspectionFinished);
+	        this.hosts = this.convertValues(source["hosts"], InspectionHost);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

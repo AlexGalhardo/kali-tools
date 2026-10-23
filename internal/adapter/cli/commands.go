@@ -32,7 +32,7 @@ var commands = []command{
 	{path: "inventory", synopsis: "Show routes, DNS and traffic counters", needsApp: true},
 	{path: "diagnose", synopsis: "diagnose [dns|tcp|http|tls|ping|trace] [flags]", needsApp: true, flags: []string{"target", "kind", "port", "record", "redirects"}},
 	{path: "discover", synopsis: "Discover a bounded IPv4 scope", needsApp: true, flags: []string{"target", "ports", "format"}},
-	{path: "inspect", synopsis: "Inspect services with separately installed Nmap", needsApp: true, flags: []string{"target", "ports", "format"}},
+	{path: "inspect", synopsis: "Inspect services on an explicit IPv4 scope", needsApp: true, flags: []string{"target", "ports", "format"}},
 	{path: "wifi", synopsis: "Show current Wi-Fi metadata", needsApp: true},
 	{path: "wifi show", synopsis: "Show current Wi-Fi metadata", needsApp: true},
 	{path: "wifi reveal", synopsis: "Print the saved key only with --confirm", needsApp: true, flags: []string{"confirm"}},
