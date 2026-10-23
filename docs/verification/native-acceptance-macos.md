@@ -36,6 +36,8 @@ Neighbors have no macOS provider yet. Wi-Fi metadata comes from CoreWLAN when th
 
 14. **Socket inventory is unsupported.** Run `./kali-tools connections --json`. Expected: exit 3 and `error.code` is `unsupported`. Then `./kali-tools throughput --duration 1 --json`. Expected: exit 0, `endpoint` starts with `127.0.0.1:`, `duration_ms` is 1000, and `byte_count` is greater than 0. Evidence: `14-connections.json`, `14-throughput.json`. This does not close B02 or B04. macOS socket-to-process mapping was not implemented.
 
+15. **Archive and data directory.** Unpack the CI zip on Apple Silicon. Expected: one `.app`, `kali-tools`, `LICENSE.md`, `README.md`, `THIRD_PARTY_NOTICES.txt`, `dependencies.json` and `BUILD.json` with `"architecture": "arm64"`, `"signature": "ad-hoc"` and `"signed": false`. After one launch, `~/Library/Application Support/kali-tools/history.db` exists. Deleting the unpacked directory leaves that file. Evidence: `15-listing.txt`. This does not close B02 or B07. An Intel Mac is not a supported archive.
+
 ## Paste-back template
 
 ```text

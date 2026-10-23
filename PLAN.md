@@ -520,10 +520,10 @@ Interfaces exit: a parity matrix (capability × desktop/CLI/web) is recorded in 
     - [x] Redacted diagnostic bundles and compatibility fixtures for all exported formats. The on-demand zip is implemented ([ADR 012](docs/adr/012-diagnostic-bundle.md), [evidence](docs/verification/specs/B06.md)). pcap, pcapng, discovery CSV and neighbors CSV fixtures import.
   - [x] Test translation key parity and all permission/error UI flows. English and PT-BR catalog keys match. Every domain error code and capability state has a UI label. Operating-system permission dialogs stay on the runbooks. [Evidence](docs/verification/specs/B06.md).
   - Assert: prior beta data upgrades without silent loss; secret fixtures appear in no ordinary artifact.
-- [ ] B07 Native packaging matrix.
-  - [ ] Build Windows, Linux and macOS artifacts on native hosts; verify actual WebView prerequisites.
-  - [ ] Dependency doctor and install instructions; clean-machine smoke checks.
-  - [ ] Dependency/source notices, installer uninstall behavior and writable-data locations.
+- [ ] B07 Native packaging matrix. Archive names, notices, uninstall and the writable database path are in [packaging](docs/packaging.md). Clean-machine WebView checks remain open. [Evidence](docs/verification/specs/B07.md).
+  - [ ] Build Windows, Linux and macOS artifacts on native hosts; verify actual WebView prerequisites. CI builds the three archives. A clean machine has not confirmed the WebView prerequisite. Native acceptance remains open.
+  - [ ] Dependency doctor and install instructions; clean-machine smoke checks. README and `doctor` already name the Ubuntu 24.04 baseline and the WebView packages. A clean-machine smoke check was not run.
+  - [x] Dependency/source notices, installer uninstall behavior and writable-data locations. Each archive includes `THIRD_PARTY_NOTICES.txt` and `dependencies.json`. There is no installer. Uninstall is deleting the unpacked directory. `history.db` stays in the per-user config directory. See [packaging](docs/packaging.md).
   - Assert: verified matrix names OS/version/architecture/provider; untested combinations are not advertised.
 - [ ] B08 TLS and certificate audit module (`internal/tlsaudit` + adapters).
   - Spec: [B08-tls-audit](docs/specs/B08-tls-audit.md)

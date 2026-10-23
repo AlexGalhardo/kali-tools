@@ -36,6 +36,8 @@ There is no privileged helper ([ADR 011](../adr/011-no-privileged-helper.md)). I
 
 14. **Socket inventory is unsupported.** Run `.\kali-tools.exe connections --json`. Expected: exit 3 and `error.code` is `unsupported`. Then `.\kali-tools.exe throughput --duration 1 --json`. Expected: exit 0, `endpoint` starts with `127.0.0.1:`, `duration_ms` is 1000, and `byte_count` is greater than 0. Evidence: `14-connections.json`, `14-throughput.json`. This does not close B04. Windows socket-to-process mapping was not implemented.
 
+15. **Archive and data directory.** Unpack the CI zip. Expected files: `kali-tools.exe`, `kali-tools-desktop.exe`, `LICENSE.md`, `README.md`, `THIRD_PARTY_NOTICES.txt`, `dependencies.json` and `BUILD.json` with `"signed": false`. Launch the desktop app. If WebView2 is missing, save the error as `15-webview.txt` and stop. After one successful start, `%AppData%\kali-tools\history.db` exists. Deleting the unpacked folder leaves that file. Evidence: `15-listing.txt`. This does not close B07. A clean machine was not required for this note, and a note alone does not check the box.
+
 ## Paste-back template
 
 ```text
