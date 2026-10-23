@@ -1,0 +1,17 @@
+---
+description: Go layout, formatting, and dependency rule
+globs: "**/*.go"
+alwaysApply: false
+---
+
+# Go
+
+Format with `golangci-lint fmt` (gofmt -s and goimports). The local import prefix is `github.com/AlexGalhardo/kali-tools`. Group imports as stdlib, third-party, then this module.
+
+Expected failures are `domain.Error` values from `internal/domain` (`domain.Invalid` for bad input). Add a new code there, and add the same user-facing string to both `en` and `pt` in `frontend/src/shared/i18n/i18n.ts`.
+
+OS code uses build tags plus an unsupported fallback in the same change (`*_windows.go`, `*_linux.go`, `*_other.go`). `internal/bootstrap` is imported by `main.go`, `cmd/`, and tests. `internal/porttest` is test-only; shared fakes live in `internal/porttest/fake`.
+
+`.golangci.yml` depguard rules encode the dependency matrix. `node scripts/task.mjs arch` must still pass. `go test ./...` does not run files tagged `integration`, `e2e`, or `windows`.
+
+The checked Go commands are `node scripts/task.mjs go` (gofmt, `go mod tidy -diff`, vet, `go test -timeout 90s ./...`, golangci-lint v2.15.0, govulncheck v1.9.0). The module's Go version is 1.27.3.

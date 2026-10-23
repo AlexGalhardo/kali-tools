@@ -1,0 +1,18 @@
+---
+description: kali-tools invariants for every task
+alwaysApply: true
+---
+
+# kali-tools
+
+Local network and security toolkit: one Go core, a Wails desktop, a loopback web server, and a CLI. Read `AGENTS.md` and `docs/architecture.md` before adding a package or wiring an interface.
+
+- Implement one spec from `docs/specs/` at a time. Write the spec's tests first. Do not invent requirements the spec does not state.
+- English source, docs, and commits. Conventional Commits. The project license is MIT. Do not create a release tag.
+- Dependencies point inward. `internal/domain` imports only the standard library. Capabilities (`network`, `capture`, `wifi`, `tlsaudit`) do not import adapters, `app`, Wails, or `database/sql`. Driving adapters call `app.Application` and do not import storage, tools, probe, platform, or pcap.
+- Declare a port in the package that calls it. Pass dependencies into `app.New` (`app.Deps`). No DI framework.
+- Do not concatenate shell commands. Bound network IO, parser input, event queues, and subprocess output.
+- Do not store Wi-Fi keys or packet payloads in history, logs, SQLite, or verification notes.
+- A missing provider is `dependency_missing`, `permission_required`, `location_consent_required`, `unsupported`, or `failed`. Do not report success in those cases.
+- A Linux build or cross compile is not native Wi-Fi, capture, or WebView acceptance.
+- Do not hand-edit `frontend/wailsjs/`. `main.go` stays at the repository root.

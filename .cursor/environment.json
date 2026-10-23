@@ -1,0 +1,5 @@
+{
+  "name": "kali-tools",
+  "user": "ubuntu",
+  "install": "bash .cursor/install.sh"
+}
