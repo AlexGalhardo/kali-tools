@@ -52,7 +52,8 @@ kali-tools/
 │   ├── capture/                    capability: live capture (Windows raw IPv4), PCAP/PCAPNG import/export, gopacket decoding
 │   ├── wifi/                       capability: current Wi-Fi metadata and explicit key reveal (Windows)
 │   ├── tlsaudit/                   capability: TLS audit request validation and certificate reports (B08); native verifier acceptance pending
-│   ├── dnsinspect/                 capability: DNS inspection request validation (B09); queries are not implemented yet
+│   ├── dnsinspect/                 capability: DNS inspection (B09)
+│   ├── localdiscovery/             capability: mDNS, SSDP and owned-device SNMP (B10)
 │   ├── adapter/                    all adapters, named by technology
 │   │   ├── contract/               shared frontend DTOs, explicit mappers and safe error mapping
 │   │   ├── storage/                driven: SQLite store, migrations, settings, retention
@@ -274,7 +275,7 @@ H02 moves all three streams through `job.Manager`. `Subscribe(ctx)` uses a defau
   - Exposing the server on the LAN requires an explicit flag plus TLS plus a warning.
 - **Capability honesty:** a server running as another user or as a service may lack Wi-Fi location consent or capture permission. It must report those states, not fail silently.
 
-The only embedded asset source is `frontend/embed.go`; `Dist()` serves the same bytes to Wails and HTTP. All API routes except `POST /api/session` require cookie or bearer authentication. Health and static assets remain public. Lifecycle/preflight helpers have no separate routes. SSE subscribes before flushing, emits retry/sequence/resync and closes on cancellation; terminal job state is recoverable from `/api/jobs/{id}`. Capture import/export accepts bytes and format, never server paths.
+The only embedded asset source is `frontend/embed.go`; `Dist()` serves the same bytes to Wails and HTTP. All API routes except `POST /api/session` require cookie or bearer authentication. The route table, body limits and error statuses are the [HTTP contract](http.md). Health and static assets remain public. Lifecycle/preflight helpers have no separate routes. SSE subscribes before flushing, emits retry/sequence/resync and closes on cancellation; terminal job state is recoverable from `/api/jobs/{id}`. Capture import/export accepts bytes and format, never server paths.
 
 Consent failures return HTTP 403 with the usual error envelope and an optional `error.settings_uri`. The shared error mapper adds the fixed URI only for `location_consent_required`; CLI JSON uses the same field, and human output adds an English/PT-BR settings hint. C01's permission exit status remains 4. Reveal remains explicit: desktop action, authenticated HTTP POST, or CLI `wifi reveal --confirm`.
 

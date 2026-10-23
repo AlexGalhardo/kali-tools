@@ -1,6 +1,6 @@
 # kali-tools
 
-A local network and security toolkit inspired by the Kali Linux ecosystem, built with Go, Wails, React, TypeScript, Base UI, Tailwind CSS v4 and SQLite. One Go core serves three interfaces: the native desktop GUI (primary), a web server with the same UI (planned) and a complete CLI for headless/SSH hosts (in progress). The interface supports English and Brazilian Portuguese.
+A local network and security toolkit inspired by the Kali Linux ecosystem, built with Go, Wails, React, TypeScript, Base UI, Tailwind CSS v4 and SQLite. One Go core serves three interfaces: the native desktop GUI (primary), a local web server with the same UI, and a CLI for headless or SSH hosts. Native SSH acceptance is still open. The interface supports English and Brazilian Portuguese.
 
 **Development preview:** core workflows are implemented and tested; hardware qualification is still open. Windows 11 leads development. Linux/macOS binaries do not imply Wi-Fi or capture parity. See [PLAN.md](PLAN.md) and [verification evidence](docs/verification/0.1.0-alpha.2-dev.md).
 
@@ -220,7 +220,7 @@ go run ./cmd/kali-tools inspect --target 127.0.0.1/32 --ports 8080
 go run ./cmd/kali-tools capture import --file synthetic.pcap --output converted.pcapng --format pcapng
 ```
 
-Start a listening local service for the TCP/HTTP examples; refusal is an expected diagnostic failure. Human output is the default; scripts must add `--json`, whose envelope includes `schema_version: 1`. Diagnostics stream bounded progress on stderr and record redacted job history. Settings and history persist in the shared per-user SQLite database. `wifi reveal --confirm` explicitly prints the saved key and a warning. Jobs remain owned by their starting process. See the [CLI contract](docs/cli.md) for commands, exit codes, SSH behavior and migration. Discovery accepts IPv4 /24 or narrower and up to 32 unique ports. Native SSH acceptance remains pending. The web server remains planned.
+Start a listening local service for the TCP/HTTP examples; refusal is an expected diagnostic failure. Human output is the default; scripts must add `--json`, whose envelope includes `schema_version: 1`. Diagnostics stream bounded progress on stderr and record redacted job history. Settings and history persist in the shared per-user SQLite database. `wifi reveal --confirm` explicitly prints the saved key and a warning. Jobs remain owned by their starting process. See the [CLI contract](docs/cli.md) for commands, exit codes, SSH behavior and migration. Discovery accepts IPv4 /24 or narrower and up to 32 unique ports. Native SSH acceptance remains pending. `kali-tools serve` is the local web server; its routes, errors and capability rules are in the [HTTP contract](docs/http.md).
 
 ## Troubleshooting
 

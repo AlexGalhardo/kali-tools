@@ -12,6 +12,7 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ### Changed
 
+- Documented the HTTP API: routes, session rules, body limits, error statuses and server-account capability states. [HTTP contract](docs/http.md).
 - Renamed the service-inspection result types from `Nmap` to `ServiceInspection` and the nested types to `Inspection*`. JSON field names are unchanged. Wails models were regenerated and now include the HTTP metadata types. Shared phase fields accept both JSON null and an omitted value. ADR 006 records the names.
 - Service inspection no longer runs Nmap. Explicit TCP scopes are identified with built-in banner, TLS and HTTP checks. TShark remains inventory-only. ADR 006 supersedes ADR 003.
 - Accepted ADR 004: the CLI keeps the standard-library flag parser. Cobra is not adopted (owner, 2026-10-23).
