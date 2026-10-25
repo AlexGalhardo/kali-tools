@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
@@ -204,10 +205,65 @@ func (d Diagnostics) Diagnose(ctx context.Context, r Request) (Result, error) {
 	return result, nil
 }
 
+// Discovery limits. The scope validator and the scanners share them so a
+// request that cannot finish inside DiscoveryDeadline is refused up front.
+const (
+	DiscoveryDeadline = 2 * time.Minute
+	DiscoveryWorkers  = 32
+	DiscoveryPace     = 10 * time.Millisecond
+)
+
+// scanDeadline is a variable only so tests can shorten it.
+var scanDeadline = DiscoveryDeadline
+
 type PortResult struct {
-	Host  string `json:"host"`
-	Port  int    `json:"port"`
-	State string `json:"state"`
+	Host      string  `json:"host"`
+	Port      int     `json:"port"`
+	State     string  `json:"state"`
+	RTTMS     float64 `json:"rtt_ms"`
+	HostState string  `json:"host_state"`
+}
+
+// Winsock error numbers; Go reports them as syscall.Errno on Windows and they
+// do not match the portable syscall.E* values there.
+const (
+	wsaeConnRefused syscall.Errno = 10061
+	wsaeHostUnreach syscall.Errno = 10065
+	wsaeNetUnreach  syscall.Errno = 10051
+)
+
+// ClassifyDial maps a TCP dial error to open, closed, filtered or unreachable.
+func ClassifyDial(err error) string {
+	var netErr net.Error
+	switch {
+	case err == nil:
+		return "open"
+	case errors.Is(err, syscall.ECONNREFUSED), errors.Is(err, wsaeConnRefused):
+		return "closed"
+	case errors.Is(err, syscall.EHOSTUNREACH), errors.Is(err, syscall.ENETUNREACH), errors.Is(err, wsaeHostUnreach), errors.Is(err, wsaeNetUnreach):
+		return "unreachable"
+	case errors.Is(err, context.DeadlineExceeded), errors.As(err, &netErr) && netErr.Timeout():
+		return "filtered"
+	}
+	return "unreachable"
+}
+
+// HostState is up when any port answered (open or closed), down when every
+// probe failed at the network layer, and unknown when probes only timed out.
+func HostState(states []string) string {
+	down := len(states) > 0
+	for _, s := range states {
+		if s == "open" || s == "closed" {
+			return "up"
+		}
+		if s != "unreachable" {
+			down = false
+		}
+	}
+	if down {
+		return "down"
+	}
+	return "unknown"
 }
 
 func ValidateDiscovery(cidr string, ports []int, timeout time.Duration) error {
@@ -225,25 +281,37 @@ func ValidateDiscovery(cidr string, ports []int, timeout time.Duration) error {
 		}
 		seen[p] = true
 	}
+	tasks := int64(1<<(32-prefix.Bits())) * int64(len(ports))
+	worst := time.Duration(tasks * int64(timeout) / DiscoveryWorkers)
+	if pace := time.Duration(tasks * int64(DiscoveryPace)); pace > worst {
+		worst = pace
+	}
+	if worst > DiscoveryDeadline {
+		return domain.Invalid("scope needs about %d s in the worst case, limit is %d s; reduce ports, timeout or the range", int(worst.Seconds()), int(DiscoveryDeadline.Seconds()))
+	}
 	return nil
 }
 
-func Discover(ctx context.Context, cidr string, ports []int, timeout time.Duration) ([]PortResult, error) {
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
-	defer cancel()
+// Discover probes every host and port of the scope. When the internal
+// deadline cuts the scan it returns the results gathered so far with
+// truncated set; a cancelled parent context is still an error.
+func Discover(ctx context.Context, cidr string, ports []int, timeout time.Duration) (results []PortResult, truncated bool, err error) {
 	if err := ValidateDiscovery(cidr, ports, timeout); err != nil {
-		return nil, err
+		return nil, false, err
 	}
+	parent := ctx
+	ctx, cancel := context.WithTimeout(ctx, scanDeadline)
+	defer cancel()
 	prefix, _ := netip.ParsePrefix(cidr)
 	type task struct {
 		host string
 		port int
 	}
 	tasks := make(chan task)
-	results := make([]PortResult, 0)
+	results = make([]PortResult, 0)
 	var mu sync.Mutex
 	var wg sync.WaitGroup
-	for range 32 {
+	for range DiscoveryWorkers {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -252,20 +320,22 @@ func Discover(ctx context.Context, cidr string, ports []int, timeout time.Durati
 					continue
 				}
 				probe, cancel := context.WithTimeout(ctx, timeout)
+				start := time.Now()
 				c, e := (&net.Dialer{}).DialContext(probe, "tcp", net.JoinHostPort(t.host, strconv.Itoa(t.port)))
+				rtt := float64(time.Since(start).Microseconds()) / 1000
 				cancel()
-				state := "unreachable"
 				if e == nil {
-					state = "open"
 					c.Close()
+				} else if ctx.Err() != nil {
+					continue
 				}
 				mu.Lock()
-				results = append(results, PortResult{t.host, t.port, state})
+				results = append(results, PortResult{Host: t.host, Port: t.port, State: ClassifyDial(e), RTTMS: rtt})
 				mu.Unlock()
 			}
 		}()
 	}
-	pace := time.NewTicker(10 * time.Millisecond)
+	pace := time.NewTicker(DiscoveryPace)
 	defer pace.Stop()
 outer:
 	for ip := prefix.Masked().Addr(); prefix.Contains(ip); ip = ip.Next() {
@@ -292,7 +362,17 @@ outer:
 		b, _ := netip.ParseAddr(results[j].Host)
 		return a.Less(b)
 	})
-	return results, ctx.Err()
+	byHost := map[string][]string{}
+	for _, r := range results {
+		byHost[r.Host] = append(byHost[r.Host], r.State)
+	}
+	for i := range results {
+		results[i].HostState = HostState(byHost[results[i].Host])
+	}
+	if parent.Err() != nil {
+		return results, false, parent.Err()
+	}
+	return results, ctx.Err() != nil, nil
 }
 
 type Counter struct {

@@ -31,9 +31,9 @@ await page.addInitScript(()=>{
       if(document.documentElement.dataset.cancelDiscovery){
         const running={...job,id:"fixture-discovery",kind:"discovery",state:"running"};
         handlers.job?.forEach(fn=>fn({schema_version:1,job:running}));
-        return new Promise<{host:string;port:number;state:string}[]>(resolve=>{cancelDiscovery=()=>{handlers.job?.forEach(fn=>fn({schema_version:1,job:{...running,state:"cancelled"}}));resolve([]);};});
+        return new Promise<{results:{host:string;port:number;state:string;rtt_ms:number;host_state:string}[];truncated:boolean}>(resolve=>{cancelDiscovery=()=>{handlers.job?.forEach(fn=>fn({schema_version:1,job:{...running,state:"cancelled"}}));resolve({results:[],truncated:false});};});
       }
-      return [{host:"192.0.2.1",port:80,state:"open"}];
+      return {results:[{host:"192.0.2.1",port:80,state:"open",rtt_ms:1.2,host_state:"up"}],truncated:false};
     },
     SaveCapture:async(format:string)=>{document.documentElement.dataset.savedCapture=format;return true;},ImportCapture:async()=>({packets:[{number:1,timestamp:"2026-10-19T12:00:00Z",length:64,source:"192.0.2.1",destination:"192.0.2.2",protocol:"DNS",info:"example.test"}],limited:false,format:"pcap"}),StartCapture:async()=>{},StopCapture:async()=>{},
     DiscoverLocal:async()=>({responders:[],limited:false,out_of_scope:0,malformed:0,errors:[]}),

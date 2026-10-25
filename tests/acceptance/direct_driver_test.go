@@ -28,7 +28,7 @@ func (d directDriver) Diagnose(ctx context.Context, r contract.DiagnosticRequest
 	return contract.FromDiagnosticResult(v), nil
 }
 func (d directDriver) Discover(ctx context.Context, cidr string, ports []int, timeout time.Duration) ([]contract.PortResult, error) {
-	v, err := d.app.Discover(ctx, cidr, ports, timeout)
+	v, _, err := d.app.Discover(ctx, cidr, ports, timeout)
 	if err != nil {
 		return nil, mappedError(err)
 	}

@@ -174,9 +174,10 @@ test("limited imports disclose omitted packets @wails-only", async({page,connect
 test("discovery results stay bounded and paginate @wails-only", async({page,connect}) => {
  await connect(page);
  await page.evaluate(() => {
-  if (window.go) window.go.wailsui!.Bindings!.Discover = async () => Array.from({length:205}, (_,i) => ({host:`192.0.2.${Math.floor(i/32)+1}`,port:i+1,state:"open"}));
+  if (window.go) window.go.wailsui!.Bindings!.Discover = async () => ({truncated:false, results:Array.from({length:205}, (_,i) => ({host:`192.0.2.${Math.floor(i/32)+1}`,port:i+1,state:"open",rtt_ms:1,host_state:"up"}))});
  });
  await page.getByRole("button",{name:"Discovery & tools",exact:true}).click();
+ await page.getByLabel("I have written authorization for this scope").check();
  await page.getByRole("button",{name:"Discover",exact:true}).click();
  await expect(page.locator("tbody tr")).toHaveCount(100);
  await page.getByRole("button",{name:"Next",exact:true}).click();
@@ -191,6 +192,7 @@ test("running discovery cancels through its service job ID @wails-only", async({
  await page.evaluate(()=>{document.documentElement.dataset.cancelDiscovery="true";});
  await page.getByRole("button",{name:"Discovery & tools",exact:true}).click();
  await expect(page.getByRole("button",{name:"Cancel",exact:true})).toBeDisabled();
+ await page.getByLabel("I have written authorization for this scope").check();
  await page.getByRole("button",{name:"Discover",exact:true}).click();
  await expect(page.getByRole("button",{name:"Cancel",exact:true})).toBeEnabled();
  await page.getByRole("button",{name:"Cancel",exact:true}).click();
@@ -233,10 +235,12 @@ test("DNS record selection reaches the diagnostic service @wails-only", async({p
 test("service inspection stays available without optional tools @wails-only", async({page,connect}) => {
  await connect(page);
  await page.getByRole("button",{name:"Discovery & tools",exact:true}).click();
+ await expect(page.getByRole("button",{name:"Inspect services",exact:true})).toBeDisabled();
+ await page.getByLabel("I have written authorization for this scope").check();
  await expect(page.getByRole("button",{name:"Inspect services",exact:true})).toBeEnabled();
  await page.evaluate(()=>{
   if(!window.go)return;
-  window.go.wailsui!.Bindings!.InspectServices=async()=>({scanner:"native",version:"1",hosts:[{addresses:[{address:"192.0.2.1",type:"ipv4"}],ports:[{port:80,state:{state:"open"},service:{name:"http",product:"Synthetic HTTP",version:"1",method:"banner"}}]}]});
+  window.go.wailsui!.Bindings!.InspectServices=async()=>({scanner:"native",version:"1",truncated:false,hosts:[{addresses:[{address:"192.0.2.1",type:"ipv4"}],ports:[{port:80,state:{state:"open"},service:{name:"http",product:"Synthetic HTTP",version:"1",method:"banner"}}]}]});
  });
  await page.getByRole("button",{name:"Inspect services",exact:true}).click();
  await expect(page.getByRole("cell",{name:"http Synthetic HTTP 1",exact:true})).toBeVisible();

@@ -121,9 +121,18 @@ export type Tool = {
   version: string;
   path: string;
 };
+export type PortResult = {
+  host: string;
+  port: number;
+  state: string;
+  rtt_ms: number;
+  host_state: string;
+};
+export type Discovery = { results: PortResult[]; truncated: boolean };
 export type ServiceInspection = {
   scanner: string;
   version: string;
+  truncated: boolean;
   hosts: {
     addresses: { address: string; type: string }[];
     ports: {
@@ -218,10 +227,7 @@ export type Backend = {
   RevealWiFi(): Promise<{ state: string; value: string }>;
   OpenLocationSettings(): Promise<void>;
   Tools(): Promise<Tool[]>;
-  Discover(
-    cidr: string,
-    ports: number[],
-  ): Promise<{ host: string; port: number; state: string }[]>;
+  Discover(cidr: string, ports: number[]): Promise<Discovery>;
   InspectServices(cidr: string, ports: number[]): Promise<ServiceInspection>;
   ImportCapture(): Promise<Capture>;
   SaveCapture(format: string): Promise<boolean>;

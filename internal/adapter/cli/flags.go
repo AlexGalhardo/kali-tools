@@ -161,7 +161,7 @@ func parseInvocation(args []string) (invocation, error) {
 		switch name {
 		case "lint":
 			fs.Bool(name, true, "run certificate linting")
-		case "all", "confirm", "owned", "interfaces":
+		case "all", "confirm", "owned", "interfaces", "authorized":
 			fs.Bool(name, false, name)
 		case "port":
 			port := 443
@@ -245,6 +245,9 @@ func parseInvocation(args []string) (invocation, error) {
 	if call.command.path == "wifi reveal" && call.values["confirm"] != "true" {
 		return call, domain.Invalid("wifi reveal prints the saved network key; re-run with --confirm")
 	}
+	if (call.command.path == "discover" || call.command.path == "inspect") && call.values["authorized"] != "true" {
+		return call, domain.Invalid("%s sends traffic to every host in the scope; re-run with --authorized to confirm you have written authorization for it", call.command.path)
+	}
 	if strings.HasPrefix(call.command.path, "capture") || call.command.path == "import" {
 		if call.values["output"] != "" && call.values["format"] != "pcap" && call.values["format"] != "pcapng" {
 			return call, domain.Invalid("packet export requires --format pcap or pcapng")
@@ -264,6 +267,9 @@ func parseInvocation(args []string) (invocation, error) {
 	var parseErr error
 	fs.Visit(func(f *flag.Flag) {
 		call.set[f.Name] = true
+		if f.Name == "authorized" {
+			return
+		}
 		if !slices.Contains(call.command.flags, f.Name) {
 			return
 		}

@@ -283,13 +283,13 @@ func (b *Bindings) OpenNpcapDownload() error {
 	b.openURL(ctx, domain.NpcapDownloadURL)
 	return nil
 }
-func (b *Bindings) Discover(cidr string, ports []int) ([]contract.PortResult, error) {
+func (b *Bindings) Discover(cidr string, ports []int) (contract.Discovery, error) {
 	ctx, e := b.ready()
 	if e != nil {
-		return nil, fail(e)
+		return contract.Discovery{}, fail(e)
 	}
-	v, e := b.app.Discover(ctx, cidr, ports, desktopDiscoveryTimeout)
-	return contract.FromPortResults(v), fail(e)
+	v, truncated, e := b.app.Discover(ctx, cidr, ports, desktopDiscoveryTimeout)
+	return contract.FromDiscovery(v, truncated), fail(e)
 }
 func (b *Bindings) InspectServices(cidr string, ports []int) (contract.ServiceInspection, error) {
 	ctx, e := b.ready()

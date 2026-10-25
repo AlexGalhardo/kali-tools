@@ -66,7 +66,8 @@ func (d cliDriver) Discover(ctx context.Context, cidr string, ports []int, timeo
 	for i, p := range ports {
 		numbers[i] = strconv.Itoa(p)
 	}
-	return cliResult[[]contract.PortResult](d, ctx, []string{"discover", "--target", cidr, "--ports", strings.Join(numbers, ","), "--timeout", strconv.FormatInt(timeout.Milliseconds(), 10)})
+	v, err := cliResult[contract.Discovery](d, ctx, []string{"discover", "--authorized", "--target", cidr, "--ports", strings.Join(numbers, ","), "--timeout", strconv.FormatInt(timeout.Milliseconds(), 10)})
+	return v.Results, err
 }
 func (d cliDriver) History(ctx context.Context) ([]contract.Job, error) {
 	return cliResult[[]contract.Job](d, ctx, []string{"history", "list"})

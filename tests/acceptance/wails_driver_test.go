@@ -45,7 +45,7 @@ func (d wailsDriver) Discover(_ context.Context, cidr string, ports []int, _ tim
 	if err != nil {
 		return nil, d.failure(err)
 	}
-	return v, nil
+	return v.Results, nil
 }
 func (d wailsDriver) History(context.Context) ([]contract.Job, error) {
 	v, err := d.bindings.History()

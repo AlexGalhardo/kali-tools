@@ -106,7 +106,9 @@ func (s Settings) AppSettings() app.Settings {
 	return app.Settings{Language: s.Language, RetentionDays: s.RetentionDays}
 }
 func FromPortResults(v []network.PortResult) []PortResult {
-	return mapSlice(v, func(p network.PortResult) PortResult { return PortResult{Host: p.Host, Port: p.Port, State: p.State} })
+	return mapSlice(v, func(p network.PortResult) PortResult {
+		return PortResult{Host: p.Host, Port: p.Port, State: p.State, RTTMS: p.RTTMS, HostState: p.HostState}
+	})
 }
 func fromPacket(v capture.Packet) Packet {
 	return Packet{Number: v.Number, Timestamp: v.Timestamp, Length: v.Length, Source: v.Source, Destination: v.Destination, Protocol: v.Protocol, Info: v.Info}
@@ -132,8 +134,11 @@ func FromWiFiSecret(v wifi.Secret) WiFiSecret { return WiFiSecret{State: v.State
 func FromTools(v []app.Tool) []Tool {
 	return mapSlice(v, func(t app.Tool) Tool { return Tool{Name: t.Name, State: t.State, Version: t.Version, Path: t.Path} })
 }
+func FromDiscovery(v []network.PortResult, truncated bool) Discovery {
+	return Discovery{Results: FromPortResults(v), Truncated: truncated}
+}
 func FromServiceInspection(v app.ServiceInspection) ServiceInspection {
-	return ServiceInspection{Scanner: v.Scanner, Version: v.Version, Finished: InspectionFinished{Exit: v.Finished.Exit}, Hosts: mapSlice(v.Hosts, func(h app.InspectionHost) InspectionHost {
+	return ServiceInspection{Scanner: v.Scanner, Version: v.Version, Truncated: v.Truncated, Finished: InspectionFinished{Exit: v.Finished.Exit}, Hosts: mapSlice(v.Hosts, func(h app.InspectionHost) InspectionHost {
 		return InspectionHost{Status: InspectionState{State: h.Status.State}, Addresses: mapSlice(h.Addresses, func(a app.InspectionAddress) InspectionAddress {
 			return InspectionAddress{Address: a.Address, Type: a.Type}
 		}), Ports: mapSlice(h.Ports, func(p app.InspectionPort) InspectionPort {

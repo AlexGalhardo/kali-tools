@@ -63,7 +63,9 @@ func TestInterruptCancelsInspection(t *testing.T) {
 	defer cancel()
 	var out, stderr bytes.Buffer
 	done := make(chan int, 1)
-	go func() { done <- runJSON(ctx, a, []string{"inspect", "--target", "127.0.0.1/32"}, &out, &stderr) }()
+	go func() {
+		done <- runJSON(ctx, a, []string{"inspect", "--authorized", "--target", "127.0.0.1/32"}, &out, &stderr)
+	}()
 	select {
 	case <-started:
 	case <-time.After(3 * time.Second):
@@ -219,10 +221,10 @@ func TestCLIGolden(t *testing.T) {
 		{"version", []string{"version"}, 0},
 		{"unknown", []string{"unknown"}, 2},
 		{"invalid-target", []string{"diagnose", "--target", "a;whoami"}, 2},
-		{"invalid-scope", []string{"discover", "--target", "0.0.0.0/0"}, 2},
-		{"invalid-format", []string{"discover", "--target", "127.0.0.1/32", "--format", "invalid"}, 2},
-		{"too-many-ports", []string{"discover", "--target", "127.0.0.1/32", "--ports", strings.Repeat("80,", 32) + "80"}, 2},
-		{"inspection-csv", []string{"inspect", "--format", "csv", "--target", "127.0.0.1/32"}, 2},
+		{"invalid-scope", []string{"discover", "--authorized", "--target", "0.0.0.0/0"}, 2},
+		{"invalid-format", []string{"discover", "--authorized", "--target", "127.0.0.1/32", "--format", "invalid"}, 2},
+		{"too-many-ports", []string{"discover", "--authorized", "--target", "127.0.0.1/32", "--ports", strings.Repeat("80,", 32) + "80"}, 2},
+		{"inspection-csv", []string{"inspect", "--authorized", "--format", "csv", "--target", "127.0.0.1/32"}, 2},
 		{"import", []string{"import", "--file", fixture}, 0},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -318,7 +320,7 @@ func TestCLIContract(t *testing.T) {
 		args      []string
 		code      int
 		errorCode string
-	}{{[]string{"version"}, 0, ""}, {[]string{"interfaces"}, 0, ""}, {[]string{"diagnose", "--target", "a;whoami"}, 2, "invalid_input"}, {[]string{"discover", "--target", "0.0.0.0/0"}, 2, "invalid_input"}, {[]string{"unknown"}, 2, "invalid_input"}} {
+	}{{[]string{"version"}, 0, ""}, {[]string{"interfaces"}, 0, ""}, {[]string{"diagnose", "--target", "a;whoami"}, 2, "invalid_input"}, {[]string{"discover", "--authorized", "--target", "0.0.0.0/0"}, 2, "invalid_input"}, {[]string{"unknown"}, 2, "invalid_input"}} {
 		var out, stderr bytes.Buffer
 		code := runJSON(t.Context(), newApp(t), test.args, &out, &stderr)
 		if code != test.code {
@@ -389,8 +391,8 @@ func TestCLICancelledContext(t *testing.T) {
 
 func TestDiscoveryRejectsInvalidOptionsBeforeScanning(t *testing.T) {
 	for _, args := range [][]string{
-		{"discover", "--target", "127.0.0.1/32", "--format", "invalid"},
-		{"discover", "--target", "127.0.0.1/32", "--ports", strings.Repeat("80,", 32) + "80"},
+		{"discover", "--authorized", "--target", "127.0.0.1/32", "--format", "invalid"},
+		{"discover", "--authorized", "--target", "127.0.0.1/32", "--ports", strings.Repeat("80,", 32) + "80"},
 	} {
 		var out, stderr bytes.Buffer
 		if code := runJSON(t.Context(), newApp(t), args, &out, &stderr); code != 2 {
@@ -411,24 +413,26 @@ func TestDiscoveryExports(t *testing.T) {
 	port := strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)
 	for _, format := range []string{"json", "csv"} {
 		var out, stderr bytes.Buffer
-		if code := runJSON(t.Context(), newApp(t), []string{"discover", "--target", "127.0.0.1/32", "--ports", port, "--format", format}, &out, &stderr); code != 0 {
+		if code := runJSON(t.Context(), newApp(t), []string{"discover", "--authorized", "--target", "127.0.0.1/32", "--ports", port, "--format", format}, &out, &stderr); code != 0 {
 			t.Fatal(code, out.String())
 		}
 		if format == "csv" {
 			rows, err := csv.NewReader(&out).ReadAll()
-			if err != nil || len(rows) != 2 || strings.Join(rows[0], ",") != "schema_version,host,port,state" || strings.Join(rows[1], ",") != "1,127.0.0.1,"+port+",open" {
+			if err != nil || len(rows) != 2 || strings.Join(rows[0], ",") != "schema_version,host,port,state,rtt_ms,host_state,truncated" || !strings.HasPrefix(strings.Join(rows[1], ","), "1,127.0.0.1,"+port+",open,") || rows[1][5] != "up" {
 				t.Fatal(rows, err)
 			}
 		} else {
 			var response struct {
 				SchemaVersion int `json:"schema_version"`
-				Data          []struct {
-					Host  string `json:"host"`
-					Port  int    `json:"port"`
-					State string `json:"state"`
+				Data          struct {
+					Results []struct {
+						Host  string `json:"host"`
+						Port  int    `json:"port"`
+						State string `json:"state"`
+					} `json:"results"`
 				} `json:"data"`
 			}
-			if err := json.Unmarshal(out.Bytes(), &response); err != nil || response.SchemaVersion != 1 || len(response.Data) != 1 || response.Data[0].State != "open" || response.Data[0].Host != "127.0.0.1" {
+			if err := json.Unmarshal(out.Bytes(), &response); err != nil || response.SchemaVersion != 1 || len(response.Data.Results) != 1 || response.Data.Results[0].State != "open" || response.Data.Results[0].Host != "127.0.0.1" {
 				t.Fatal(out.String(), err)
 			}
 		}
@@ -523,4 +527,13 @@ func newApp(t *testing.T) *app.Application {
 		}
 	})
 	return a
+}
+
+func TestScanCommandsRequireAuthorization(t *testing.T) {
+	for _, command := range []string{"discover", "inspect"} {
+		var out, stderr bytes.Buffer
+		if code := runJSON(t.Context(), newApp(t), []string{command, "--target", "127.0.0.1/32"}, &out, &stderr); code != 2 || !bytes.Contains(out.Bytes(), []byte("--authorized")) {
+			t.Fatalf("%s: exit %d: %s", command, code, out.String())
+		}
+	}
 }

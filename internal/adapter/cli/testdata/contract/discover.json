@@ -2,10 +2,13 @@
   "schema_version": 1,
   "command": "discover",
   "paths": {
-    "data": "array",
-    "data[].host": "string",
-    "data[].port": "number",
-    "data[].state": "string",
+    "data.results": "array",
+    "data.results[].host": "string",
+    "data.results[].host_state": "string",
+    "data.results[].port": "number",
+    "data.results[].rtt_ms": "number",
+    "data.results[].state": "string",
+    "data.truncated": "boolean",
     "schema_version": "number",
     "version": "string"
   }

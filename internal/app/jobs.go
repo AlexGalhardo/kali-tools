@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -52,23 +53,39 @@ func (a *Application) StartDiagnostic(parent context.Context, request network.Re
 
 func (a *Application) CancelJob(ctx context.Context, id job.ID) bool { return a.jobs.Cancel(id) }
 
-// Discover persists counts only; addresses and port results remain in memory.
-func (a *Application) Discover(parent context.Context, cidr string, ports []int, timeout time.Duration) (results []network.PortResult, err error) {
+// Discover persists counts and the exact scope only; addresses and port results remain in memory.
+// truncated reports that the scan deadline cut the run and results are partial.
+func (a *Application) Discover(parent context.Context, cidr string, ports []int, timeout time.Duration) (results []network.PortResult, truncated bool, err error) {
 	if err = network.ValidateDiscovery(cidr, ports, timeout); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	err = a.runOperation(parent, "discovery", func(ctx context.Context) (string, error) {
 		var err error
-		results, err = network.Discover(ctx, cidr, ports, timeout)
+		results, truncated, err = network.Discover(ctx, cidr, ports, timeout)
 		open := 0
 		for _, result := range results {
 			if result.State == "open" {
 				open++
 			}
 		}
-		return fmt.Sprintf("%d endpoints checked, %d open", len(results), open), err
+		return fmt.Sprintf("%s ports %s: %d endpoints checked, %d open%s", cidr, portList(ports), len(results), open, truncatedNote(truncated)), err
 	})
-	return results, err
+	return results, truncated, err
+}
+
+func portList(ports []int) string {
+	text := make([]string, len(ports))
+	for i, p := range ports {
+		text[i] = strconv.Itoa(p)
+	}
+	return strings.Join(text, ",")
+}
+
+func truncatedNote(truncated bool) string {
+	if truncated {
+		return " (truncated at deadline)"
+	}
+	return ""
 }
 
 func (a *Application) InspectServices(parent context.Context, cidr string, ports []int) (result ServiceInspection, err error) {
@@ -90,7 +107,7 @@ func (a *Application) InspectServices(parent context.Context, cidr string, ports
 		if err != nil {
 			return "", err
 		}
-		return fmt.Sprintf("%s %s: %d hosts", result.Scanner, result.Version, len(result.Hosts)), nil
+		return fmt.Sprintf("%s %s: %s ports %s: %d hosts%s", result.Scanner, result.Version, cidr, portList(ports), len(result.Hosts), truncatedNote(result.Truncated)), nil
 	})
 	return result, err
 }

@@ -1,13 +1,18 @@
 exit=0
 stdout:
 {
-  "data": [
-    {
-      "host": "127.0.0.1",
-      "port": 443,
-      "state": "open"
-    }
-  ],
+  "data": {
+    "results": [
+      {
+        "host": "127.0.0.1",
+        "host_state": "up",
+        "port": 443,
+        "rtt_ms": 0,
+        "state": "open"
+      }
+    ],
+    "truncated": false
+  },
   "schema_version": 1,
   "version": "0.7.0-dev.2"
 }

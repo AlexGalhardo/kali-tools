@@ -15,6 +15,8 @@ type ServiceInspection struct {
 	Version  string             `json:"version"`
 	Finished InspectionFinished `json:"finished"`
 	Hosts    []InspectionHost   `json:"hosts"`
+	// Truncated is set when the deadline cut the scan; Hosts holds what finished.
+	Truncated bool `json:"truncated"`
 }
 type InspectionFinished struct {
 	Exit string `json:"exit"`

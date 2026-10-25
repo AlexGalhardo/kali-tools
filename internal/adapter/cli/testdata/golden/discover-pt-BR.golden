@@ -1,7 +1,7 @@
 exit=0
 stdout:
-HOST       PORTA  ESTADO
-127.0.0.1  443  aberta
+HOST       PORTA  ESTADO  RTT     ESTADO_HOST
+127.0.0.1  443  aberta   0.0 ms  ativo
 stderr:
 job <id> discovery: na fila
 job <id> discovery: executando

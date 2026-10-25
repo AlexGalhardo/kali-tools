@@ -204,13 +204,19 @@ func renderHuman(out io.Writer, call invocation, data any) error {
 		for _, value := range v.Values {
 			line("  %s", value)
 		}
-	case []contract.PortResult:
-		header("HOST PORT STATE")
-		for _, item := range v {
-			line("%s\t%d\t%s", item.Host, item.Port, state(item.State))
+	case contract.Discovery:
+		if v.Truncated {
+			line("%s", l("partial results: the scan deadline was reached"))
+		}
+		header("HOST PORT STATE RTT HOST_STATE")
+		for _, item := range v.Results {
+			line("%s\t%d\t%s\t%.1f ms\t%s", item.Host, item.Port, state(item.State), item.RTTMS, l(item.HostState))
 		}
 	case contract.ServiceInspection:
 		line("%s %s", v.Scanner, v.Version)
+		if v.Truncated {
+			line("%s", l("partial results: the scan deadline was reached"))
+		}
 		header("HOST PORT STATE SERVICE METHOD")
 		for _, host := range v.Hosts {
 			addresses := []string{}

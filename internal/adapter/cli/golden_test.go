@@ -58,7 +58,7 @@ func goldenCases(t *testing.T) []goldenCase {
 		{"snmp", []string{"snmp", "--interface", "missing", "--scope", "192.0.2.0/24", "--target", "192.0.2.1"}},
 		{"version", []string{"version"}}, {"doctor", []string{"doctor"}}, {"capabilities", []string{"capabilities"}}, {"interfaces", []string{"interfaces"}},
 		{"inventory", []string{"inventory"}}, {"neighbors", []string{"neighbors"}}, {"diagnose", []string{"diagnose", "ping", "--target", "fixture.invalid"}},
-		{"discover", []string{"discover", "--target", "127.0.0.1/32", "--ports", port}}, {"inspect", []string{"inspect", "--target", "127.0.0.1/32"}},
+		{"discover", []string{"discover", "--authorized", "--target", "127.0.0.1/32", "--ports", port}}, {"inspect", []string{"inspect", "--authorized", "--target", "127.0.0.1/32"}},
 		{"wifi-show", []string{"wifi", "show"}}, {"wifi-reveal", []string{"wifi", "reveal", "--confirm"}},
 		{"capture-live", []string{"capture", "live"}}, {"capture-import", []string{"capture", "import", "--file", file}},
 		{"capture-export", []string{"capture", "export", "--file", file, "--output", file + ".pcapng", "--format", "pcapng"}},
@@ -72,6 +72,7 @@ func goldenCases(t *testing.T) []goldenCase {
 
 var elapsed = regexp.MustCompile(`\([0-9.]+ ms,`)
 var progressID = regexp.MustCompile(`job [0-9a-f]{8} `)
+var rttText = regexp.MustCompile(` *[0-9]+.[0-9] ms`)
 var randomJobID = regexp.MustCompile(`[0-9a-f]{32}`)
 
 func goldenArgs(t *testing.T, a *app.Application, test goldenCase) []string {
@@ -116,6 +117,7 @@ func normalizeOutput(t *testing.T, test goldenCase, output string, jsonMode bool
 	output = strings.ReplaceAll(output, runtime.GOOS, "OS")
 	output = strings.ReplaceAll(output, runtime.GOARCH, "ARCH")
 	output = randomJobID.ReplaceAllString(output, fixtureJobID)
+	output = rttText.ReplaceAllString(output, "   0.0 ms")
 	if jsonMode {
 		var value any
 		if err := json.Unmarshal([]byte(output), &value); err != nil {
@@ -127,6 +129,9 @@ func normalizeOutput(t *testing.T, test goldenCase, output string, jsonMode bool
 			case map[string]any:
 				if id, ok := v["id"].(string); ok && slices.Contains([]string{"routes_counters", "icmp", "wifi", "neighbors", "capture_live", "capture_pktmon", "capture_npcap", "capture_libpcap"}, id) {
 					v["state"], v["detail"], v["provider"] = "<native>", "<native>", "<native>"
+				}
+				if _, ok := v["rtt_ms"]; ok {
+					v["rtt_ms"] = float64(0)
 				}
 				if _, ok := v["elapsed_ms"]; ok {
 					v["elapsed_ms"] = float64(0)

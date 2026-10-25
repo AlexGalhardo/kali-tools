@@ -1,7 +1,7 @@
 exit=0
 stdout:
-HOST       PORT   STATE
-127.0.0.1  443  open
+HOST       PORT   STATE  RTT     HOST_STATE
+127.0.0.1  443  open   0.0 ms  up
 stderr:
 job <id> discovery: queued
 job <id> discovery: running

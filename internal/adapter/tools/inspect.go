@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"fmt"
@@ -48,7 +49,7 @@ func InspectServices(parent context.Context, cidr string, ports []int) (app.Serv
 	if err := network.ValidateDiscovery(cidr, ports, time.Second); err != nil {
 		return app.ServiceInspection{}, err
 	}
-	ctx, cancel := context.WithTimeout(parent, 2*time.Minute)
+	ctx, cancel := context.WithTimeout(parent, network.DiscoveryDeadline)
 	defer cancel()
 	prefix, _ := netip.ParsePrefix(cidr)
 	type task struct {
@@ -59,7 +60,7 @@ func InspectServices(parent context.Context, cidr string, ports []int) (app.Serv
 	hits := map[string][]app.InspectionPort{}
 	var mu sync.Mutex
 	var wg sync.WaitGroup
-	for range 32 {
+	for range network.DiscoveryWorkers {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -68,13 +69,16 @@ func InspectServices(parent context.Context, cidr string, ports []int) (app.Serv
 					continue
 				}
 				port := inspectPort(ctx, item.host, item.port)
+				if ctx.Err() != nil {
+					continue
+				}
 				mu.Lock()
 				hits[item.host] = append(hits[item.host], port)
 				mu.Unlock()
 			}
 		}()
 	}
-	pace := time.NewTicker(10 * time.Millisecond)
+	pace := time.NewTicker(network.DiscoveryPace)
 	defer pace.Stop()
 outer:
 	for ip := prefix.Masked().Addr(); prefix.Contains(ip); ip = ip.Next() {
@@ -94,9 +98,13 @@ outer:
 	close(tasks)
 	wg.Wait()
 	result := inspectionResult(hits)
-	if err := ctx.Err(); err != nil {
+	if err := parent.Err(); err != nil {
 		result.Finished.Exit = ""
 		return result, err
+	}
+	if ctx.Err() != nil {
+		result.Finished.Exit = "deadline"
+		result.Truncated = true
 	}
 	return result, nil
 }
@@ -107,7 +115,7 @@ func inspectionResult(hits map[string][]app.InspectionPort) app.ServiceInspectio
 		sort.Slice(ports, func(i, j int) bool { return ports[i].Port < ports[j].Port })
 		state := "down"
 		for _, port := range ports {
-			if port.State.State == "open" {
+			if port.State.State == "open" || port.State.State == "closed" {
 				state = "up"
 				break
 			}
@@ -135,7 +143,7 @@ func inspectPort(ctx context.Context, host string, port int) app.InspectionPort 
 	address := net.JoinHostPort(host, strconv.Itoa(port))
 	conn, err := dial(ctx, address)
 	if err != nil {
-		return tcpPort(port, "unreachable", "", "", "", "")
+		return tcpPort(port, network.ClassifyDial(err), "", "", "", "")
 	}
 	banner := readLimited(conn, bannerLimit, bannerWait)
 	_ = conn.Close()
@@ -151,11 +159,14 @@ func inspectPort(ctx context.Context, host string, port int) app.InspectionPort 
 	if product, version, ok := identifyHTTP(ctx, host, address); ok {
 		return tcpPort(port, "open", "http", product, version, "http")
 	}
+	if name := identifyActive(ctx, address); name != "" {
+		return tcpPort(port, "open", name, "", "", "probe")
+	}
 	return tcpPort(port, "open", "", "", "", "")
 }
 
 func tcpPort(port int, state, name, product, version, method string) app.InspectionPort {
-	if method != "banner" && method != "tls" && method != "http" {
+	if method != "banner" && method != "tls" && method != "http" && method != "probe" {
 		method = ""
 	}
 	return app.InspectionPort{
@@ -192,6 +203,9 @@ func readLimited(conn net.Conn, limit int, wait time.Duration) []byte {
 }
 
 func classifyBanner(raw []byte) (name, product, version string, ok bool) {
+	if len(raw) >= 3 && raw[0] == 0xFF && raw[1] >= 0xFB && raw[1] <= 0xFE {
+		return "telnet", "", "", true
+	}
 	if version, ok = mysqlVersion(raw); ok {
 		return "mysql", "", label(version), true
 	}
@@ -317,4 +331,51 @@ func label(value string) string {
 		}
 	}
 	return b.String()
+}
+
+// Probes for services that wait for the client to speak. Each is one
+// connection, one write and one capped read.
+var activeProbes = []struct {
+	name    string
+	payload []byte
+	match   func([]byte) bool
+}{
+	{"redis", []byte("PING\r\n"), func(r []byte) bool {
+		return bytes.HasPrefix(r, []byte("+PONG")) || bytes.HasPrefix(r, []byte("-NOAUTH"))
+	}},
+	{"rdp", []byte{0x03, 0x00, 0x00, 0x13, 0x0e, 0xe0, 0, 0, 0, 0, 0, 0x01, 0x00, 0x08, 0x00, 0, 0, 0, 0}, func(r []byte) bool {
+		return len(r) >= 6 && r[0] == 0x03 && r[1] == 0x00 && r[5] == 0xD0
+	}},
+	{"smb", smbNegotiate(), func(r []byte) bool {
+		return len(r) >= 8 && (bytes.Equal(r[4:8], []byte("\xFFSMB")) || bytes.Equal(r[4:8], []byte("\xFESMB")))
+	}},
+}
+
+func smbNegotiate() []byte {
+	header := []byte{0xFF, 'S', 'M', 'B', 0x72, 0, 0, 0, 0, 0x18, 0xC8, 0x01, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 0xFE, 0xFF, 0, 0, 0, 0}
+	body := append([]byte{0, 12, 0, 0x02}, "NT LM 0.12\x00"...)
+	msg := append(header, body...)
+	return append([]byte{0, 0, 0, byte(len(msg))}, msg...)
+}
+
+func identifyActive(ctx context.Context, address string) string {
+	for _, p := range activeProbes {
+		if ctx.Err() != nil {
+			return ""
+		}
+		conn, err := dial(ctx, address)
+		if err != nil {
+			return ""
+		}
+		_ = conn.SetDeadline(time.Now().Add(probeWait))
+		var reply []byte
+		if _, err = conn.Write(p.payload); err == nil {
+			reply = readLimited(conn, responseLimit, probeWait)
+		}
+		_ = conn.Close()
+		if p.match(reply) {
+			return p.name
+		}
+	}
+	return ""
 }

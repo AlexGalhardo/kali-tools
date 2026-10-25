@@ -85,14 +85,14 @@ func TestPrivateLab(t *testing.T) {
 	if e != nil || httpResult.Values[0] != "204 No Content" {
 		t.Fatal(httpResult, e)
 	}
-	inventory, e := network.Discover(ctx, address+"/32", []int{8080, 9090, 9091}, 500*time.Millisecond)
+	inventory, _, e := network.Discover(ctx, address+"/32", []int{8080, 9090, 9091}, 500*time.Millisecond)
 	if e != nil || len(inventory) != 3 {
 		t.Fatal(inventory, e)
 	}
 	for _, r := range inventory {
 		want := "open"
 		if r.Port == 9091 {
-			want = "unreachable"
+			want = "closed"
 		}
 		if r.State != want {
 			t.Fatalf("port %d: %s", r.Port, r.State)

@@ -48,6 +48,11 @@ export function App() {
     connected: t.connected,
     open: t.open,
     unreachable: t.unreachable,
+    closed: t.portClosed,
+    filtered: t.portFiltered,
+    up: t.hostUp,
+    down: t.hostDown,
+    unknown: t.hostUnknown,
   };
   const stateText = (state: string) => labels[state] ?? state;
   const errorLabels: Record<string, string> = {

@@ -25,11 +25,15 @@ export function DiscoveryPage({
     [discoveryPage, setDiscoveryPage] = useState(0),
     [discoveryJob, setDiscoveryJob] = useState(""),
     [inspectionProvider, setInspectionProvider] = useState(""),
+    [authorized, setAuthorized] = useState(false),
+    [truncated, setTruncated] = useState(false),
     [discovery, setDiscovery] = useState<
       {
         host: string;
         port: number;
         state: string;
+        rtt_ms?: number;
+        host_state?: string;
         service?: string;
         method?: string;
       }[]
@@ -56,21 +60,30 @@ export function DiscoveryPage({
             <input value={ports} onChange={(e) => setPorts(e.target.value)} />
           </Field>
         </div>
+        <label>
+          <input
+            type="checkbox"
+            checked={authorized}
+            onChange={(e) => setAuthorized(e.target.checked)}
+          />{" "}
+          {t.authorizedConfirm}
+        </label>
         <div className="actions">
           <Button
-            disabled={!connected() || busy}
+            disabled={!connected() || busy || !authorized}
             onClick={() =>
               execute(async () => {
                 setDiscoveryPage(0);
                 setDiscovery([]);
+                setTruncated(false);
                 setInspectionProvider("");
                 try {
-                  setDiscovery(
-                    await backend().Discover(
-                      cidr,
-                      ports.split(",").map(Number),
-                    ),
+                  const value = await backend().Discover(
+                    cidr,
+                    ports.split(",").map(Number),
                   );
+                  setTruncated(value.truncated);
+                  setDiscovery(value.results);
                 } finally {
                   setDiscoveryJob("");
                 }
@@ -81,11 +94,12 @@ export function DiscoveryPage({
           </Button>
           <Button
             className="secondary"
-            disabled={!connected() || busy}
+            disabled={!connected() || busy || !authorized}
             onClick={() =>
               execute(async () => {
                 setDiscoveryPage(0);
                 setDiscovery([]);
+                setTruncated(false);
                 setInspectionProvider("");
                 try {
                   const value = await backend().InspectServices(
@@ -93,6 +107,7 @@ export function DiscoveryPage({
                     ports.split(",").map(Number),
                   );
                   setInspectionProvider(`${value.scanner} ${value.version}`);
+                  setTruncated(value.truncated);
                   setDiscovery(
                     value.hosts.flatMap((host) =>
                       host.ports.map((port) => ({
@@ -145,16 +160,28 @@ export function DiscoveryPage({
             {t.download}
           </Button>
         </div>
+        {!authorized && <p className="footnote">{t.authorizedRequired}</p>}
+        {truncated && (
+          <p className="footnote" role="status">
+            {t.partialResults}
+          </p>
+        )}
         {inspectionProvider && <p className="footnote">{inspectionProvider}</p>}
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                {[t.target, t.port, t.state, t.service, t.detectionMethod].map(
-                  (label) => (
-                    <th key={label}>{label}</th>
-                  ),
-                )}
+                {[
+                  t.target,
+                  t.port,
+                  t.state,
+                  t.rtt,
+                  t.hostState,
+                  t.service,
+                  t.detectionMethod,
+                ].map((label) => (
+                  <th key={label}>{label}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -165,6 +192,10 @@ export function DiscoveryPage({
                     <td className="mono">{r.host}</td>
                     <td>{r.port}</td>
                     <td>{stateText(r.state)}</td>
+                    <td>
+                      {r.rtt_ms === undefined ? "?" : r.rtt_ms.toFixed(1)}
+                    </td>
+                    <td>{r.host_state ? stateText(r.host_state) : "?"}</td>
                     <td>{r.service || "?"}</td>
                     <td>{r.method || "?"}</td>
                   </tr>

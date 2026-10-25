@@ -22,6 +22,8 @@ var portuguese = messages{
 	"queued": "na fila", "running": "executando", "cancelled": "cancelado", "unsupported": "não suportado", "dependency_missing": "dependência ausente",
 	"permission_required": "permissão necessária", "location_consent_required": "consentimento de localização necessário", "disconnected": "desconectado",
 	"invalid_input": "entrada inválida", "not_found": "não encontrado", "timeout": "tempo esgotado", "conflict": "conflito", "unauthorized": "não autorizado", "forbidden": "proibido", "certificate_invalid": "certificado inválido", "no_connection": "sem conexão",
+	"filtered": "filtrada", "unreachable": "inalcançável", "up": "ativo", "down": "inativo", "unknown": "desconhecido", "RTT": "RTT", "HOST_STATE": "ESTADO_HOST",
+	"partial results: the scan deadline was reached": "parcial: o prazo da varredura foi atingido e a lista está incompleta",
 	"error": "erro", "saved": "salvo", "packets": "pacotes", "format": "formato", "limited": "limitado",
 	"DNS inspection": "Inspeção DNS", "queries": "consultas", "agree": "concorda", "verdict": "veredito", "dnssec": "dnssec",
 	"responders": "respondedores", "out of scope": "fora do escopo", "malformed": "malformado", "SNMP": "SNMP",
