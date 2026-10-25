@@ -39,6 +39,7 @@ const (
 	CodeConflict                = "conflict"
 	CodeUnauthorized            = "unauthorized"
 	CodeForbidden               = "forbidden"
+	CodeUnavailable             = "unavailable"
 )
 
 type Error struct {
@@ -63,7 +64,7 @@ func CapabilityStates() []string {
 	return []string{CapabilityAvailable, CapabilityDependencyMissing, CapabilityPermissionRequired, CapabilityLocationConsentRequired, CapabilityUnsupported, CapabilityFailed}
 }
 func ErrorCodes() []string {
-	return []string{CodeInvalidInput, CodeUnsupported, CodePermissionRequired, CodeDependencyMissing, CodeLocationConsentRequired, CodeNotFound, CodeTimeout, CodeCancelled, CodeFailed, CodeCertificateInvalid, CodeNoConnection, CodeConflict, CodeUnauthorized, CodeForbidden}
+	return []string{CodeInvalidInput, CodeUnsupported, CodePermissionRequired, CodeDependencyMissing, CodeLocationConsentRequired, CodeNotFound, CodeTimeout, CodeCancelled, CodeFailed, CodeCertificateInvalid, CodeNoConnection, CodeConflict, CodeUnauthorized, CodeForbidden, CodeUnavailable}
 }
 func IsCapabilityState(s string) bool { return slices.Contains(CapabilityStates(), s) }
 func IsErrorCode(code string) bool    { return slices.Contains(ErrorCodes(), code) }

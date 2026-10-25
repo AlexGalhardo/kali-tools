@@ -48,6 +48,8 @@ func statusFor(code string) int {
 		return http.StatusNotImplemented
 	case domain.CodeNoConnection, domain.CodeCertificateInvalid:
 		return http.StatusBadGateway
+	case domain.CodeUnavailable:
+		return http.StatusServiceUnavailable
 	case domain.CodeTimeout:
 		return http.StatusGatewayTimeout
 	default:

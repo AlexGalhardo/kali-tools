@@ -56,6 +56,7 @@ export function App() {
     conflict: t.conflictError,
     unauthorized: t.unauthorizedError,
     forbidden: t.forbiddenError,
+    unavailable: t.unavailableError,
     unsupported: t.unsupported,
     dependency_missing: t.dependencyMissing,
     no_connection: t.noConnection,

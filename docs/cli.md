@@ -483,7 +483,7 @@ Deprecated alias for `capture import`. Flags, JSON data and human output match t
 | Exit | Meaning |
 | --- | --- |
 | 0 | Success or help |
-| 1 | failed, no_connection, certificate_invalid, unknown errors or output failure |
+| 1 | failed, no_connection, certificate_invalid, unavailable, unknown errors or output failure |
 | 2 | invalid_input, usage error or no command |
 | 3 | unsupported |
 | 4 | permission_required, location_consent_required |
