@@ -3,6 +3,7 @@
 package wifi
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"unsafe"
@@ -120,7 +121,7 @@ func Current() (Network, error) {
 	}
 	return networkFromConnection(c, channel)
 }
-func Reveal() (Secret, error) {
+func Reveal(context.Context) (Secret, error) {
 	h, i, c, e := connected()
 	if e != nil {
 		return Secret{}, e
