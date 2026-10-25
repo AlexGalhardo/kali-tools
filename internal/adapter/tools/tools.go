@@ -13,7 +13,7 @@ type Tool = app.Tool
 
 func inspect(ctx context.Context, name string) Tool {
 	item := Tool{Name: name, State: "dependency_missing"}
-	path, err := exec.LookPath(name)
+	path, err := resolve(name)
 	if err != nil {
 		return item
 	}
@@ -31,6 +31,15 @@ func inspect(ctx context.Context, name string) Tool {
 		item.State = "unsupported"
 	}
 	return item
+}
+
+// resolve prefers the standard install location over PATH so a user-writable
+// PATH entry cannot shadow the binary (CWE-427).
+func resolve(name string) (string, error) {
+	if path := knownToolPath(name); path != "" {
+		return path, nil
+	}
+	return exec.LookPath(name)
 }
 
 func Inventory(ctx context.Context) []Tool {
