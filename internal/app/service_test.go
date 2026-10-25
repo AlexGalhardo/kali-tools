@@ -68,6 +68,9 @@ func TestDiscoverySummarySurvivesRestartWithoutTargets(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = store.Close() })
 	service := app.New(app.Deps{Jobs: store, Settings: store, Diagnostics: network.Diagnostics{}})
+	if err := service.AcceptLegalNotice(t.Context()); err != nil {
+		t.Fatal(err)
+	}
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)

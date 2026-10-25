@@ -5,6 +5,8 @@ import "github.com/AlexGalhardo/kali-tools/internal/network"
 type Settings struct {
 	Language      string `json:"language"`
 	RetentionDays int    `json:"retention_days"`
+	// LegalNoticeAck is the acknowledged notice version; only AcceptLegalNotice changes it.
+	LegalNoticeAck string `json:"legal_notice_ack,omitempty"`
 }
 
 type HostAdapter struct {

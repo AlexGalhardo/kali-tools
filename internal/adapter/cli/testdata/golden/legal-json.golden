@@ -1,0 +1,11 @@
+exit=0
+stdout:
+{
+  "data": {
+    "accepted": true,
+    "version": "1"
+  },
+  "schema_version": 1,
+  "version": "0.7.0-dev.2"
+}
+stderr:

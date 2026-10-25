@@ -222,6 +222,29 @@ func handleSettings(a *app.Application) http.HandlerFunc {
 		writeJSON(w, http.StatusOK, contract.FromSettings(value))
 	}
 }
+func handleLegalNotice(a *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		value, err := a.LegalNotice(r.Context())
+		if err != nil {
+			writeError(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, contract.FromLegalNotice(value))
+	}
+}
+func handleAcceptLegalNotice(a *app.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := decodeEmpty(w, r); err != nil {
+			writeError(w, r, err)
+			return
+		}
+		if err := a.AcceptLegalNotice(r.Context()); err != nil {
+			writeError(w, r, err)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
 func handleWiFi(a *app.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		value, err := a.CurrentWiFi(r.Context())

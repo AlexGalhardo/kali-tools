@@ -27,6 +27,8 @@ func addRoutes(mux *http.ServeMux, a *app.Application, s *Server) {
 	mux.Handle("GET /api/jobs/{id}", emptyRequest(handleJob(a)))
 	mux.Handle("GET /api/history", emptyRequest(handleHistory(a)))
 	mux.Handle("GET /api/settings", emptyRequest(handleSettings(a)))
+	mux.Handle("GET /api/legal", emptyRequest(handleLegalNotice(a)))
+	mux.Handle("POST /api/legal/accept", handleAcceptLegalNotice(a))
 	mux.Handle("GET /api/wifi", emptyRequest(handleWiFi(a)))
 	mux.Handle("POST /api/diagnose", handleDiagnose(a))
 	mux.Handle("POST /api/tls/audit", handleTLSAudit(a))

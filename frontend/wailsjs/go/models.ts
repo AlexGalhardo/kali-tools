@@ -925,6 +925,20 @@ export namespace contract {
 		    return a;
 		}
 	}
+	export class LegalNotice {
+	    version: string;
+	    accepted: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new LegalNotice(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.version = source["version"];
+	        this.accepted = source["accepted"];
+	    }
+	}
 	export class LiveCaptureRequest {
 	    backend?: string;
 	    address: string;
@@ -1290,6 +1304,7 @@ export namespace contract {
 	export class Settings {
 	    language: string;
 	    retention_days: number;
+	    legal_notice_ack?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Settings(source);
@@ -1299,6 +1314,7 @@ export namespace contract {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.language = source["language"];
 	        this.retention_days = source["retention_days"];
+	        this.legal_notice_ack = source["legal_notice_ack"];
 	    }
 	}
 	export class TLSAuditCertificate {

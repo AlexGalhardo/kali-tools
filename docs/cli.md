@@ -382,6 +382,16 @@ Human example (fixture values):
 history cleared (queued and running jobs are kept)
 ```
 
+## legal
+
+[JSON paths and types](../internal/adapter/cli/testdata/contract/legal.json).
+
+`kali-tools legal [flags]`
+
+Flags / positional: `--accept` records the authorized-use notice. Until it is recorded, `discover` and `inspect` fail with `forbidden`; passive commands are unaffected.
+
+JSON `data`: `LegalNotice` (`version`, `accepted`). The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`.
+
 ## settings get
 
 [JSON paths and types](../internal/adapter/cli/testdata/contract/settings-get.json).

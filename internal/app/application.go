@@ -85,6 +85,11 @@ func (a *Application) Settings(ctx context.Context) (Settings, error) {
 	return a.deps.Settings.Settings(ctx)
 }
 func (a *Application) SaveSettings(ctx context.Context, value Settings) error {
+	current, err := a.deps.Settings.Settings(ctx)
+	if err != nil {
+		return err
+	}
+	value.LegalNoticeAck = current.LegalNoticeAck
 	return a.deps.Settings.SaveSettings(ctx, value)
 }
 func (a *Application) CurrentWiFi(ctx context.Context) (wifi.Network, error) {

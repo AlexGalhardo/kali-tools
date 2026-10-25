@@ -4,8 +4,12 @@ import "strings"
 
 type messages map[string]string
 
+const legalNoticeText = "Use kali-tools only on systems you own or are explicitly authorized in writing to test. Active scans send traffic to up to 256 hosts x 32 ports. The tool keeps no cloud telemetry. Run `kali-tools legal --accept` to record that you have read this."
+
 var portuguese = messages{
-	"TLS audit": "Auditoria TLS", "verified": "verificado", "accepted": "aceito", "rejected": "rejeitado", "client_unsupported": "não suportado pelo cliente", "fatal": "fatal", "warn": "aviso", "info": "informação",
+	legalNoticeText: "Use o kali-tools apenas em sistemas que você possui ou que tenha autorização expressa, por escrito, para testar. Varreduras ativas enviam tráfego para até 256 hosts x 32 portas. A ferramenta não envia telemetria para a nuvem. Rode `kali-tools legal --accept` para registrar que você leu isto.",
+	"version":       "versão",
+	"TLS audit":     "Auditoria TLS", "verified": "verificado", "accepted": "aceito", "rejected": "rejeitado", "client_unsupported": "não suportado pelo cliente", "fatal": "fatal", "warn": "aviso", "info": "informação",
 	"neighbors": "vizinhos", "INTERFACE": "INTERFACE", "FAMILY": "FAMÍLIA", "ADDRESS": "ENDEREÇO", "ROUTER": "ROTEADOR",
 	"LOCAL": "LOCAL", "REMOTE": "REMOTO", "PROCESS": "PROCESSO", "endpoint": "endpoint", "duration_ms": "duração_ms", "byte_count": "octetos", "source": "origem",
 	"CAPABILITY": "CAPACIDADE", "STATE": "ESTADO", "PROVIDER": "PROVEDOR", "DETAIL": "DETALHE",

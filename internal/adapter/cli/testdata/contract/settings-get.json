@@ -3,6 +3,7 @@
   "command": "settings get",
   "paths": {
     "data.language": "string",
+    "data.legal_notice_ack": "string",
     "data.retention_days": "number",
     "schema_version": "number",
     "version": "string"

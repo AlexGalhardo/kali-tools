@@ -57,6 +57,9 @@ func TestInterruptCancelsInspection(t *testing.T) {
 	before := runtime.NumGoroutine()
 	started := make(chan struct{})
 	store := fake.NewStore()
+	if err := store.SaveSettings(t.Context(), app.Settings{Language: "en", RetentionDays: 30, LegalNoticeAck: app.LegalNoticeVersion}); err != nil {
+		t.Fatal(err)
+	}
 	a := app.New(app.Deps{Jobs: store, Settings: store, Tools: interruptTools{started: started}})
 	t.Cleanup(func() { _ = a.Close() })
 	ctx, cancel := context.WithCancel(t.Context())
@@ -517,6 +520,15 @@ type envelope struct {
 
 func newApp(t *testing.T) *app.Application {
 	t.Helper()
+	a := newUnacceptedApp(t)
+	if err := a.AcceptLegalNotice(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	return a
+}
+
+func newUnacceptedApp(t *testing.T) *app.Application {
+	t.Helper()
 	a, cleanup, err := bootstrap.New(t.Context(), bootstrap.Config{DataPath: ":memory:"})
 	if err != nil {
 		t.Fatal(err)
@@ -527,6 +539,18 @@ func newApp(t *testing.T) *app.Application {
 		}
 	})
 	return a
+}
+
+func TestLegalNoticeGatesScansUntilAccepted(t *testing.T) {
+	a := newUnacceptedApp(t)
+	var out, stderr bytes.Buffer
+	if code := runJSON(t.Context(), a, []string{"discover", "--authorized", "--target", "127.0.0.1/32", "--ports", "1"}, &out, &stderr); code != cli.ExitCode("forbidden") || !bytes.Contains(out.Bytes(), []byte("legal --accept")) {
+		t.Fatalf("before accept: exit %d: %s", code, out.String())
+	}
+	out.Reset()
+	if code := runJSON(t.Context(), a, []string{"legal", "--accept"}, &out, &stderr); code != 0 || !bytes.Contains(out.Bytes(), []byte(`"accepted": true`)) {
+		t.Fatalf("accept: exit %d: %s", code, out.String())
+	}
 }
 
 func TestScanCommandsRequireAuthorization(t *testing.T) {

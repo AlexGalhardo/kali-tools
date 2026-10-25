@@ -99,11 +99,14 @@ func FromStatus(v job.Status) Job {
 	return Job{ID: string(v.ID), Kind: v.Kind, State: string(v.State), Created: v.Created, Finished: copyPointer(v.Finished), Summary: v.Summary}
 }
 func FromStatuses(v []job.Status) []Job { return mapSlice(v, FromStatus) }
+func FromLegalNotice(v app.LegalNotice) LegalNotice {
+	return LegalNotice{Version: v.Version, Accepted: v.Accepted}
+}
 func FromSettings(v app.Settings) Settings {
-	return Settings{Language: v.Language, RetentionDays: v.RetentionDays}
+	return Settings{Language: v.Language, RetentionDays: v.RetentionDays, LegalNoticeAck: v.LegalNoticeAck}
 }
 func (s Settings) AppSettings() app.Settings {
-	return app.Settings{Language: s.Language, RetentionDays: s.RetentionDays}
+	return app.Settings{Language: s.Language, RetentionDays: s.RetentionDays, LegalNoticeAck: s.LegalNoticeAck}
 }
 func FromPortResults(v []network.PortResult) []PortResult {
 	return mapSlice(v, func(p network.PortResult) PortResult {

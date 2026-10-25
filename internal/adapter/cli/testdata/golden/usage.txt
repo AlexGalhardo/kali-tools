@@ -26,6 +26,7 @@ Commands:
   history clear    Clear terminal history; keep active jobs
   settings get     Show language and retention settings
   settings set     Update language or retention settings
+  legal            Show the authorized-use notice; --accept records it
   capture live     Capture bounded traffic with an optional backend
   capture import   Import a PCAP or PCAPNG file
   capture export   Convert a packet file to an explicit destination

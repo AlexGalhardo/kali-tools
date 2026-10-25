@@ -242,6 +242,10 @@ func renderHuman(out io.Writer, call invocation, data any) error {
 		if v.Value != "" {
 			field("key", v.Value)
 		}
+	case contract.LegalNotice:
+		line("%s", l(legalNoticeText))
+		field("version", v.Version)
+		field("accepted", v.Accepted)
 	case contract.Settings:
 		field("language", v.Language)
 		field("retention_days", v.RetentionDays)

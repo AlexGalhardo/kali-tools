@@ -232,6 +232,21 @@ func (b *Bindings) Settings() (contract.Settings, error) {
 	v, e := b.app.Settings(ctx)
 	return contract.FromSettings(v), fail(e)
 }
+func (b *Bindings) LegalNotice() (contract.LegalNotice, error) {
+	ctx, e := b.ready()
+	if e != nil {
+		return contract.LegalNotice{}, fail(e)
+	}
+	v, e := b.app.LegalNotice(ctx)
+	return contract.FromLegalNotice(v), fail(e)
+}
+func (b *Bindings) AcceptLegalNotice() error {
+	ctx, e := b.ready()
+	if e != nil {
+		return fail(e)
+	}
+	return fail(b.app.AcceptLegalNotice(ctx))
+}
 func (b *Bindings) CurrentWiFi() (contract.WiFi, error) {
 	ctx, e := b.ready()
 	if e != nil {

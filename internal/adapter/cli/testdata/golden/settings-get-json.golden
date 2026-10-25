@@ -3,6 +3,7 @@ stdout:
 {
   "data": {
     "language": "en",
+    "legal_notice_ack": "1",
     "retention_days": 30
   },
   "schema_version": 1,
