@@ -49,7 +49,7 @@ User scope and instructions take precedence. Do not invent product requirements,
 
 ## Project
 
-kali-tools is a local network and security toolkit. One Go module, `github.com/AlexGalhardo/kali-tools`, owns the capabilities. Three driving adapters share `app.Application`: the Wails desktop (`main.go`, `internal/adapter/wailsui`), the loopback web server (`internal/adapter/httpapi`, `kali-tools serve`), and the CLI (`cmd/kali-tools`). The UI is React, TypeScript, Base UI, and Tailwind CSS v4 in `frontend/`, with English and Brazilian Portuguese catalogs. SQLite through `modernc.org/sqlite` stores settings and redacted history. There is no cloud runtime and no telemetry.
+kali-tools is a local network and security toolkit for personal study of networking and information security (ADR 014). It is not a Kali tool orchestrator or a pentest product. One Go module, `github.com/AlexGalhardo/kali-tools`, owns the capabilities. Three driving adapters share `app.Application`: the Wails desktop (`main.go`, `internal/adapter/wailsui`), the loopback web server (`internal/adapter/httpapi`, `kali-tools serve`), and the CLI (`cmd/kali-tools`). The UI is React, TypeScript, Base UI, and Tailwind CSS v4 in `frontend/`, with English and Brazilian Portuguese catalogs. SQLite through `modernc.org/sqlite` stores settings and redacted history. There is no cloud runtime and no telemetry.
 
 Behavior is specified in `docs/specs/`. The package map and dependency rule are in `docs/architecture.md`. A green Linux build is not hardware acceptance.
 

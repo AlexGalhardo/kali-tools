@@ -17,6 +17,7 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ### Changed
 
+- Product identity is now a tool for personal study of networking and information security, not a Kali tool orchestrator or pentest product (ADR 014). PLAN and AGENTS describe it that way.
 - **Breaking (0.x):** the discovery response is `{results, truncated}` instead of a bare array on `/api/discovery`, the Wails `Discover` binding and `discover --json`; `ServiceInspection` gained `truncated`. `schema_version` stays 1.
 - `job.ErrBusy` maps to `conflict` (HTTP 409, CLI exit 8) instead of `invalid_input`.
 - `diagnose tls` returns the certificate chain with `verified=false` for untrusted authorities instead of failing.

@@ -16,7 +16,7 @@ Related documents:
 
 ## 1. Product contract
 
-Build a local security and network toolkit inspired by the Kali Linux ecosystem.
+Build a local network and security toolkit for personal study of networking and information security (ADR 014). The Kali Linux ecosystem is an inspiration for the topics, not a compatibility goal.
 
 **Stack.** Go, Wails, React, TypeScript, Base UI and Tailwind CSS v4.
 
@@ -49,7 +49,7 @@ Every capability is implemented once in Go services and exposed through all thre
 
 These are real implementation requirements, not placeholder panels. Alpha acceptance is Windows-first. Beta and 1.0 broaden native verification to Linux and macOS. Capability limitations must be visible to users.
 
-**Scope boundary.** Defensive, diagnostic and authorized-testing capabilities only. Credential attacks, exploitation frameworks, Wi-Fi injection/monitor-mode attacks and evasion are out of scope (§11).
+**Scope boundary.** Defensive, diagnostic and learning capabilities, used on systems the user owns or may test in writing (ADR 014). The tool does not orchestrate external pentest programs. Credential attacks, exploitation frameworks, Wi-Fi injection/monitor-mode attacks and evasion are out of scope (§11).
 
 **Licensing.**
 
