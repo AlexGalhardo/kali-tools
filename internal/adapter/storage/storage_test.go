@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -109,7 +110,7 @@ func TestMigrationRollback(t *testing.T) {
 		t.Fatal(e)
 	}
 	defer func() { _ = s.Close() }()
-	if _, e = s.db.Exec("UPDATE schema_migrations SET version=99; INSERT INTO jobs VALUES('x','tcp','running','2026-01-01T00:00:00Z',NULL,'unchanged')"); e != nil {
+	if _, e = s.db.Exec("INSERT INTO schema_migrations VALUES(99); INSERT INTO jobs(id,kind,state,created,finished,summary) VALUES('x','tcp','running','2026-01-01T00:00:00Z',NULL,'unchanged')"); e != nil {
 		t.Fatal(e)
 	}
 	if s.migrate(t.Context()) == nil {
@@ -249,13 +250,8 @@ func copyDBFile(t *testing.T, src, dst string) {
 	}
 }
 
-func TestRenamedApplicationPreservesExistingData(t *testing.T) {
+func TestDataPathIgnoresLegacyDirectory(t *testing.T) {
 	base := t.TempDir()
-	preferred := filepath.Join(base, "kali-tools", "history.db")
-	path, err := dataPath(base)
-	if err != nil || path != preferred {
-		t.Fatalf("new path: %s %v", path, err)
-	}
 	legacy := filepath.Join(base, "hacker-tools", "history.db")
 	if err := os.MkdirAll(filepath.Dir(legacy), 0700); err != nil {
 		t.Fatal(err)
@@ -263,18 +259,83 @@ func TestRenamedApplicationPreservesExistingData(t *testing.T) {
 	if err := os.WriteFile(legacy, []byte("legacy-fixture"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	path, err = dataPath(base)
-	if err != nil || path != legacy {
-		t.Fatalf("legacy path lost: %s %v", path, err)
+	path, err := dataPath(base)
+	if want := filepath.Join(base, "kali-tools", "history.db"); err != nil || path != want {
+		t.Fatalf("path = %s, %v", path, err)
 	}
-	if err := os.MkdirAll(filepath.Dir(preferred), 0700); err != nil {
+}
+
+func TestMigrationsAreNumberedAndDropDeadTable(t *testing.T) {
+	store, err := Open(":memory:")
+	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(preferred, []byte("new-fixture"), 0600); err != nil {
+	defer func() { _ = store.Close() }()
+	var versions, inventory, owner int
+	if err = store.db.QueryRow("SELECT COUNT(*) FROM schema_migrations").Scan(&versions); err != nil || versions != len(migrations) {
+		t.Fatal(versions, err)
+	}
+	if err = store.db.QueryRow("SELECT COUNT(*) FROM sqlite_master WHERE name='tool_inventory'").Scan(&inventory); err != nil || inventory != 0 {
+		t.Fatal("tool_inventory kept", inventory, err)
+	}
+	if err = store.db.QueryRow("SELECT COUNT(*) FROM pragma_table_info('jobs') WHERE name='owner_pid'").Scan(&owner); err != nil || owner != 1 {
+		t.Fatal("owner_pid missing", owner, err)
+	}
+	if err = store.db.QueryRow("SELECT COUNT(*) FROM sqlite_master WHERE name='diagnostic_results'").Scan(&owner); err != nil || owner != 1 {
+		t.Fatal("diagnostic_results dropped", owner, err)
+	}
+}
+
+func TestHelperSleep(t *testing.T) {
+	if os.Getenv("STORAGE_HELPER_SLEEP") == "1" {
+		time.Sleep(30 * time.Second)
+	}
+}
+
+func TestOpenCancelsOnlyJobsOfDeadOwners(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "history.db")
+	s, err := Open(path)
+	if err != nil {
 		t.Fatal(err)
 	}
-	path, err = dataPath(base)
-	if err != nil || path != preferred {
-		t.Fatalf("new data not preferred: %s %v", path, err)
+	defer func() { _ = s.Close() }()
+	live := exec.Command(os.Args[0], "-test.run=^TestHelperSleep$")
+	live.Env = append(os.Environ(), "STORAGE_HELPER_SLEEP=1")
+	if err = live.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = live.Process.Kill(); _ = live.Wait() }()
+	dead := exec.Command(os.Args[0], "-test.run=^$")
+	if err = dead.Run(); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	rows := []struct {
+		id  string
+		pid any
+	}{{"live", live.Process.Pid}, {"dead", dead.Process.Pid}, {"legacy", nil}, {"self", os.Getpid()}}
+	for _, r := range rows {
+		if _, err = s.db.Exec("INSERT INTO jobs(id,kind,state,created,summary,owner_pid) VALUES(?,?,?,?,?,?)", r.id, "tcp", "running", now, "Running", r.pid); err != nil {
+			t.Fatal(err)
+		}
+	}
+	other, err := Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = other.Close() }()
+	got := map[string]string{}
+	history, err := other.History(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, j := range history {
+		got[string(j.ID)] = string(j.State)
+	}
+	want := map[string]string{"live": "running", "dead": "cancelled", "legacy": "cancelled", "self": "cancelled"}
+	for id, state := range want {
+		if got[id] != state {
+			t.Fatalf("%s = %q, want %q (all: %v)", id, got[id], state, got)
+		}
 	}
 }

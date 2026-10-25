@@ -41,13 +41,15 @@ func JobStoreContract(t *testing.T, newStore func(*testing.T) app.JobStore) {
 		for _, count := range []int{HistoryLimit, HistoryLimit + 1} {
 			t.Run(fmt.Sprint(count), func(t *testing.T) {
 				s := newStore(t)
-				// 201 separate SQLite commits miss the 3s contract deadline under the Windows race detector.
-				ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
-				t.Cleanup(cancel)
+				ctx := t.Context()
 				base := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 				for i := range count {
 					created := base.Add(time.Duration(i) * time.Second)
-					if err := s.PutJob(ctx, job.Status{ID: job.ID(fmt.Sprint(i)), Kind: "tcp", State: job.Completed, Created: created, Finished: &created}); err != nil {
+					// Each commit gets its own deadline: a slow disk must not fail the whole loop.
+					putCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+					err := s.PutJob(putCtx, job.Status{ID: job.ID(fmt.Sprint(i)), Kind: "tcp", State: job.Completed, Created: created, Finished: &created})
+					cancel()
+					if err != nil {
 						t.Fatal(err)
 					}
 				}
