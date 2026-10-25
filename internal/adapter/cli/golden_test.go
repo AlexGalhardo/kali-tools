@@ -65,7 +65,7 @@ func goldenCases(t *testing.T) []goldenCase {
 		{"jobs-list", []string{"jobs", "list", "--all"}}, {"jobs-show", []string{"jobs", "show", fixtureJobID}}, {"jobs-cancel", []string{"jobs", "cancel", fixtureJobID}},
 		{"history-list", []string{"history", "list"}}, {"history-clear", []string{"history", "clear"}},
 		{"settings-get", []string{"settings", "get"}}, {"settings-set", []string{"settings", "set", "--language", "pt-BR", "--retention-days", "7"}},
-		{"tools", []string{"tools"}}, {"serve", []string{"serve"}},
+		{"legal", []string{"legal"}}, {"tools", []string{"tools"}}, {"serve", []string{"serve"}},
 		{"wifi", []string{"wifi"}}, {"capture", []string{"capture"}}, {"import", []string{"import", "--file", file}},
 	}
 }

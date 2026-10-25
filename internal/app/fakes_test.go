@@ -36,7 +36,13 @@ type fakeCapture = fake.LiveCapture
 type fakeProber = fake.Prober
 
 func fakeDeps() app.Deps {
-	return app.Deps{Jobs: &fakeJobStore{}, Settings: &fakeSettings{}, WiFi: fakeWiFi{Network: wifi.Network{State: "disconnected"}, Secret: wifi.Secret{State: "no_saved_key"}}}
+	return app.Deps{Jobs: &fakeJobStore{}, Settings: acceptedSettings(), WiFi: fakeWiFi{Network: wifi.Network{State: "disconnected"}, Secret: wifi.Secret{State: "no_saved_key"}}}
+}
+
+func acceptedSettings() *fakeSettings {
+	s := &fakeSettings{}
+	_ = s.SaveSettings(context.Background(), app.Settings{Language: "en", RetentionDays: 30, LegalNoticeAck: app.LegalNoticeVersion})
+	return s
 }
 
 func TestDiagnosticJobWithFakes(t *testing.T) {
@@ -64,7 +70,7 @@ func TestDiagnosticJobWithFakes(t *testing.T) {
 	if strings.Contains(string(raw), "synthetic-target.invalid") {
 		t.Fatal("target persisted")
 	}
-	settings := app.Settings{Language: "pt-BR", RetentionDays: 7}
+	settings := app.Settings{Language: "pt-BR", RetentionDays: 7, LegalNoticeAck: app.LegalNoticeVersion}
 	if err := s.SaveSettings(t.Context(), settings); err != nil {
 		t.Fatal(err)
 	}

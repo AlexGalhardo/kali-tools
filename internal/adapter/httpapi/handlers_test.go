@@ -211,9 +211,40 @@ func TestJobRoutesAndSSE(t *testing.T) {
 	}
 }
 
+func TestLegalNoticeRoutes(t *testing.T) {
+	store := fake.NewStore()
+	a := app.New(app.Deps{Jobs: store, Settings: store, Tools: fake.Tools{}})
+	t.Cleanup(func() { _ = a.Close() })
+	mux := testMux(t, a)
+	do := func(method, path, body string) *httptest.ResponseRecorder {
+		r := httptest.NewRequest(method, path, strings.NewReader(body))
+		if body != "" {
+			r.Header.Set("Content-Type", "application/json")
+		}
+		w := httptest.NewRecorder()
+		mux.ServeHTTP(w, r)
+		return w
+	}
+	if w := do("POST", "/api/inspect", `{"cidr":"127.0.0.1/32","ports":[443]}`); w.Code != 403 {
+		t.Fatalf("inspect before ack = %d %s", w.Code, w.Body)
+	}
+	if w := do("GET", "/api/legal", ""); w.Code != 200 || !strings.Contains(w.Body.String(), `"accepted":false`) {
+		t.Fatalf("legal = %d %s", w.Code, w.Body)
+	}
+	if w := do("POST", "/api/legal/accept", ""); w.Code != 204 {
+		t.Fatalf("accept = %d %s", w.Code, w.Body)
+	}
+	if w := do("GET", "/api/legal", ""); !strings.Contains(w.Body.String(), `"accepted":true`) {
+		t.Fatalf("legal after = %s", w.Body)
+	}
+}
+
 func testApp(t *testing.T) *app.Application {
 	t.Helper()
 	store := fake.NewStore()
+	if err := store.SaveSettings(t.Context(), app.Settings{Language: "en", RetentionDays: 30, LegalNoticeAck: app.LegalNoticeVersion}); err != nil {
+		t.Fatal(err)
+	}
 	a := app.New(app.Deps{Jobs: store, Settings: store, Host: fake.Host{}, Tools: fake.Tools{Tools: []app.Tool{{Name: "tshark", State: "dependency_missing"}}}, WiFi: fake.WiFi{Network: wifi.Network{SSID: "Fixture Network", State: "connected"}, Secret: wifi.Secret{State: "available", Value: "synthetic-test-key"}}})
 	t.Cleanup(func() {
 		if err := a.Close(); err != nil {
@@ -297,7 +328,7 @@ func TestReadRouteErrors(t *testing.T) {
 func TestRoutesMatchApplication(t *testing.T) {
 	// Lifecycle and preflight helpers are not remotely callable operations.
 	excluded := map[string]bool{"Close": true, "StartMetrics": true, "CanImportCapture": true, "CanExportCapture": true, "RunMetricsForTest": true, "PublishForTest": true, "WaitForTest": true}
-	operations := map[string]string{"AuditTLS": "POST /api/tls/audit", "InspectDNS": "POST /api/dns/inspect", "DiscoverLocal": "POST /api/discovery/local", "QuerySNMP": "POST /api/snmp", "Capabilities": "GET /api/capabilities", "CaptureBackendStatus": "GET /api/capture/backends", "Interfaces": "GET /api/interfaces", "Connections": "GET /api/connections", "Throughput": "POST /api/throughput", "Neighbors": "GET /api/neighbors", "Inventory": "GET /api/inventory", "Tools": "GET /api/tools", "Diagnose": "POST /api/diagnose", "StartDiagnostic": "POST /api/diagnostics", "CancelJob": "POST /api/jobs/{id}/cancel", "JobSnapshot": "GET /api/jobs/{id}", "Subscribe": "GET /api/events", "History": "GET /api/history", "ClearHistory": "DELETE /api/history", "Settings": "GET /api/settings", "SaveSettings": "PUT /api/settings", "CurrentWiFi": "GET /api/wifi", "RevealWiFi": "POST /api/wifi/reveal", "Discover": "POST /api/discovery", "InspectServices": "POST /api/inspect", "StartCapture": "POST /api/capture/start", "StopCapture": "POST /api/capture/stop", "ImportCapture": "POST /api/capture/import", "ExportCapture": "GET /api/capture/export", "DiagnosticBundle": "GET /api/doctor/bundle"}
+	operations := map[string]string{"AuditTLS": "POST /api/tls/audit", "InspectDNS": "POST /api/dns/inspect", "DiscoverLocal": "POST /api/discovery/local", "QuerySNMP": "POST /api/snmp", "Capabilities": "GET /api/capabilities", "CaptureBackendStatus": "GET /api/capture/backends", "Interfaces": "GET /api/interfaces", "Connections": "GET /api/connections", "Throughput": "POST /api/throughput", "Neighbors": "GET /api/neighbors", "Inventory": "GET /api/inventory", "Tools": "GET /api/tools", "Diagnose": "POST /api/diagnose", "StartDiagnostic": "POST /api/diagnostics", "CancelJob": "POST /api/jobs/{id}/cancel", "JobSnapshot": "GET /api/jobs/{id}", "Subscribe": "GET /api/events", "History": "GET /api/history", "ClearHistory": "DELETE /api/history", "LegalNotice": "GET /api/legal", "AcceptLegalNotice": "POST /api/legal/accept", "Settings": "GET /api/settings", "SaveSettings": "PUT /api/settings", "CurrentWiFi": "GET /api/wifi", "RevealWiFi": "POST /api/wifi/reveal", "Discover": "POST /api/discovery", "InspectServices": "POST /api/inspect", "StartCapture": "POST /api/capture/start", "StopCapture": "POST /api/capture/stop", "ImportCapture": "POST /api/capture/import", "ExportCapture": "GET /api/capture/export", "DiagnosticBundle": "GET /api/doctor/bundle"}
 	file, err := parser.ParseFile(token.NewFileSet(), "routes.go", nil, 0)
 	if err != nil {
 		t.Fatal(err)

@@ -18,5 +18,8 @@ func newApplication(t *testing.T) *app.Application {
 			t.Error(err)
 		}
 	})
+	if err := a.AcceptLegalNotice(t.Context()); err != nil {
+		t.Fatal(err)
+	}
 	return a
 }

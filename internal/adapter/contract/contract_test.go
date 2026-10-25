@@ -87,7 +87,7 @@ func mappings() []mappingCase {
 		mapping(func(v network.Request) contract.DiagnosticRequest {
 			return contract.DiagnosticRequest{RecordType: v.RecordType, Kind: v.Kind, Target: v.Target, Port: v.Port, TimeoutMS: v.TimeoutMS, Redirects: v.Redirects}
 		}),
-		mapping(contract.FromDiagnosticResult), mapping(contract.FromStatus), mapping(contract.FromStatuses), mapping(contract.FromSettings), mapping(contract.FromPortResults), mapping(contract.FromImportResult),
+		mapping(contract.FromDiagnosticResult), mapping(contract.FromStatus), mapping(contract.FromStatuses), mapping(contract.FromSettings), mapping(contract.FromLegalNotice), mapping(contract.FromPortResults), mapping(contract.FromImportResult),
 		mapping(func(v capture.LiveRequest) contract.LiveCaptureRequest {
 			return contract.LiveCaptureRequest{Backend: v.Backend, Address: v.Address, DurationSeconds: v.DurationSeconds, PacketLimit: v.PacketLimit}
 		}),

@@ -165,6 +165,13 @@ type JobEvent struct {
 type Settings struct {
 	Language      string `json:"language"`
 	RetentionDays int    `json:"retention_days"`
+	// LegalNoticeAck is read-only: the application ignores it on save.
+	LegalNoticeAck string `json:"legal_notice_ack,omitempty"`
+}
+
+type LegalNotice struct {
+	Version  string `json:"version"`
+	Accepted bool   `json:"accepted"`
 }
 
 type PortResult struct {

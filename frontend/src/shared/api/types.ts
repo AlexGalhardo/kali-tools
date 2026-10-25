@@ -95,7 +95,12 @@ export type Job = {
   finished?: string;
   summary: string;
 };
-export type Settings = { language: string; retention_days: number };
+export type Settings = {
+  language: string;
+  retention_days: number;
+  legal_notice_ack?: string;
+};
+export type LegalNotice = { version: string; accepted: boolean };
 export type Packet = {
   number: number;
   timestamp: string;
@@ -222,6 +227,8 @@ export type Backend = {
   ClearHistory(): Promise<void>;
   Settings(): Promise<Settings>;
   SaveSettings(v: Settings): Promise<void>;
+  LegalNotice(): Promise<LegalNotice>;
+  AcceptLegalNotice(): Promise<void>;
   SaveDiagnosticBundle(): Promise<boolean>;
   CurrentWiFi(): Promise<WiFi>;
   RevealWiFi(): Promise<{ state: string; value: string }>;

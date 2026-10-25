@@ -1,0 +1,6 @@
+exit=0
+stdout:
+Use o kali-tools apenas em sistemas que você possui ou que tenha autorização expressa, por escrito, para testar. Varreduras ativas enviam tráfego para até 256 hosts x 32 portas. A ferramenta não envia telemetria para a nuvem. Rode `kali-tools legal --accept` para registrar que você leu isto.
+versão: 1
+aceito: true
+stderr:

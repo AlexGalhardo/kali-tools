@@ -57,6 +57,9 @@ func newTestApp(t *testing.T) *app.Application {
 	if err := store.PutJob(t.Context(), job.Status{ID: job.ID(fixtureJobID), Kind: "tcp", State: job.Completed, Created: now, Finished: &now, Summary: "Diagnostic completed"}); err != nil {
 		t.Fatal(err)
 	}
+	if err := store.SaveSettings(t.Context(), app.Settings{Language: "en", RetentionDays: 30, LegalNoticeAck: app.LegalNoticeVersion}); err != nil {
+		t.Fatal(err)
+	}
 	a := app.New(app.Deps{
 		Jobs: store, Settings: store, Clock: func() time.Time { return now },
 		Host: fake.Host{Snapshot: app.HostSnapshot{

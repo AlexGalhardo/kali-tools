@@ -161,7 +161,7 @@ func parseInvocation(args []string) (invocation, error) {
 		switch name {
 		case "lint":
 			fs.Bool(name, true, "run certificate linting")
-		case "all", "confirm", "owned", "interfaces", "authorized":
+		case "all", "confirm", "owned", "interfaces", "authorized", "accept":
 			fs.Bool(name, false, name)
 		case "port":
 			port := 443

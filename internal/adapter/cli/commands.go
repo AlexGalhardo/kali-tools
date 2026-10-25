@@ -54,6 +54,7 @@ var commands = []command{
 	{path: "history clear", synopsis: "Clear terminal history; keep active jobs", needsApp: true},
 	{path: "settings get", synopsis: "Show language and retention settings", needsApp: true},
 	{path: "settings set", synopsis: "Update language or retention settings", needsApp: true, flags: []string{"language", "retention-days"}},
+	{path: "legal", synopsis: "Show the authorized-use notice; --accept records it", needsApp: true, flags: []string{"accept"}},
 	{path: "capture live", synopsis: "Capture bounded traffic with an optional backend", needsApp: true, flags: []string{"backend", "target", "duration", "limit", "output", "format"}},
 	{path: "capture import", synopsis: "Import a PCAP or PCAPNG file", needsApp: true, flags: []string{"file", "output", "format"}},
 	{path: "capture export", synopsis: "Convert a packet file to an explicit destination", needsApp: true, flags: []string{"file", "output", "format"}},
@@ -172,6 +173,14 @@ func runAdditional(ctx context.Context, a *app.Application, call invocation, std
 			}
 		}
 		return nil, &domain.Error{Code: domain.CodeNotFound, Message: "job not found"}, true
+	case "legal":
+		if call.values["accept"] == "true" {
+			if err := a.AcceptLegalNotice(ctx); err != nil {
+				return nil, err, true
+			}
+		}
+		value, err := a.LegalNotice(ctx)
+		return contract.FromLegalNotice(value), err, true
 	case "settings get":
 		value, err := a.Settings(ctx)
 		return contract.FromSettings(value), err, true

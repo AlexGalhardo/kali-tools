@@ -75,6 +75,9 @@ export class HttpTransport implements Transport {
     ClearHistory: () => this.request("/api/history", { method: "DELETE" }),
     Settings: () => this.request<Result<"Settings">>("/api/settings"),
     SaveSettings: (value) => this.json("PUT", "/api/settings", value),
+    LegalNotice: () => this.request<Result<"LegalNotice">>("/api/legal"),
+    AcceptLegalNotice: () =>
+      this.request("/api/legal/accept", { method: "POST" }),
     SaveDiagnosticBundle: () => this.saveDiagnosticBundle(),
     CurrentWiFi: () => this.request<Result<"CurrentWiFi">>("/api/wifi"),
     RevealWiFi: () =>

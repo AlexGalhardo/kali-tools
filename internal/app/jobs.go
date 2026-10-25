@@ -59,6 +59,9 @@ func (a *Application) Discover(parent context.Context, cidr string, ports []int,
 	if err = network.ValidateDiscovery(cidr, ports, timeout); err != nil {
 		return nil, false, err
 	}
+	if err = a.requireLegalNotice(parent); err != nil {
+		return nil, false, err
+	}
 	err = a.runOperation(parent, "discovery", func(ctx context.Context) (string, error) {
 		var err error
 		results, truncated, err = network.Discover(ctx, cidr, ports, timeout)
@@ -90,6 +93,9 @@ func truncatedNote(truncated bool) string {
 
 func (a *Application) InspectServices(parent context.Context, cidr string, ports []int) (result ServiceInspection, err error) {
 	if err = network.ValidateDiscovery(cidr, ports, time.Second); err != nil {
+		return result, err
+	}
+	if err = a.requireLegalNotice(parent); err != nil {
 		return result, err
 	}
 	a.mu.Lock()

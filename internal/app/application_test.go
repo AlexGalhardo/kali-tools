@@ -101,7 +101,7 @@ func TestApplicationDelegatesToPorts(t *testing.T) {
 			a := app.New(deps)
 			defer func() { _ = a.Close() }()
 			got, err := test.call(a, ctx)
-			if err != nil || !reflect.DeepEqual(got, test.want) || calls != 1 {
+			if err != nil || !reflect.DeepEqual(got, test.want) || calls != map[bool]int{true: 2, false: 1}[test.name == "save settings"] {
 				t.Fatalf("got=%+v, want=%+v, err=%v, calls=%d", got, test.want, err, calls)
 			}
 		})

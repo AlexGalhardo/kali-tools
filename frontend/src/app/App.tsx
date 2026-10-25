@@ -86,7 +86,8 @@ export function App() {
     [rates, setRates] = useState<number[][]>([]),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
-    [notice, setNotice] = useState("");
+    [notice, setNotice] = useState(""),
+    [legalPending, setLegalPending] = useState(false);
   const [packetCount, setPacketCount] = useState(0);
   const execute = useCallback(async (fn: () => Promise<void>) => {
     setError("");
@@ -118,6 +119,7 @@ export function App() {
     execute(async () => {
       await refresh();
       setSettings(await backend().Settings());
+      setLegalPending(!(await backend().LegalNotice()).accepted);
     });
   }, [execute, refresh]);
   useEffect(
@@ -144,6 +146,39 @@ export function App() {
   };
   return (
     <div className="shell">
+      {legalPending && (
+        <div className="legal-overlay">
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="legal-title"
+            aria-describedby="legal-body"
+            className="legal-dialog"
+          >
+            <h2 id="legal-title">{t.legalTitle}</h2>
+            <p id="legal-body">{t.legalBody}</p>
+            <p className="muted">{t.legalPassive}</p>
+            <div className="legal-actions">
+              <Button
+                className="secondary"
+                onClick={() => setLegalPending(false)}
+              >
+                {t.legalLater}
+              </Button>
+              <Button
+                onClick={() =>
+                  execute(async () => {
+                    await backend().AcceptLegalNotice();
+                    setLegalPending(false);
+                  })
+                }
+              >
+                {t.legalAccept}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       <aside>
         <Button className="brand" onClick={() => nav("dashboard")}>
           <span className="brand-mark">

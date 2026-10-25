@@ -1,0 +1,6 @@
+exit=0
+stdout:
+Use kali-tools only on systems you own or are explicitly authorized in writing to test. Active scans send traffic to up to 256 hosts x 32 ports. The tool keeps no cloud telemetry. Run `kali-tools legal --accept` to record that you have read this.
+version: 1
+accepted: true
+stderr:

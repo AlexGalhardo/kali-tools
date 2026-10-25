@@ -59,6 +59,13 @@ export const en = {
   conflictError: "The operation conflicts with one already running.",
   unauthorizedError: "Authentication is required.",
   forbiddenError: "This operation is not allowed.",
+  legalTitle: "Authorized use only",
+  legalBody:
+    "Use kali-tools only on systems you own or are explicitly authorized in writing to test. Active scans send traffic to up to 256 hosts x 32 ports. The tool keeps no cloud telemetry.",
+  legalPassive:
+    "Passive features stay available. Scans stay blocked until you acknowledge this notice.",
+  legalAccept: "I understand and acknowledge",
+  legalLater: "Not now",
   unavailableError: "The service is shutting down. Try again shortly.",
 
   navigation: "Main navigation",
@@ -373,6 +380,13 @@ export const pt: typeof en = {
     "A opera\u00e7\u00e3o conflita com outra em execu\u00e7\u00e3o.",
   unauthorizedError: "Autentica\u00e7\u00e3o necess\u00e1ria.",
   forbiddenError: "Esta opera\u00e7\u00e3o n\u00e3o \u00e9 permitida.",
+  legalTitle: "Somente uso autorizado",
+  legalBody:
+    "Use o kali-tools apenas em sistemas que voc\u00ea possui ou que tenha autoriza\u00e7\u00e3o expressa, por escrito, para testar. Varreduras ativas enviam tr\u00e1fego para at\u00e9 256 hosts x 32 portas. A ferramenta n\u00e3o envia telemetria para a nuvem.",
+  legalPassive:
+    "Os recursos passivos continuam dispon\u00edveis. As varreduras ficam bloqueadas at\u00e9 voc\u00ea reconhecer este aviso.",
+  legalAccept: "Entendi e reconhe\u00e7o",
+  legalLater: "Agora n\u00e3o",
   unavailableError:
     "O servi\u00e7o est\u00e1 encerrando. Tente novamente em instantes.",
 

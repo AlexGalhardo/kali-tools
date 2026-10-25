@@ -28,6 +28,8 @@ There is no CORS. A cross-site request is `403` `forbidden`. One token is one op
 | `GET /api/jobs/{id}` | yes | 200 |
 | `GET /api/history` | yes | 200 |
 | `GET /api/settings` | yes | 200 |
+| `GET /api/legal` | yes | 200 |
+| `POST /api/legal/accept` | yes | 204 |
 | `GET /api/wifi` | yes | 200 |
 | `POST /api/diagnose` | yes | 200 |
 | `POST /api/tls/audit` | yes | 200 |
@@ -81,6 +83,8 @@ Default JSON body limit: 64 KiB.
 JSON requests must use `Content-Type: application/json` and must not contain unknown fields. A larger body is `413` `invalid_input`. A wrong media type is `415` `invalid_input`.
 
 ## Settings
+
+`GET /api/legal` returns `{version, accepted}` for the authorized-use notice and `POST /api/legal/accept` (empty body) records it. `POST /api/discovery` and `POST /api/inspect` answer `403` `forbidden` until it is recorded. `PUT /api/settings` never changes the acknowledgement.
 
 `GET /api/settings` and `PUT /api/settings` use `language` and `retention_days`. Language is `en` or `pt-BR`. Retention is 1 through 365 days. A new database defaults to `en` and 30 days. Other values are `400` `invalid_input` and are not echoed back.
 
