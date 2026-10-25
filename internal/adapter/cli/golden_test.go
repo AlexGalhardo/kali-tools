@@ -72,7 +72,9 @@ func goldenCases(t *testing.T) []goldenCase {
 
 var elapsed = regexp.MustCompile(`\([0-9.]+ ms,`)
 var progressID = regexp.MustCompile(`job [0-9a-f]{8} `)
-var rttText = regexp.MustCompile(` *[0-9]+.[0-9] ms`)
+
+// Discovery prints %.1f and a following column. Diagnose prints (%g ms, …); a bare dot would rewrite that too.
+var rttText = regexp.MustCompile(` *[0-9]+\.[0-9] ms `)
 var randomJobID = regexp.MustCompile(`[0-9a-f]{32}`)
 
 func goldenArgs(t *testing.T, a *app.Application, test goldenCase) []string {
@@ -117,7 +119,7 @@ func normalizeOutput(t *testing.T, test goldenCase, output string, jsonMode bool
 	output = strings.ReplaceAll(output, runtime.GOOS, "OS")
 	output = strings.ReplaceAll(output, runtime.GOARCH, "ARCH")
 	output = randomJobID.ReplaceAllString(output, fixtureJobID)
-	output = rttText.ReplaceAllString(output, "   0.0 ms")
+	output = rttText.ReplaceAllString(output, "   0.0 ms ")
 	if jsonMode {
 		var value any
 		if err := json.Unmarshal([]byte(output), &value); err != nil {
@@ -178,6 +180,17 @@ func normalizeOutput(t *testing.T, test goldenCase, output string, jsonMode bool
 		filtered = append(filtered, line)
 	}
 	return strings.Join(filtered, "\n")
+}
+
+func TestDiagnoseDurationSurvivesRTTNormalization(t *testing.T) {
+	got := normalizeOutput(t, goldenCase{name: "diagnose"}, "ping fixture.invalid: completed (0.123 ms, fake)\n", false)
+	if !strings.Contains(got, "(0 ms, fake)") || strings.Contains(got, "0.0 ms") {
+		t.Fatalf("%q", got)
+	}
+	got = normalizeOutput(t, goldenCase{name: "discover"}, "127.0.0.1  443  open  12.3 ms  up\n", false)
+	if !strings.Contains(got, "open   0.0 ms  up") {
+		t.Fatalf("%q", got)
+	}
 }
 
 func TestGolden(t *testing.T) {

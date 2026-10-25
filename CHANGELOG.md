@@ -32,6 +32,10 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 - HTTP export and bundle downloads set a 2-minute write deadline.
 - SECURITY.md notes that revealed Wi-Fi and SNMP secrets pass through the browser in `serve` mode.
 
+### Fixed
+
+- The discovery RTT golden normalizer matches one decimal digit and the following column space. It no longer rewrites a diagnose `%g` duration such as `0.123 ms`.
+
 ### Removed
 
 - Unused `tool_inventory` table and the `hacker-tools/history.db` path fallback.
