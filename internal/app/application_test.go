@@ -225,7 +225,7 @@ func TestApplicationAfterClose(t *testing.T) {
 	if !errors.Is(err, job.ErrClosed) {
 		t.Fatal(err)
 	}
-	_, err = a.Discover(t.Context(), "127.0.0.1/32", []int{80}, 100*time.Millisecond)
+	_, _, err = a.Discover(t.Context(), "127.0.0.1/32", []int{80}, 100*time.Millisecond)
 	if !errors.Is(err, job.ErrClosed) {
 		t.Fatal(err)
 	}

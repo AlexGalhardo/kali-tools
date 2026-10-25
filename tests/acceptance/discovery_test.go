@@ -24,7 +24,10 @@ func DiscoverySpec(t *testing.T, newDriver scenarioDriver) {
 		d := newDriver(t)
 		port := openPort(t)
 		v, err := d.Discover(testContext(t), "127.0.0.1/32", []int{port}, 500*time.Millisecond)
-		if err != nil || !reflect.DeepEqual(v, []contract.PortResult{{Host: "127.0.0.1", Port: port, State: "open"}}) {
+		for i := range v {
+			v[i].RTTMS = 0
+		}
+		if err != nil || !reflect.DeepEqual(v, []contract.PortResult{{Host: "127.0.0.1", Port: port, State: "open", HostState: "up"}}) {
 			t.Fatalf("result=%v err=%v", v, err)
 		}
 	})

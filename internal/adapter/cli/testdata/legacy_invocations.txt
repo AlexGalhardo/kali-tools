@@ -1,8 +1,8 @@
 0 - version
 2 invalid_input diagnose --target a;whoami
 2 invalid_input diagnose --kind tcp --target a;whoami
-2 invalid_input discover --target 0.0.0.0/0
+2 invalid_input discover --authorized --target 0.0.0.0/0
 2 invalid_input capture --target 127.0.0.1
 0 - wifi
 1 failed import --file missing-synthetic-file.pcap
-2 invalid_input discover --target 0.0.0.0/0 --format json
+2 invalid_input discover --authorized --target 0.0.0.0/0 --format json

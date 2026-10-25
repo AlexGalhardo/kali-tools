@@ -167,15 +167,18 @@ func runLegacy(ctx context.Context, application *app.Application, call invocatio
 			}
 			if err == nil {
 				var results []network.PortResult
-				results, err = application.Discover(ctx, *target, numbers, time.Duration(*timeout)*time.Millisecond)
-				data = contract.FromPortResults(results)
+				var truncated bool
+				results, truncated, err = application.Discover(ctx, *target, numbers, time.Duration(*timeout)*time.Millisecond)
+				if err == nil {
+					data = contract.FromDiscovery(results, truncated)
+				}
 				if err == nil && *format == "csv" {
 					writer := csv.NewWriter(out)
-					if e := writer.Write([]string{"schema_version", "host", "port", "state"}); e != nil {
+					if e := writer.Write([]string{"schema_version", "host", "port", "state", "rtt_ms", "host_state", "truncated"}); e != nil {
 						return exitFailure
 					}
 					for _, r := range results {
-						if e := writer.Write([]string{"1", r.Host, strconv.Itoa(r.Port), r.State}); e != nil {
+						if e := writer.Write([]string{"1", r.Host, strconv.Itoa(r.Port), r.State, strconv.FormatFloat(r.RTTMS, 'f', 3, 64), r.HostState, strconv.FormatBool(truncated)}); e != nil {
 							return exitFailure
 						}
 					}

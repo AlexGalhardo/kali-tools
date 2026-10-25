@@ -89,11 +89,11 @@ func TestInspectServicesUsesToolRunner(t *testing.T) {
 		t.Fatalf("inspection = %+v, err = %v", result, err)
 	}
 	rows, err := s.History(t.Context())
-	if err != nil || len(rows) != 1 || rows[0].Summary != "Service inspection completed: native 1: 2 hosts" || rows[0].Kind != "inspect" {
+	if err != nil || len(rows) != 1 || rows[0].Summary != "Service inspection completed: native 1: 127.0.0.1/32 ports 80: 2 hosts" || rows[0].Kind != "inspect" {
 		t.Fatalf("history = %+v, err = %v", rows, err)
 	}
-	if strings.Contains(rows[0].Summary, "127.0.0.1") || strings.Contains(rows[0].Summary, "SECRET-BANNER") {
-		t.Fatal("scope or probe content persisted")
+	if strings.Contains(rows[0].Summary, "SECRET-BANNER") {
+		t.Fatal("probe content persisted")
 	}
 }
 

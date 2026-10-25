@@ -168,9 +168,18 @@ type Settings struct {
 }
 
 type PortResult struct {
-	Host  string `json:"host"`
-	Port  int    `json:"port"`
-	State string `json:"state"`
+	Host      string  `json:"host"`
+	Port      int     `json:"port"`
+	State     string  `json:"state"`
+	RTTMS     float64 `json:"rtt_ms"`
+	HostState string  `json:"host_state"`
+}
+
+// Discovery wraps the port results with a flag that is true when the scan
+// deadline cut the run and the list is partial.
+type Discovery struct {
+	Results   []PortResult `json:"results"`
+	Truncated bool         `json:"truncated"`
 }
 
 type Packet struct {
@@ -257,10 +266,11 @@ type Tool struct {
 }
 
 type ServiceInspection struct {
-	Scanner  string             `json:"scanner"`
-	Version  string             `json:"version"`
-	Finished InspectionFinished `json:"finished"`
-	Hosts    []InspectionHost   `json:"hosts"`
+	Scanner   string             `json:"scanner"`
+	Version   string             `json:"version"`
+	Finished  InspectionFinished `json:"finished"`
+	Hosts     []InspectionHost   `json:"hosts"`
+	Truncated bool               `json:"truncated"`
 }
 type InspectionFinished struct {
 	Exit string `json:"exit"`

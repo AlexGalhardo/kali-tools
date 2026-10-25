@@ -357,12 +357,12 @@ func handleDiscover(a *app.Application) http.HandlerFunc {
 			writeError(w, r, err)
 			return
 		}
-		value, err := a.Discover(r.Context(), request.CIDR, request.Ports, app.DefaultDiscoveryTimeout)
+		value, truncated, err := a.Discover(r.Context(), request.CIDR, request.Ports, app.DefaultDiscoveryTimeout)
 		if err != nil {
 			writeError(w, r, err)
 			return
 		}
-		writeJSON(w, http.StatusOK, contract.FromPortResults(value))
+		writeJSON(w, http.StatusOK, contract.FromDiscovery(value, truncated))
 	}
 }
 

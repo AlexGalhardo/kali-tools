@@ -17,6 +17,7 @@
     "data.hosts[].ports[].state.state": "string",
     "data.hosts[].status.state": "string",
     "data.scanner": "string",
+    "data.truncated": "boolean",
     "data.version": "string",
     "schema_version": "number",
     "version": "string"

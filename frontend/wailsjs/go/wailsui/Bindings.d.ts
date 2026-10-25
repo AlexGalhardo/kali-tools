@@ -18,7 +18,7 @@ export function CurrentWiFi():Promise<contract.WiFi>;
 
 export function Diagnose(arg1:contract.DiagnosticRequest):Promise<contract.DiagnosticResult>;
 
-export function Discover(arg1:string,arg2:Array<number>):Promise<Array<contract.PortResult>>;
+export function Discover(arg1:string,arg2:Array<number>):Promise<contract.Discovery>;
 
 export function DiscoverLocal(arg1:contract.LocalDiscoveryRequest):Promise<contract.LocalDiscoveryResult>;
 

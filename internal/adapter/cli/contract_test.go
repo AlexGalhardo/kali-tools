@@ -207,7 +207,7 @@ func TestFlagErrorsDoNotEchoValues(t *testing.T) {
 			}
 		})
 	}
-	for _, args := range [][]string{{"discover", "--ports", "synthetic-secret"}, {"diagnose", "http", "--target", "http://user:synthetic-secret@localhost/"}} {
+	for _, args := range [][]string{{"discover", "--authorized", "--ports", "synthetic-secret"}, {"diagnose", "http", "--target", "http://user:synthetic-secret@localhost/"}} {
 		var out, stderr bytes.Buffer
 		code := runJSON(t.Context(), newTestApp(t), args, &out, &stderr)
 		if code != 2 || strings.Contains(out.String()+stderr.String(), "synthetic-secret") {
@@ -455,7 +455,7 @@ func TestCLIContractCommandMappings(t *testing.T) {
 	application := newApp(t)
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	for _, args := range [][]string{{"doctor"}, {"inventory"}, {"wifi"}, {"inspect", "--target", "192.0.2.0/24"}, {"discover", "--ports", "bad"}} {
+	for _, args := range [][]string{{"doctor"}, {"inventory"}, {"wifi"}, {"inspect", "--authorized", "--target", "192.0.2.0/24"}, {"discover", "--authorized", "--ports", "bad"}} {
 		var out, stderr bytes.Buffer
 		code := runJSON(ctx, application, args, &out, &stderr)
 		var response envelope

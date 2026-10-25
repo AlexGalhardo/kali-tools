@@ -5,9 +5,11 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strconv"
 	"strings"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -61,16 +63,16 @@ func TestDiscoveryScopeAndLimits(t *testing.T) {
 	}
 	defer listener.Close()
 	port := listener.Addr().(*net.TCPAddr).Port
-	items, e := Discover(t.Context(), "127.0.0.1/32", []int{port}, 100*time.Millisecond)
-	if e != nil || len(items) != 1 || items[0].Host != "127.0.0.1" || items[0].State != "open" {
+	items, truncated, e := Discover(t.Context(), "127.0.0.1/32", []int{port}, 100*time.Millisecond)
+	if e != nil || truncated || len(items) != 1 || items[0].Host != "127.0.0.1" || items[0].State != "open" || items[0].HostState != "up" {
 		t.Fatalf("%+v %v", items, e)
 	}
 	for _, cidr := range []string{"0.0.0.0/0", "192.168.0.0/16", "invalid", "::/128"} {
-		if _, e := Discover(t.Context(), cidr, []int{port}, time.Second); e == nil {
+		if _, _, e := Discover(t.Context(), cidr, []int{port}, time.Second); e == nil {
 			t.Fatal("accepted", cidr)
 		}
 	}
-	if _, e := Discover(t.Context(), "127.0.0.1/32", []int{port, port}, time.Second); e == nil {
+	if _, _, e := Discover(t.Context(), "127.0.0.1/32", []int{port, port}, time.Second); e == nil {
 		t.Fatal("duplicate ports")
 	}
 }
@@ -149,5 +151,64 @@ func TestICMPUsesInjectedProber(t *testing.T) {
 	result, err := (Diagnostics{Prober: prober}).Diagnose(t.Context(), Request{Kind: "traceroute", Target: "127.0.0.1", TimeoutMS: 500})
 	if err != nil || result.Provider != "fake" || !prober.trace || len(result.Values) != 1 {
 		t.Fatal(result, err)
+	}
+}
+
+func TestValidateDiscoveryRejectsImpossibleScope(t *testing.T) {
+	all := make([]int, 32)
+	for i := range all {
+		all[i] = i + 1
+	}
+	err := ValidateDiscovery("192.0.2.0/24", all, 500*time.Millisecond)
+	if err == nil || !strings.Contains(err.Error(), "limit is 120 s") {
+		t.Fatalf("/24 x 32 ports at 500 ms must be rejected: %v", err)
+	}
+	if err := ValidateDiscovery("192.0.2.0/24", all[:16], 500*time.Millisecond); err != nil {
+		t.Fatal(err)
+	}
+	if err := ValidateDiscovery("192.0.2.0/24", all[:6], 3*time.Second); err == nil {
+		t.Fatal("/24 x 6 ports at 3 s needs 144 s")
+	}
+}
+
+func TestClassifyDial(t *testing.T) {
+	for _, c := range []struct {
+		err  error
+		want string
+	}{
+		{nil, "open"},
+		{&net.OpError{Err: os.NewSyscallError("connect", syscall.ECONNREFUSED)}, "closed"},
+		{&net.OpError{Err: os.NewSyscallError("connect", syscall.Errno(10061))}, "closed"},
+		{context.DeadlineExceeded, "filtered"},
+		{&net.OpError{Err: os.ErrDeadlineExceeded}, "filtered"},
+		{&net.OpError{Err: os.NewSyscallError("connect", syscall.EHOSTUNREACH)}, "unreachable"},
+		{&net.OpError{Err: os.NewSyscallError("connect", syscall.Errno(10051))}, "unreachable"},
+	} {
+		if got := ClassifyDial(c.err); got != c.want {
+			t.Errorf("%v: got %s want %s", c.err, got, c.want)
+		}
+	}
+	if HostState([]string{"filtered", "closed"}) != "up" || HostState([]string{"filtered"}) != "unknown" || HostState([]string{"unreachable"}) != "down" {
+		t.Fatal("host state")
+	}
+}
+
+func TestDiscoverClosedPort(t *testing.T) {
+	l, _ := net.Listen("tcp", "127.0.0.1:0")
+	port := l.Addr().(*net.TCPAddr).Port
+	l.Close()
+	items, _, err := Discover(t.Context(), "127.0.0.1/32", []int{port}, time.Second)
+	if err != nil || len(items) != 1 || items[0].State != "closed" || items[0].HostState != "up" {
+		t.Fatalf("%+v %v", items, err)
+	}
+}
+
+func TestDiscoverReturnsPartialResultsAtDeadline(t *testing.T) {
+	old := scanDeadline
+	scanDeadline = 400 * time.Millisecond
+	t.Cleanup(func() { scanDeadline = old })
+	items, truncated, err := Discover(t.Context(), "192.0.2.0/24", []int{81}, 100*time.Millisecond)
+	if err != nil || !truncated || len(items) == 0 || len(items) >= 256 {
+		t.Fatalf("truncated=%v err=%v results=%d", truncated, err, len(items))
 	}
 }

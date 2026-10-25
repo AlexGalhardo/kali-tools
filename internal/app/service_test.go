@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -72,7 +73,8 @@ func TestDiscoverySummarySurvivesRestartWithoutTargets(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer listener.Close()
-	results, err := service.Discover(t.Context(), "127.0.0.1/32", []int{listener.Addr().(*net.TCPAddr).Port}, 100*time.Millisecond)
+	port := listener.Addr().(*net.TCPAddr).Port
+	results, _, err := service.Discover(t.Context(), "127.0.0.1/32", []int{port}, 100*time.Millisecond)
 	if err != nil || len(results) != 1 || results[0].State != "open" {
 		t.Fatal(results, err)
 	}
@@ -88,11 +90,8 @@ func TestDiscoverySummarySurvivesRestartWithoutTargets(t *testing.T) {
 	}
 	defer func() { _ = store.Close() }()
 	history, err := store.History(t.Context())
-	if err != nil || len(history) != 1 || history[0].Kind != "discovery" || history[0].State != "completed" || history[0].Summary != "Discovery completed: 1 endpoints checked, 1 open" {
+	if err != nil || len(history) != 1 || history[0].Kind != "discovery" || history[0].State != "completed" || history[0].Summary != fmt.Sprintf("Discovery completed: 127.0.0.1/32 ports %d: 1 endpoints checked, 1 open", port) {
 		t.Fatal(history, err)
-	}
-	if strings.Contains(history[0].Summary, "127.0.0.1") {
-		t.Fatal("target persisted")
 	}
 }
 

@@ -114,10 +114,11 @@ func (d httpDriver) Diagnose(ctx context.Context, r contract.DiagnosticRequest) 
 }
 
 func (d httpDriver) Discover(ctx context.Context, cidr string, ports []int, _ time.Duration) ([]contract.PortResult, error) {
-	return httpResult[[]contract.PortResult](d, ctx, "POST", "/api/discovery", struct {
+	v, err := httpResult[contract.Discovery](d, ctx, "POST", "/api/discovery", struct {
 		CIDR  string `json:"cidr"`
 		Ports []int  `json:"ports"`
 	}{CIDR: cidr, Ports: ports})
+	return v.Results, err
 }
 
 func (d httpDriver) History(ctx context.Context) ([]contract.Job, error) {
