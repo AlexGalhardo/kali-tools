@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"io"
 	"os"
 	"strings"
 
@@ -10,20 +11,32 @@ import (
 
 const maxSecretFileBytes = 4 << 10
 
+// secretInput is where `--secret-file -` reads; tests replace it.
+var secretInput io.Reader = os.Stdin
+
 func readSecretLines(path string) (string, string, error) {
-	info, err := os.Lstat(path)
-	if err != nil || !info.Mode().IsRegular() {
-		return "", "", domain.Invalid("secret file must be a regular file")
-	}
-	if info.Size() > maxSecretFileBytes {
-		return "", "", domain.Invalid("secret file is too large")
-	}
-	if err := secretFileOwner(info); err != nil {
-		return "", "", err
-	}
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		return "", "", domain.Invalid("secret file must be a regular file")
+	var raw []byte
+	if path == "-" {
+		var err error
+		raw, err = io.ReadAll(io.LimitReader(secretInput, maxSecretFileBytes+1))
+		if err != nil || len(raw) > maxSecretFileBytes {
+			return "", "", domain.Invalid("secret input is unreadable or too large")
+		}
+	} else {
+		info, err := os.Lstat(path)
+		if err != nil || !info.Mode().IsRegular() {
+			return "", "", domain.Invalid("secret file must be a regular file")
+		}
+		if info.Size() > maxSecretFileBytes {
+			return "", "", domain.Invalid("secret file is too large")
+		}
+		if err := secretFileOwner(path, info); err != nil {
+			return "", "", err
+		}
+		raw, err = os.ReadFile(path)
+		if err != nil {
+			return "", "", domain.Invalid("secret file must be a regular file")
+		}
 	}
 	parts := strings.Split(string(raw), "\n")
 	line1 := strings.TrimRight(parts[0], "\r")
