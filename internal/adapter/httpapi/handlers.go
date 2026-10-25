@@ -126,12 +126,19 @@ func handleInterfaces(a *app.Application) http.HandlerFunc {
 func handleConnections(a *app.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		value, err := a.Connections(r.Context())
-		if err != nil {
-			writeError(w, r, err)
-			return
-		}
-		writeJSON(w, http.StatusOK, contract.FromConnectionTable(value))
+		writeConverted(w, r, value, err, contract.FromConnectionTable)
 	}
+}
+
+// writeConverted keeps the error check out of the caller: on platforms where
+// the provider is an unsupported stub, staticcheck (SA4023) otherwise flags
+// the caller's err != nil as always true.
+func writeConverted[T, U any](w http.ResponseWriter, r *http.Request, value T, err error, convert func(T) U) {
+	if err != nil {
+		writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, convert(value))
 }
 
 func handleThroughput(a *app.Application) http.HandlerFunc {

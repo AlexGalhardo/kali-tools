@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
 )
 
@@ -20,10 +21,9 @@ func knownToolPath(name string) string {
 		}
 		_ = key.Close()
 	}
-	for _, env := range []string{"ProgramFiles", "ProgramW6432"} {
-		if base := os.Getenv(env); base != "" {
-			dirs = append(dirs, filepath.Join(base, "Wireshark"))
-		}
+	// Known-folder lookup instead of os.Getenv: env reads are confined to composition roots.
+	if base, err := windows.KnownFolderPath(windows.FOLDERID_ProgramFiles, 0); err == nil {
+		dirs = append(dirs, filepath.Join(base, "Wireshark"))
 	}
 	for _, dir := range dirs {
 		candidate := filepath.Join(dir, "tshark.exe")

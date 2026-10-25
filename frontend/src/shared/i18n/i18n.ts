@@ -373,7 +373,8 @@ export const pt: typeof en = {
     "A opera\u00e7\u00e3o conflita com outra em execu\u00e7\u00e3o.",
   unauthorizedError: "Autentica\u00e7\u00e3o necess\u00e1ria.",
   forbiddenError: "Esta opera\u00e7\u00e3o n\u00e3o \u00e9 permitida.",
-  unavailableError: "O servi\u00e7o est\u00e1 encerrando. Tente novamente em instantes.",
+  unavailableError:
+    "O servi\u00e7o est\u00e1 encerrando. Tente novamente em instantes.",
 
   navigation: "Navega\u00e7\u00e3o principal",
   networkWorkspace: "ESPA\u00c7O DE REDE",

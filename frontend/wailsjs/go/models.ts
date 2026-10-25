@@ -644,6 +644,58 @@ export namespace contract {
 		    return a;
 		}
 	}
+	export class PortResult {
+	    host: string;
+	    port: number;
+	    state: string;
+	    rtt_ms: number;
+	    host_state: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new PortResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.host = source["host"];
+	        this.port = source["port"];
+	        this.state = source["state"];
+	        this.rtt_ms = source["rtt_ms"];
+	        this.host_state = source["host_state"];
+	    }
+	}
+	export class Discovery {
+	    results: PortResult[];
+	    truncated: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new Discovery(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.results = this.convertValues(source["results"], PortResult);
+	        this.truncated = source["truncated"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	
 	
 	export class InspectionAddress {
@@ -1070,58 +1122,7 @@ export namespace contract {
 		}
 	}
 	
-	export class PortResult {
-	    host: string;
-	    port: number;
-	    state: string;
-	    rtt_ms: number;
-	    host_state: string;
 	
-	    static createFrom(source: any = {}) {
-	        return new PortResult(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.host = source["host"];
-	        this.port = source["port"];
-	        this.state = source["state"];
-	        this.rtt_ms = source["rtt_ms"];
-	        this.host_state = source["host_state"];
-	    }
-	}
-	export class Discovery {
-	    results: PortResult[];
-	    truncated: boolean;
-
-	    static createFrom(source: any = {}) {
-	        return new Discovery(source);
-	    }
-
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.results = this.convertValues(source["results"], PortResult);
-	        this.truncated = source["truncated"];
-	    }
-
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
 	
 	
 	export class SNMPInterface {

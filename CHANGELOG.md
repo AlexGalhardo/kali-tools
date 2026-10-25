@@ -4,6 +4,33 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+### Added
+
+- Port states `open`, `closed`, `filtered` and `unreachable`, plus `rtt_ms` and `host_state` per result, in the HTTP, Wails and CLI contracts, CSV, goldens and both catalogs.
+- `truncated` flag: discovery and service inspection return partial results when the deadline cuts them, instead of failing.
+- Early `invalid_input` rejection of discovery and inspection scopes that cannot finish inside the deadline.
+- Telnet banner classification and bounded Redis, SMB and RDP probes in service inspection.
+- Authorization gate for `discover` and `inspect`: `--authorized` on the CLI and a confirmation checkbox in the UI. Job summaries record the exact CIDR and ports.
+- Error code `unavailable` (HTTP 503) for a shutting-down service.
+- Numbered SQLite migrations (v2 adds `jobs.owner_pid`) and `schema_migrations`.
+- Windows `tshark` lookup in the Wireshark install directory (registry, then Program Files) before `PATH`.
+
+### Changed
+
+- **Breaking (0.x):** the discovery response is `{results, truncated}` instead of a bare array on `/api/discovery`, the Wails `Discover` binding and `discover --json`; `ServiceInspection` gained `truncated`. `schema_version` stays 1.
+- `job.ErrBusy` maps to `conflict` (HTTP 409, CLI exit 8) instead of `invalid_input`.
+- `diagnose tls` returns the certificate chain with `verified=false` for untrusted authorities instead of failing.
+- Opening the database cancels only `running` or `queued` jobs whose owner process is gone.
+- SQLite uses `synchronous=NORMAL` with WAL; `history.db` and its `-wal`/`-shm` files are created with mode 0600 on Unix.
+- Session cookie is named `__Host-kali_session_<port>` when the server uses TLS.
+- Wi-Fi secret reveal on Linux honors the caller context and times out after 10 s.
+- HTTP export and bundle downloads set a 2-minute write deadline.
+- SECURITY.md notes that revealed Wi-Fi and SNMP secrets pass through the browser in `serve` mode.
+
+### Removed
+
+- Unused `tool_inventory` table and the `hacker-tools/history.db` path fallback.
+
 ## [0.7.0-dev.2] - 2026-10-23
 
 Unsigned development preview; hardware qualification remains open. Not a release-qualified build.
