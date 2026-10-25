@@ -14,6 +14,10 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 - Error code `unavailable` (HTTP 503) for a shutting-down service.
 - Numbered SQLite migrations (v2 adds `jobs.owner_pid`) and `schema_migrations`.
 - Windows `tshark` lookup in the Wireshark install directory (registry, then Program Files) before `PATH`.
+- First-run authorized-use notice persisted in settings: `kali-tools legal` and `legal --accept`, `GET /api/legal` and `POST /api/legal/accept`, a UI dialog. `discover` and `inspect` return `forbidden` until it is accepted; passive features are unaffected.
+- `snmp --secret-file` checks the owner and DACL on Windows (rejects Everyone and Users read access) and accepts `--secret-file -` to read from stdin.
+- `serve --allow-from <cidr>` filters peers at Accept before TLS, `serve --token-file <path>` writes the launch URL to an owner-only file instead of printing it, and 5 failed session exchanges lock a peer IP out for 60 s. Rejections are logged with the peer address. The lockout table holds 1024 peers and is cleared when full, so many distinct source addresses can reset it. Windows does not enforce the 0600 mode of the token file; use a per-user directory.
+- README rewritten for end users (quick start, first five minutes, responsible use, what it does not do); build material moved to `docs/development.md`, with a Windows Defender note for slow tests.
 
 ### Changed
 

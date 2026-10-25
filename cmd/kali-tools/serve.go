@@ -44,8 +44,20 @@ func serveArguments(args []string) ([]string, bool) {
 }
 
 // writeTokenFile stores the launch URL, which carries the credential, with owner-only permissions.
+// A previous file is replaced, never reopened: truncating in place would follow a symlink
+// or keep the permissions of a file someone else created. O_EXCL also refuses a planted link.
 func writeTokenFile(path, launchURL string) error {
-	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
+	if info, err := os.Lstat(path); err == nil {
+		if !info.Mode().IsRegular() {
+			return domain.Invalid("--token-file must be a regular file path, not a link or directory")
+		}
+		if err := os.Remove(path); err != nil {
+			return domain.Invalid("cannot replace --token-file")
+		}
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return domain.Invalid("cannot write --token-file")
+	}
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
 	if err != nil {
 		return domain.Invalid("cannot write --token-file")
 	}

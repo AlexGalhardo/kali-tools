@@ -203,3 +203,21 @@ func TestServeMissingAssets(t *testing.T) {
 		t.Fatalf("code=%d stdout=%s stderr=%s", code, &out, &stderr)
 	}
 }
+
+func TestWriteTokenFileReplacesFileAndRejectsDirectory(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "token")
+	if err := os.WriteFile(path, []byte("stale-longer-content-from-an-earlier-run"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeTokenFile(path, "http://127.0.0.1:1/#t"); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil || string(data) != "http://127.0.0.1:1/#t\n" {
+		t.Fatalf("token file = %q, %v", data, err)
+	}
+	if err := writeTokenFile(dir, "http://127.0.0.1:1/#t"); err == nil {
+		t.Fatal("a directory must be rejected")
+	}
+}

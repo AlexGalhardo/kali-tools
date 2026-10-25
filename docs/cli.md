@@ -177,15 +177,17 @@ ping fixture.invalid: completed (0 ms, fake)
 
 `kali-tools discover [flags]`
 
-Flags / positional: `--target` CIDR, `--ports` default `80,443`, `--format json\|csv` default `json`.
+Flags / positional: `--target` CIDR, `--ports` default `80,443`, `--format json\|csv` default `json`, `--authorized` (required; confirms you own the scope or have written authorization). The authorized-use notice must also be accepted with `legal --accept`.
 
-JSON `data`: `[]PortResult`. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
+A scope whose worst-case time exceeds the two-minute deadline is rejected with `invalid_input`. When the deadline cuts a scan, the partial results are returned with `truncated: true` and a warning, not as an error. `state` is `open`, `closed` (connection refused), `filtered` (timeout) or `unreachable`; `host_state` is `up`, `down` or `unknown`. CSV columns: `schema_version,host,port,state,rtt_ms,host_state,truncated`.
+
+JSON `data`: `{results: []PortResult, truncated}`. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
 
 Human example (stderr for errors):
 
 ```text
-HOST       PORT   STATE
-127.0.0.1  443  open
+HOST       PORT   STATE  RTT     HOST_STATE
+127.0.0.1  443  open   0.0 ms  up
 ```
 
 ## inspect
@@ -194,7 +196,7 @@ HOST       PORT   STATE
 
 `kali-tools inspect [flags]`
 
-Flags / positional: `--target` CIDR, `--ports` default `80,443`, `--format json` (deprecated).
+Flags / positional: `--target` CIDR, `--ports` default `80,443`, `--format json` (deprecated), `--authorized` (required, as for `discover`). A deadline cut sets `truncated` and `Finished.Exit = "deadline"` instead of failing.
 
 JSON `data`: `ServiceInspection`. The envelope contains `schema_version: 1`, `version`, optional `data` and optional `error: {code, message}`. Partial diagnostic/capture data may accompany an error.
 
