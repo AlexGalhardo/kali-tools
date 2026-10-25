@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/godbus/dbus/v5"
 	"github.com/mdlayher/wifi"
@@ -14,6 +15,9 @@ import (
 )
 
 const maxWiFiInterfaces = 64
+
+// nmPromptTimeout bounds GetSecrets, which can block on a polkit dialog.
+const nmPromptTimeout = 10 * time.Second
 
 func Current() (Network, error) {
 	client, err := wifi.New()
@@ -48,12 +52,12 @@ func Current() (Network, error) {
 	return Network{}, &domain.Error{Code: domain.CodeNoConnection, Message: "No connected Wi-Fi interface"}
 }
 
-func Reveal() (Secret, error) {
+func Reveal(ctx context.Context) (Secret, error) {
 	current, err := Current()
 	if err != nil {
 		return Secret{}, err
 	}
-	return nmSecret(context.Background(), current.SSID)
+	return nmSecret(ctx, current.SSID)
 }
 
 func signalPercent(milliDBm int32, unspecified uint32) uint32 {
@@ -102,15 +106,19 @@ func nmSecret(ctx context.Context, ssid string) (Secret, error) {
 	if ssid == "" || len(ssid) > 32 {
 		return Secret{}, domain.Invalid("Wi-Fi SSID is missing or too long")
 	}
+	ctx, cancel := context.WithTimeout(ctx, nmPromptTimeout)
+	defer cancel()
 	conn, err := dbus.ConnectSystemBus()
 	if err != nil {
 		return Secret{}, nmError(err)
 	}
 	defer func() { _ = conn.Close() }()
-	bus := conn.Object("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager")
-	value, err := bus.GetProperty("org.freedesktop.NetworkManager.ActiveConnections")
+	object := func(path dbus.ObjectPath) dbus.BusObject {
+		return conn.Object("org.freedesktop.NetworkManager", path)
+	}
+	value, err := nmProperty(ctx, object("/org/freedesktop/NetworkManager"), "org.freedesktop.NetworkManager.ActiveConnections")
 	if err != nil {
-		return Secret{}, nmError(err)
+		return Secret{}, nmContextError(ctx, err)
 	}
 	paths, ok := value.Value().([]dbus.ObjectPath)
 	if !ok {
@@ -120,9 +128,9 @@ func nmSecret(ctx context.Context, ssid string) (Secret, error) {
 		return Secret{}, domain.Invalid("NetworkManager connection count exceeds limit")
 	}
 	for _, path := range paths {
-		secret, matched, err := connectionSecret(conn, path, ssid)
+		secret, matched, err := connectionSecret(ctx, object, path, ssid)
 		if err != nil {
-			return Secret{}, err
+			return Secret{}, nmContextError(ctx, err)
 		}
 		if matched {
 			return secret, nil
@@ -131,9 +139,28 @@ func nmSecret(ctx context.Context, ssid string) (Secret, error) {
 	return Secret{State: "no_saved_key"}, nil
 }
 
-func connectionSecret(conn *dbus.Conn, path dbus.ObjectPath, ssid string) (Secret, bool, error) {
-	active := conn.Object("org.freedesktop.NetworkManager", path)
-	value, err := active.GetProperty("org.freedesktop.NetworkManager.Connection.Active.Connection")
+func nmProperty(ctx context.Context, obj dbus.BusObject, name string) (dbus.Variant, error) {
+	var value dbus.Variant
+	dot := strings.LastIndex(name, ".")
+	iface, prop := name[:dot], name[dot+1:]
+	err := obj.CallWithContext(ctx, "org.freedesktop.DBus.Properties.Get", 0, iface, prop).Store(&value)
+	return value, err
+}
+
+// nmContextError reports an expired or cancelled ctx instead of the transport error it caused.
+func nmContextError(ctx context.Context, err error) error {
+	switch {
+	case errors.Is(ctx.Err(), context.DeadlineExceeded):
+		return &domain.Error{Code: domain.CodeTimeout, Message: "authorization prompt not answered"}
+	case ctx.Err() != nil:
+		return ctx.Err()
+	default:
+		return err
+	}
+}
+
+func connectionSecret(ctx context.Context, object func(dbus.ObjectPath) dbus.BusObject, path dbus.ObjectPath, ssid string) (Secret, bool, error) {
+	value, err := nmProperty(ctx, object(path), "org.freedesktop.NetworkManager.Connection.Active.Connection")
 	if err != nil {
 		return Secret{}, false, nmError(err)
 	}
@@ -141,9 +168,9 @@ func connectionSecret(conn *dbus.Conn, path dbus.ObjectPath, ssid string) (Secre
 	if !ok || settingsPath == "/" {
 		return Secret{}, false, nil
 	}
-	settings := conn.Object("org.freedesktop.NetworkManager", settingsPath)
+	settings := object(settingsPath)
 	var config map[string]map[string]dbus.Variant
-	if err := settings.Call("org.freedesktop.NetworkManager.Settings.Connection.GetSettings", 0).Store(&config); err != nil {
+	if err := settings.CallWithContext(ctx, "org.freedesktop.NetworkManager.Settings.Connection.GetSettings", 0).Store(&config); err != nil {
 		return Secret{}, false, nmError(err)
 	}
 	wireless := config["802-11-wireless"]
@@ -151,7 +178,7 @@ func connectionSecret(conn *dbus.Conn, path dbus.ObjectPath, ssid string) (Secre
 		return Secret{}, false, nil
 	}
 	var secrets map[string]map[string]dbus.Variant
-	if err := settings.Call("org.freedesktop.NetworkManager.Settings.Connection.GetSecrets", 0, "802-11-wireless-security").Store(&secrets); err != nil {
+	if err := settings.CallWithContext(ctx, "org.freedesktop.NetworkManager.Settings.Connection.GetSecrets", 0, "802-11-wireless-security").Store(&secrets); err != nil {
 		return Secret{}, false, nmError(err)
 	}
 	security := map[string]string{}

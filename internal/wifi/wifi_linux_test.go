@@ -3,9 +3,13 @@
 package wifi
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/godbus/dbus/v5"
 
 	"github.com/AlexGalhardo/kali-tools/internal/domain"
 )
@@ -62,5 +66,32 @@ func TestLinuxWiFiCurrentIsExplicit(t *testing.T) {
 	case domain.CodeNoConnection, domain.CodeUnsupported, domain.CodePermissionRequired, domain.CodeFailed:
 	default:
 		t.Fatal(target)
+	}
+}
+
+type stalledObject struct{ dbus.BusObject }
+
+func (stalledObject) CallWithContext(ctx context.Context, _ string, _ dbus.Flags, _ ...any) *dbus.Call {
+	<-ctx.Done()
+	return &dbus.Call{Err: ctx.Err()}
+}
+
+func TestConnectionSecretHonoursDeadlineAndCancellation(t *testing.T) {
+	object := func(dbus.ObjectPath) dbus.BusObject { return stalledObject{} }
+	ctx, cancel := context.WithTimeout(t.Context(), 20*time.Millisecond)
+	defer cancel()
+	_, _, err := connectionSecret(ctx, object, "/a", "lab")
+	var target *domain.Error
+	if err = nmContextError(ctx, err); !errors.As(err, &target) || target.Code != domain.CodeTimeout || target.Message != "authorization prompt not answered" {
+		t.Fatalf("deadline: %v", err)
+	}
+	cancelled, stop := context.WithCancel(t.Context())
+	stop()
+	_, _, err = connectionSecret(cancelled, object, "/a", "lab")
+	if err = nmContextError(cancelled, err); !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancel: %v", err)
+	}
+	if _, err := nmSecret(cancelled, "lab"); !errors.Is(err, context.Canceled) {
+		t.Fatalf("nmSecret cancel: %v", err)
 	}
 }

@@ -74,7 +74,10 @@ static int ktReveal(const char *account, char **secret, int *status) {
 }
 */
 import "C"
-import "unsafe"
+import (
+	"context"
+	"unsafe"
+)
 
 func Current() (Network, error) {
 	var ssid, bssid *C.char
@@ -83,7 +86,7 @@ func Current() (Network, error) {
 	return networkFromCoreWLAN(code, takeCString(ssid), takeCString(bssid), int(channel), int(rssi))
 }
 
-func Reveal() (Secret, error) {
+func Reveal(context.Context) (Secret, error) {
 	network, err := Current()
 	if err != nil {
 		return Secret{}, err

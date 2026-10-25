@@ -29,5 +29,5 @@ func (Native) Reveal(ctx context.Context) (Secret, error) {
 	if err := ctx.Err(); err != nil {
 		return Secret{}, err
 	}
-	return Reveal()
+	return Reveal(ctx)
 }
