@@ -2,7 +2,9 @@ package httpapi
 
 import (
 	"log/slog"
+	"net"
 	"net/http"
+	"net/netip"
 	"strings"
 	"time"
 
@@ -104,6 +106,58 @@ func (s *Server) accessLog(next http.Handler) http.Handler {
 		next.ServeHTTP(out, r)
 		finished = true
 	})
+}
+
+// allowListener drops connections from outside the allowed prefixes at Accept,
+// before any TLS handshake or HTTP parsing.
+type allowListener struct {
+	net.Listener
+	allow []netip.Prefix
+	log   *slog.Logger
+}
+
+func (l *allowListener) Accept() (net.Conn, error) {
+	for {
+		conn, err := l.Listener.Accept()
+		if err != nil {
+			return nil, err
+		}
+		if l.permitted(conn.RemoteAddr()) {
+			return conn, nil
+		}
+		l.log.Info("connection refused by allow-from", "remote", conn.RemoteAddr().String())
+		_ = conn.Close()
+	}
+}
+
+func (l *allowListener) permitted(addr net.Addr) bool {
+	tcp, ok := addr.(*net.TCPAddr)
+	if !ok {
+		return false
+	}
+	ip, ok := netip.AddrFromSlice(tcp.IP)
+	if !ok {
+		return false
+	}
+	ip = ip.Unmap()
+	for _, prefix := range l.allow {
+		if prefix.Contains(ip) {
+			return true
+		}
+	}
+	return false
+}
+
+func parseAllowFrom(values []string) ([]netip.Prefix, error) {
+	prefixes := make([]netip.Prefix, 0, len(values))
+	for _, value := range values {
+		prefix, err := netip.ParsePrefix(strings.TrimSpace(value))
+		if err != nil {
+			return nil, domain.Invalid("invalid --allow-from CIDR")
+		}
+		prefixes = append(prefixes, prefix.Masked())
+	}
+	return prefixes, nil
 }
 
 func recoverPanics(next http.Handler, logger *slog.Logger) http.Handler {

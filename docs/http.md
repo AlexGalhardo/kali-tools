@@ -6,6 +6,10 @@
 
 `POST /api/session` exchanges the launch token from the printed URL fragment for an HttpOnly `SameSite=Strict` cookie. The cookie name is `kali_session_` plus the listen port. TLS adds `Secure`. Automation may send `Authorization: Bearer` with that same launch token. Restarting the process invalidates both.
 
+A wrong launch token is `401` `unauthorized` and is logged with the peer address (`remote`) but never the token. After 5 failed exchanges from one peer IP, further exchanges from that IP return `429` `conflict` (`too many failed attempts`) for 60 seconds from the last failure. The tracker is bounded to 1024 peer addresses.
+
+With `serve --allow-remote --allow-from <cidr>[,<cidr>]`, connections whose peer address is outside every CIDR are closed at `Accept`, before the TLS handshake. Without `--allow-from`, every peer may connect. `--allow-from` without `--allow-remote` is `invalid_input`. `--token-file <path>` writes the launch URL (which carries the token) to `<path>` with mode 0600 and omits it from stdout and the `--json` record, which then carries `token_file`. Windows does not enforce POSIX modes; place the file in a per-user directory.
+
 Every other `/api/` route requires that cookie or bearer. A missing or wrong credential is `401` `unauthorized` with message `session required`. `GET /healthz` and the site root (embedded files) are public. They still pass the Host allowlist.
 
 There is no CORS. A cross-site request is `403` `forbidden`. One token is one operator: it is not a multi-user authorization boundary.
