@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"net"
 	"net/netip"
@@ -17,17 +18,34 @@ func diagnoseTLS(ctx context.Context, host string, port int, roots *x509.CertPoo
 		serverName = ip.WithZone("").String()
 	}
 	c, err := (&tls.Dialer{NetDialer: &net.Dialer{}, Config: &tls.Config{
-		MinVersion: tls.VersionTLS12, ServerName: serverName, RootCAs: roots,
+		// Verified explicitly below so a lab certificate still yields its chain.
+		MinVersion: tls.VersionTLS12, ServerName: serverName, InsecureSkipVerify: true,
 	}}).DialContext(ctx, "tcp", net.JoinHostPort(host, strconv.Itoa(port)))
 	if err != nil {
 		return nil, err
 	}
 	defer c.Close()
 	state := c.(*tls.Conn).ConnectionState()
+	peers := state.PeerCertificates
+	if len(peers) == 0 {
+		return nil, errors.New("server presented no certificate")
+	}
+	intermediates := x509.NewCertPool()
+	for _, cert := range peers[1:min(len(peers), 16)] {
+		intermediates.AddCert(cert)
+	}
+	_, verifyErr := peers[0].Verify(x509.VerifyOptions{Roots: roots, Intermediates: intermediates, DNSName: serverName})
+	var unknown x509.UnknownAuthorityError
+	if verifyErr != nil && !errors.As(verifyErr, &unknown) {
+		return nil, verifyErr
+	}
 	values := []string{}
 	for _, cert := range state.PeerCertificates[:min(len(state.PeerCertificates), 16)] {
 		subject, issuer := cert.Subject.String(), cert.Issuer.String()
 		values = append(values, fmt.Sprintf("subject=%.1024s issuer=%.1024s expires=%s", subject, issuer, cert.NotAfter.UTC().Format(time.RFC3339)))
 	}
-	return values, nil
+	if verifyErr != nil {
+		return append(values, "verified=false", "verify=unknown_authority"), nil
+	}
+	return append(values, "verified=true"), nil
 }

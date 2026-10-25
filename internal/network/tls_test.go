@@ -25,12 +25,12 @@ func TestTLSTrustAndSummary(t *testing.T) {
 	roots := x509.NewCertPool()
 	roots.AddCert(server.Certificate())
 	values, err := diagnoseTLS(t.Context(), address.IP.String(), address.Port, roots)
-	if err != nil || len(values) != 1 || !strings.Contains(values[0], "issuer=") || !strings.Contains(values[0], server.Certificate().NotAfter.UTC().Format(time.RFC3339)) {
+	if err != nil || len(values) != 2 || values[1] != "verified=true" || !strings.Contains(values[0], "issuer=") || !strings.Contains(values[0], server.Certificate().NotAfter.UTC().Format(time.RFC3339)) {
 		t.Fatalf("summary %v, error %v", values, err)
 	}
 	result, err := (Diagnostics{}).Diagnose(t.Context(), Request{Kind: "tls", Target: address.IP.String(), Port: address.Port, TimeoutMS: 1000})
-	if err == nil || result.Status != "failed" || result.ErrorCode != "certificate_invalid" || len(result.Values) != 0 {
-		t.Fatalf("untrusted certificate accepted: %+v, %v", result, err)
+	if err != nil || result.Status == "failed" || len(result.Values) != 3 || result.Values[1] != "verified=false" || result.Values[2] != "verify=unknown_authority" {
+		t.Fatalf("self-signed chain not reported: %+v, %v", result, err)
 	}
 }
 
