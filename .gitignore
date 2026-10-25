@@ -31,3 +31,6 @@
 
 # Copyrighted reference books stay local
 /docs/*.pdf
+
+# External audit report (local only)
+/specialist-feedback.md
