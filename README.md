@@ -1,33 +1,70 @@
 # kali-tools
 
-A local network and security toolkit inspired by the Kali Linux ecosystem, built with Go, Wails, React, TypeScript, Base UI, Tailwind CSS v4 and SQLite. One Go core serves three interfaces: the native desktop GUI (primary), a local web server with the same UI, and a CLI for headless or SSH hosts. Native SSH acceptance is still open. The interface supports English and Brazilian Portuguese.
+kali-tools is a local network and security toolkit for personal study and learning, for use on your own systems and lab. It is not a Kali Linux tool orchestrator and not a penetration-testing product; the name only nods to the Kali ecosystem it learns from ([ADR 014](docs/adr/014-product-identity.md)). One Go core serves three interfaces: a native desktop app, a local web server with the same UI, and a CLI for headless or SSH hosts. The interface supports English and Brazilian Portuguese.
 
-**Development preview:** core workflows are implemented and tested; hardware qualification is still open. Windows 11 leads development. Linux/macOS binaries do not imply Wi-Fi or capture parity. The frozen surface is the [CLI contract](docs/cli.md), the [HTTP contract](docs/http.md), schema version 1, settings `language` and `retention_days`, and the [packaging matrix](docs/packaging.md). This project does not promise every Kali tool or every protocol payload. See [PLAN.md](PLAN.md) and [verification evidence](docs/verification/0.1.0-alpha.2-dev.md).
+**Development preview:** core workflows are implemented and tested; hardware qualification is still open. Windows 11 leads development. Linux/macOS binaries do not imply Wi-Fi or capture parity. Native SSH acceptance is still open. The frozen surface is the [CLI contract](docs/cli.md), the [HTTP contract](docs/http.md), schema version 1, settings `language` and `retention_days`, and the [packaging matrix](docs/packaging.md). See [PLAN.md](PLAN.md) and the [verification evidence](docs/verification/0.1.0-alpha.2-dev.md).
+
+<!-- TODO: add screenshots of the desktop app once captured; the repository has none yet. -->
 
 ## What it does
 
 - Lists interfaces, addresses, gateways and DNS; monitors native traffic counters.
 - Runs DNS record queries, bounded TCP/HTTP/TLS checks and Windows IPv4 ping/traceroute. An HTTP check reports phase timings and security headers. It traces at most five redirects only when asked, and never follows one on its own.
-- Discovers explicitly selected IPv4 scopes and identifies services with built-in TCP, banner and TLS checks. It does not run Nmap.
+- Discovers explicitly selected IPv4 scopes and identifies services with built-in TCP, banner and TLS checks.
+- Audits a TLS endpoint: certificate chain, protocols and lint findings.
 - Inspects Windows Wi-Fi metadata and reveals the current saved key only on explicit request; the display clears automatically.
 - Imports PCAP/PCAPNG, summarizes packets and explicitly saves retained packet data in either format.
 - Keeps preferences and redacted operation history locally in SQLite. No cloud runtime or telemetry is required.
 
-## Development downloads
+## Quick start
 
-[GitHub releases](https://github.com/AlexGalhardo/kali-tools/releases) contain development release drafts assembled only after CI passes. Archives target Windows x64, Ubuntu 24.04 x64 and macOS Apple Silicon (macOS 13 or later). There is no Intel or universal macOS build for 1.0. Each archive includes the desktop, CLI, license/notices, dependency inventory and build metadata. Verify downloads against `SHA256SUMS`. The release workflow also publishes a Sigstore build attestation. See [ADR 009](docs/adr/009-signing-and-provenance.md).
+1. Open the [GitHub releases page](https://github.com/AlexGalhardo/kali-tools/releases) and download the archive for your system, plus `SHA256SUMS`:
+   - Windows 11 x64: `windows-x64.zip` (needs the Edge WebView2 Runtime).
+   - Ubuntu 24.04 x64: `linux-x64.tar.gz` (needs GTK 3 and WebKitGTK 4.1).
+   - macOS 13 or later, Apple Silicon: `macos-arm64.zip`. There is no Intel build.
+2. Verify the download against the checksum, as described in [ADR 009](docs/adr/009-signing-and-provenance.md):
+   - Windows (PowerShell): `Get-FileHash .\<archive> -Algorithm SHA256`, then compare with the matching line in `SHA256SUMS`.
+   - Linux: `sha256sum --check --ignore-missing SHA256SUMS`.
+   - macOS: `shasum -a 256 --check --ignore-missing SHA256SUMS`.
+   - Optional, with the GitHub CLI: `gh attestation verify <archive> --repo AlexGalhardo/kali-tools` checks the Sigstore build attestation.
+3. Extract the archive and run `kali-tools-desktop` for the desktop app, or `kali-tools` for the CLI (`kali-tools --help`). `kali-tools serve` starts the local web server.
 
-Windows uses Edge WebView2. Linux requires GTK3 and WebKitGTK 4.1. Releases are vendor-unsigned: no Apple Developer ID, notarization, or Windows Authenticode certificate. An Apple Silicon build keeps only the ad-hoc signature the Go linker applies so the binary can run. The supported archive matrix, and the combinations that are not supported, are in [packaging](docs/packaging.md). Read the release notes before testing; a successful native build does not qualify hardware features.
-
-## First launch of an unsigned build
+Releases are vendor-unsigned: no Apple Developer ID, notarization or Windows Authenticode certificate, so your OS warns on first launch:
 
 - **Windows:** SmartScreen may say the app is unrecognized. Choose **More info**, then **Run anyway**.
-- **macOS:** Gatekeeper may block the app. Open **System Settings > Privacy & Security** and choose **Open Anyway**. If it stays blocked, clear the quarantine flag with `xattr -d com.apple.quarantine` on the `.app`.
+- **macOS:** Gatekeeper may block the app. Open **System Settings > Privacy & Security** and choose **Open Anyway**. If it stays blocked, clear the quarantine flag with `xattr -d com.apple.quarantine` on the `.app`. An Apple Silicon build keeps only the ad-hoc signature the Go linker applies.
 - **Linux:** no extra first-launch prompt.
 
-## Choose your setup
+Read the release notes before testing; a successful native build does not qualify hardware features. Combinations not in the [packaging matrix](docs/packaging.md) are not supported.
 
-There are exactly six shell scripts:
+## First five minutes
+
+Use only a network you own, such as a home lab or a VM network. The examples use `192.168.56.0/28`; replace it with your own range.
+
+1. Open the desktop app, or run `kali-tools doctor` to see which capabilities are available on this host and why any are not.
+2. Inventory your machine: `kali-tools inventory` shows adapters, gateways, DNS and traffic counters; `kali-tools interfaces` lists the interfaces.
+3. Discover your lab: `kali-tools discover --authorized --target 192.168.56.0/28 --ports 22,80,443`. A scope is IPv4 /24 or narrower with at most 32 ports. `--authorized` is your statement that you own or are allowed to scan the target.
+4. Audit TLS on a service you run: `kali-tools tls-audit --target <your-host>`. Add `--json` for scripts.
+5. Export the results: `kali-tools discover --authorized --target 192.168.56.0/28 --ports 22,80,443 --format csv > lab.csv`, or add `--json` to any command and redirect it. Saved packet data is exported with `kali-tools capture export --file in.pcap --output out.pcapng --format pcapng`.
+
+The full command list, JSON envelope and exit codes are in the [CLI contract](docs/cli.md).
+
+## Responsible use
+
+Use kali-tools only on systems you own or have written authorization to test. Active scans and checks send real traffic to the target, so run them on your own lab or with permission.
+
+## What it does not do
+
+- No exploitation frameworks or exploit probes.
+- No credential attacks, password guessing or brute forcing.
+- No Wi-Fi injection, monitor-mode attacks or evasion. Wi-Fi support reads metadata of the network you are connected to and reveals only a key your own computer has saved.
+- No Nmap: service inspection is native TCP, banner, TLS and one HTTP request ([ADR 006](docs/adr/006-native-service-inspection.md)). TShark is optional and separately installed.
+
+See the scope boundary in [PLAN.md](PLAN.md).
+
+## Build from source
+
+Contributors build with one of exactly six shell scripts. Run them in Git Bash on Windows, or Terminal on Linux/macOS, from the repository root. Prerequisites, test actions, Docker lab, pinned tool versions and troubleshooting are in [docs/development.md](docs/development.md).
 
 | System | Without Docker: native desktop + CLI | With Docker: isolated CLI lab |
 | --- | --- | --- |
@@ -35,213 +72,7 @@ There are exactly six shell scripts:
 | Linux | `scripts/setup/setup-linux.sh` | `scripts/setup/setup-linux-docker.sh` |
 | macOS | `scripts/setup/setup-darwin.sh` | `scripts/setup/setup-darwin-docker.sh` |
 
-Run these in **Git Bash on Windows**, or Terminal on Linux/macOS. Start at the repository root. Using `bash script.sh` does not require changing executable permissions.
-
-Docker tests the headless CLI/core in a private laboratory. To open the native desktop application, use the **without Docker** instructions. A container does not verify host Wi-Fi, Keychain, WebViews or capture authorization.
-
-## 1. Get the source
-
-```bash
-git clone https://github.com/AlexGalhardo/kali-tools.git
-cd kali-tools
-```
-
-If GitHub requests authentication, use an account with access to the repository. Never save access tokens in project files.
-
-## 2. Prepare your computer without Docker
-
-The development baseline is Go **1.27.3**, Node.js **24.21.0**, Bun **1.4.3** and Wails **2.17.0**. Install Go, Node.js and Git first. Reopen your terminal after installation to load PATH changes. macOS development for 1.0 is Apple Silicon on macOS 13 or later ([ADR 007](docs/adr/007-macos-baseline.md)).
-
-Setup installs pinned Wails, golangci-lint and govulncheck into the repository's ignored `.tools/bin` directory. It installs exact frontend dependencies from the npm lockfile and downloads Playwright Chromium. It does not change your global Go binary directory. GitHub Actions is enabled separately in the repository.
-
-### Windows 11
-
-1. Install [Git for Windows](https://git-scm.com/downloads/win), [Go](https://go.dev/dl/) and [Node.js](https://nodejs.org/en/download).
-2. Ensure [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) is installed; Wails doctor checks this.
-3. Install a native GCC compiler for Go race tests, such as [w64devkit](https://github.com/skeeto/w64devkit/releases). Extract it and add its `bin` directory to PATH.
-4. Open a new Git Bash at the repository root and run:
-
-```bash
-go version
-node --version
-npm --version
-gcc --version
-bash scripts/setup/setup-windows.sh setup
-```
-
-### Linux
-
-Ubuntu 24.04 LTS is the documented Linux baseline. Debian 13 and Kali are best-effort and come with no guarantee. Other distributions need equivalent GTK3 and WebKitGTK development packages. See [ADR 010](docs/adr/010-linux-baseline.md).
-
-1. Install Go and Node.js from their official distributions.
-2. Install native build dependencies:
-
-```bash
-sudo apt-get update
-sudo apt-get install -y build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev
-```
-
-Continue by preparing the project:
-
-```bash
-go version
-node --version
-bash scripts/setup/setup-linux.sh setup
-```
-
-The Linux script supplies the `webkit2_41` Wails build tag. If Playwright reports missing browser system packages, follow its diagnostic instructions. Native Linux feature acceptance remains pending.
-
-### macOS
-
-Install Go and Node.js for your Mac architecture. Install Xcode Command Line Tools if they are not already installed:
-
-```bash
-xcode-select --install
-go version
-node --version
-bash scripts/setup/setup-darwin.sh setup
-```
-
-Native macOS Wi-Fi/Keychain and capture support remain pending. Successful compilation does not imply feature parity.
-
-## 3. Test without Docker
-
-Choose the script for your computer:
-
-```bash
-# Windows / Git Bash
-bash scripts/setup/setup-windows.sh test
-
-# Linux
-bash scripts/setup/setup-linux.sh test
-
-# macOS
-bash scripts/setup/setup-darwin.sh test
-```
-
-The `test` action stops on failure and runs Go formatting/module checks, vet, unit tests with coverage, golangci-lint, govulncheck, race tests, parser fuzz smoke, frontend lint/typecheck/build, Playwright workflows/accessibility, workflow pin/static checks and Markdown lint.
-
-Tests use synthetic secrets and capture bytes. A skipped native check means hardware or permission acceptance is still pending, not that the capability was verified.
-
-To run one group after setup:
-
-```bash
-export PATH="$PWD/.tools/bin:$PATH"
-node scripts/task.mjs go
-node scripts/task.mjs race
-node scripts/task.mjs fuzz
-node scripts/task.mjs web
-node scripts/task.mjs workflows
-node scripts/markdown.mjs
-```
-
-## 4. Compile and open without Docker
-
-Choose **one** build command:
-
-```bash
-bash scripts/setup/setup-windows.sh build
-bash scripts/setup/setup-linux.sh build
-bash scripts/setup/setup-darwin.sh build
-```
-
-Outputs are in `build/bin/`. The Windows desktop executable is `kali-tools-desktop.exe`; the CLI is `kali-tools.exe`. These are unsigned development artifacts.
-
-For development with automatic frontend/backend rebuilds, use your script with `dev`:
-
-```bash
-bash scripts/setup/setup-windows.sh dev
-# Linux: bash scripts/setup/setup-linux.sh dev
-# macOS: bash scripts/setup/setup-darwin.sh dev
-```
-
-Use `doctor` to inspect prerequisites or `help` to see the action list. `doctor --bundle PATH` writes a redacted diagnostic zip on this computer and does not upload it.
-
-## 5. Build and test with Docker
-
-Install and start an engine first:
-
-- **Windows:** Docker Desktop with its WSL2 backend and **Linux containers** selected.
-- **Linux:** Docker Engine plus the Compose plugin, following [Docker's official instructions](https://docs.docker.com/engine/install/). Your account must be able to access the daemon.
-- **macOS:** Docker Desktop for your Mac's Intel or Apple Silicon architecture.
-
-Verify engine and Compose access:
-
-```bash
-docker version
-docker compose version
-```
-
-Choose **one** command for your host. No Go or Node.js installation is needed on the host for these Docker scripts:
-
-```bash
-# Windows / Git Bash
-bash scripts/setup/setup-windows-docker.sh test
-
-# Linux
-bash scripts/setup/setup-linux-docker.sh test
-
-# macOS
-bash scripts/setup/setup-darwin-docker.sh test
-```
-
-The first run downloads base images and builds the CLI, fixture and test images. A private network contains health-checked HTTP/TCP/DNS services. Tests assert HTTP status, TCP inventory, DNS answers and NXDOMAIN, and execute the built CLI to check JSON schemas, successful diagnostics and invalid-input exit codes. Runtime and test services use a non-root account; no host ports are published.
-
-The test script returns a nonzero exit code on failure and cleans up its lab containers/network on exit. It uses the Compose project name `kali-tools-lab`.
-
-All three Docker scripts accept the same actions:
-
-```bash
-# Replace windows with linux or darwin for those hosts.
-bash scripts/setup/setup-windows-docker.sh build    # Build images only
-bash scripts/setup/setup-windows-docker.sh doctor   # Check daemon/Compose/configuration
-bash scripts/setup/setup-windows-docker.sh down     # Manual lab cleanup
-bash scripts/setup/setup-windows-docker.sh help
-```
-
-Docker builds Linux CLI images. It does not create native Windows/macOS desktop installers or replace native acceptance tests.
-
-## 6. Try the CLI
-
-```bash
-go run ./cmd/kali-tools version
-go run ./cmd/kali-tools doctor
-go run ./cmd/kali-tools --json interfaces
-go run ./cmd/kali-tools neighbors --family all --format json
-go run ./cmd/kali-tools tls-audit --target example.com --lint=true --json
-go run ./cmd/kali-tools dns-inspect --target example.com --json
-go run ./cmd/kali-tools local-discover --interface eth0 --scope 192.0.2.0/24 --json
-go run ./cmd/kali-tools snmp --interface eth0 --scope 192.0.2.0/24 --target 192.0.2.1 --owned --secret-file ./secret.txt --json
-go run ./cmd/kali-tools diagnose dns --target example.com --record MX
-go run ./cmd/kali-tools diagnose tcp --target localhost --port 8080
-go run ./cmd/kali-tools diagnose http --target http://localhost:8080/health
-go run ./cmd/kali-tools discover --target 127.0.0.1/32 --ports 8080,9090
-go run ./cmd/kali-tools inspect --target 127.0.0.1/32 --ports 8080
-go run ./cmd/kali-tools capture import --file synthetic.pcap --output converted.pcapng --format pcapng
-```
-
-Start a listening local service for the TCP/HTTP examples; refusal is an expected diagnostic failure. Human output is the default; scripts must add `--json`, whose envelope includes `schema_version: 1`. Diagnostics stream bounded progress on stderr and record redacted job history. Settings and history persist in the shared per-user SQLite database. `wifi reveal --confirm` explicitly prints the saved key and a warning. Jobs remain owned by their starting process. See the [CLI contract](docs/cli.md) for commands, exit codes, SSH behavior and migration. Discovery accepts IPv4 /24 or narrower and up to 32 unique ports. Native SSH acceptance remains pending. `kali-tools serve` is the local web server; its routes, errors and capability rules are in the [HTTP contract](docs/http.md).
-
-## Troubleshooting
-
-| Symptom | Action |
-| --- | --- |
-| Go, Node, npm or GCC not found | Install the prerequisite, add it to PATH and reopen the terminal. |
-| Missing WebView/GTK/WebKit | Install the OS prerequisites above, then run `doctor`. |
-| `-race` needs CGO/C compiler | Install GCC on Windows/Linux or Xcode tools on macOS. |
-| Docker daemon unavailable/denied | Start the engine; check context, Linux-container mode and daemon access. |
-| Bun reports `EBADF` in a sandbox | Use the committed npm lockfile and `npm ci`; the new Bun lockfile is now also verified with `bun install --frozen-lockfile`. |
-| Browser test port is occupied | Stop the previous development/test server and retry. |
-| Windows reports `EPERM` on a native npm module during build | Close running Vite/Playwright development processes before `npm ci` or a Wails rebuild; the DLL may still be loaded. |
-| Wi-Fi/capture denied or unsupported | Read the capability response; permissions and hardware need separate native acceptance. |
-
-Windows raw capture is limited to IPv4, requires administrator authorization, reports no reliable drop count, and is bounded to 60 seconds/10000 packets. Revealed Wi-Fi keys are never written to ordinary history. See [capture boundaries](docs/adr/002-capture-backend.md).
-
-Capture backends are selectable in the packet inspector and with `capture live --backend raw_socket|pktmon|npcap|libpcap`. Pktmon requires an elevated Windows process, captures all NICs with 512-byte truncation and reports circular-buffer/duplicate limits. Npcap must be [installed separately by the user](https://npcap.com/#download) and requires a build with `-tags pcap`. The Npcap free license forbids redistribution without a commercial license, so kali-tools never bundles, installs or redistributes it. Npcap permits local IPv4/IPv6 selection; Pktmon requires no target address. On Linux, `libpcap` is included in the Ubuntu native CI artifact (`-tags pcap`). Opening an interface needs `CAP_NET_RAW` on the capture process. The UI and the web server are not run as root. An untagged build reports `unsupported`. Optional backends have automated implementation evidence but native qualification remains open; see [ADR 005](docs/adr/005-windows-capture-backend.md) and [ADR 010](docs/adr/010-linux-baseline.md).
-
-kali-tools 1.0 has no privileged helper and no helper IPC ([ADR 011](docs/adr/011-no-privileged-helper.md)). The UI and the web server stay unprivileged. On Linux, grant capture once with `sudo setcap cap_net_raw+eip` on the capture binary. Do not run the UI or the web server as root. On macOS, `doctor` reports whether this user can open `/dev/bpf`. The fix is membership of the `access_bpf` group from the ChmodBPF package, then a new login. kali-tools never changes device permissions. On Windows, install Npcap from the link above or start an elevated terminal for Pktmon and raw IPv4. When permission is missing, the UI, CLI and `doctor` show the capability state and that fix.
-
-On Windows 11 24H2+, a Wi-Fi location-consent notice points to Settings > Privacy & security > Location (`ms-settings:privacy-location`); allow location for desktop apps and select **Check again**. Browser mode displays the URI for the server account and cannot open that host's settings.
+Docker tests the headless CLI/core in a private laboratory. It does not verify host Wi-Fi, Keychain, WebViews or capture authorization.
 
 ## Guides
 
@@ -256,21 +87,6 @@ On Windows 11 24H2+, a Wi-Fi location-consent notice points to Settings > Privac
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)
 - [Verification evidence](docs/verification/0.1.0-alpha.2-dev.md) ([previous](docs/verification/0.1.0-alpha.1-dev.md))
-
-## Repository layout
-
-```text
-main.go, app.go          Wails desktop composition root (must stay at the root for Wails v2)
-cmd/kali-tools/          CLI
-internal/domain, app     shared kernel and application services
-internal/network|capture|wifi   capability packages
-internal/adapter/        SQLite, external tools, ICMP, OS platform (+ future cli, wailsui, httpapi)
-frontend/src/            app/, features/, shared/{api,i18n,ui}/, styles/
-scripts/, scripts/setup/ task runners and per-OS setup entry points
-docs/                    architecture, research, specs, ADRs, releases, verification
-```
-
-Formatting and linting are enforced: run `lefthook install` once; each commit runs `golangci-lint fmt` (gofmt -s + goimports), `golangci-lint run` and `go vet`.
 
 ## License and contribution
 
