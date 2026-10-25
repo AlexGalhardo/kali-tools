@@ -102,6 +102,7 @@ Failure bodies are `{"error":{"code","message"}}`. `location_consent_required` m
 | `unsupported` | 501 |
 | `no_connection` | 502 |
 | `certificate_invalid` | 502 |
+| `unavailable` | 503 |
 | `timeout` | 504 |
 | `failed` | 500 |
 

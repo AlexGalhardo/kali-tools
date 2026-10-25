@@ -18,6 +18,10 @@ func TestSessionExchange(t *testing.T) {
 		if len(s.launch) != 43 || len(s.cookie) != 43 || s.launch == s.cookie {
 			t.Fatal("session entropy/encoding")
 		}
+		wantName := "kali_session_12345"
+		if secure {
+			wantName = "__Host-" + wantName
+		}
 		for _, token := range []string{s.launch, "wrong"} {
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest("POST", "/api/session", strings.NewReader(`{"token":"`+token+`"}`))
@@ -37,7 +41,7 @@ func TestSessionExchange(t *testing.T) {
 				t.Fatal(cookies)
 			}
 			cookie := cookies[0]
-			if !cookie.HttpOnly || cookie.SameSite != http.SameSiteStrictMode || cookie.Path != "/" || cookie.Secure != secure || !cookie.Expires.IsZero() || cookie.MaxAge != 0 || cookie.Name != "kali_session_12345" {
+			if !cookie.HttpOnly || cookie.SameSite != http.SameSiteStrictMode || cookie.Path != "/" || cookie.Secure != secure || !cookie.Expires.IsZero() || cookie.MaxAge != 0 || cookie.Name != wantName {
 				t.Fatal(cookie)
 			}
 			request := httptest.NewRequest("GET", "/api/history", nil)

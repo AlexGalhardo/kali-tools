@@ -21,7 +21,7 @@ var portuguese = messages{
 	"available": "disponível", "completed": "concluído", "open": "aberta", "connected": "conectado", "failed": "falhou", "closed": "fechada",
 	"queued": "na fila", "running": "executando", "cancelled": "cancelado", "unsupported": "não suportado", "dependency_missing": "dependência ausente",
 	"permission_required": "permissão necessária", "location_consent_required": "consentimento de localização necessário", "disconnected": "desconectado",
-	"invalid_input": "entrada inválida", "not_found": "não encontrado", "timeout": "tempo esgotado", "conflict": "conflito", "unauthorized": "não autorizado", "forbidden": "proibido", "certificate_invalid": "certificado inválido", "no_connection": "sem conexão",
+	"invalid_input": "entrada inválida", "not_found": "não encontrado", "timeout": "tempo esgotado", "conflict": "conflito", "unauthorized": "não autorizado", "forbidden": "proibido", "unavailable": "indisponível", "certificate_invalid": "certificado inválido", "no_connection": "sem conexão",
 	"error": "erro", "saved": "salvo", "packets": "pacotes", "format": "formato", "limited": "limitado",
 	"DNS inspection": "Inspeção DNS", "queries": "consultas", "agree": "concorda", "verdict": "veredito", "dnssec": "dnssec",
 	"responders": "respondedores", "out of scope": "fora do escopo", "malformed": "malformado", "SNMP": "SNMP",

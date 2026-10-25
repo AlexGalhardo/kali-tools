@@ -17,6 +17,7 @@ import (
 
 const maxCaptureUpload = app.MaxCaptureFileSize
 const uploadReadTimeout = 120 * time.Second
+const downloadWriteTimeout = 2 * time.Minute
 const maxFormatBytes = 16
 
 func (s *Server) acquireTransfer(w http.ResponseWriter, r *http.Request) bool {
@@ -112,6 +113,7 @@ func (s *Server) handleExport() http.HandlerFunc {
 		w.Header().Set("Content-Type", media)
 		w.Header().Set("Content-Disposition", `attachment; filename="capture.`+format+`"`)
 		w.Header().Set("Cache-Control", "no-store")
+		defer limitDownload(w)()
 		_, _ = io.Copy(w, file)
 	}
 }
@@ -130,6 +132,16 @@ func (s *Server) handleBundle() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/zip")
 		w.Header().Set("Content-Disposition", `attachment; filename="kali-tools-diagnostic.zip"`)
 		w.Header().Set("Cache-Control", "no-store")
+		defer limitDownload(w)()
 		_, _ = w.Write(body)
 	}
+}
+
+// limitDownload bounds how long a slow reader can hold a transfer slot and returns the reset.
+func limitDownload(w http.ResponseWriter) func() {
+	rc := http.NewResponseController(w)
+	if err := rc.SetWriteDeadline(time.Now().Add(downloadWriteTimeout)); err != nil {
+		return func() {}
+	}
+	return func() { _ = rc.SetWriteDeadline(time.Time{}) }
 }

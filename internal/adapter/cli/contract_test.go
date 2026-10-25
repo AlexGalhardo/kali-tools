@@ -149,7 +149,7 @@ func TestExitCodeTable(t *testing.T) {
 		{"", 0}, {"failed", 1}, {"no_connection", 1}, {"certificate_invalid", 1},
 		{"invalid_input", 2}, {"unsupported", 3}, {"permission_required", 4},
 		{"location_consent_required", 4}, {"dependency_missing", 5}, {"not_found", 6},
-		{"timeout", 7}, {"conflict", 8}, {"unauthorized", 9}, {"forbidden", 9},
+		{"timeout", 7}, {"conflict", 8}, {"unauthorized", 9}, {"forbidden", 9}, {"unavailable", 1},
 		{"cancelled", 130}, {"unknown", 1},
 	} {
 		t.Run(test.code, func(t *testing.T) {

@@ -26,7 +26,16 @@ func newSession(port int, secure bool) (*session, error) {
 	// Go's crypto/rand.Read terminates the process on entropy failure and always returns nil.
 	_, _ = rand.Read(launch)
 	_, _ = rand.Read(cookie)
-	return &session{launch: base64.RawURLEncoding.EncodeToString(launch), cookie: base64.RawURLEncoding.EncodeToString(cookie), name: sessionCookie + strconv.Itoa(port), secure: secure}, nil
+	return &session{launch: base64.RawURLEncoding.EncodeToString(launch), cookie: base64.RawURLEncoding.EncodeToString(cookie), name: cookieName(port, secure), secure: secure}, nil
+}
+
+// The __Host- prefix needs Secure, Path=/ and no Domain, so it applies only over TLS.
+func cookieName(port int, secure bool) string {
+	name := sessionCookie + strconv.Itoa(port)
+	if secure {
+		return "__Host-" + name
+	}
+	return name
 }
 
 func (s *session) valid(r *http.Request) bool {

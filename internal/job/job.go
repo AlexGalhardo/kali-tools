@@ -57,7 +57,7 @@ type Limits struct {
 }
 
 var (
-	ErrClosed   = &domain.Error{Code: "invalid_input", Message: "service is shutting down"}
-	ErrBusy     = &domain.Error{Code: "invalid_input", Message: "maximum concurrent operations reached"}
+	ErrClosed   = &domain.Error{Code: domain.CodeUnavailable, Message: "service is shutting down"}
+	ErrBusy     = &domain.Error{Code: domain.CodeConflict, Message: "maximum concurrent operations reached"}
 	ErrNotFound = errors.New("job: not found")
 )

@@ -9,7 +9,7 @@ import (
 
 func TestCapabilityStatesAndErrorCodes(t *testing.T) {
 	wantStates := []string{"available", "dependency_missing", "permission_required", "location_consent_required", "unsupported", "failed"}
-	wantCodes := []string{"invalid_input", "unsupported", "permission_required", "dependency_missing", "location_consent_required", "not_found", "timeout", "cancelled", "failed", "certificate_invalid", "no_connection", "conflict", "unauthorized", "forbidden"}
+	wantCodes := []string{"invalid_input", "unsupported", "permission_required", "dependency_missing", "location_consent_required", "not_found", "timeout", "cancelled", "failed", "certificate_invalid", "no_connection", "conflict", "unauthorized", "forbidden", "unavailable"}
 	if !slices.Equal(domain.CapabilityStates(), wantStates) || !slices.Equal(domain.ErrorCodes(), wantCodes) {
 		t.Fatal("state/code lists differ")
 	}

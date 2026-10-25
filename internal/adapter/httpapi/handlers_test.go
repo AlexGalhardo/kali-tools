@@ -256,7 +256,7 @@ func TestWiFiConsentHTTPError(t *testing.T) {
 }
 
 func TestStatusForEveryCode(t *testing.T) {
-	for code, want := range map[string]int{"invalid_input": 400, "unauthorized": 401, "forbidden": 403, "permission_required": 403, "location_consent_required": 403, "not_found": 404, "conflict": 409, "dependency_missing": 424, "cancelled": 499, "failed": 500, "unsupported": 501, "no_connection": 502, "certificate_invalid": 502, "timeout": 504, "unknown": 500} {
+	for code, want := range map[string]int{"invalid_input": 400, "unauthorized": 401, "forbidden": 403, "permission_required": 403, "location_consent_required": 403, "not_found": 404, "conflict": 409, "dependency_missing": 424, "cancelled": 499, "failed": 500, "unsupported": 501, "no_connection": 502, "certificate_invalid": 502, "timeout": 504, "unavailable": 503, "unknown": 500} {
 		if got := statusFor(code); got != want {
 			t.Errorf("%s=%d want %d", code, got, want)
 		}
