@@ -28,7 +28,9 @@ type Options struct {
 	AllowRemote bool
 	TLSCert     string
 	TLSKey      string
-	Logger      *slog.Logger
+	// AllowFrom lists CIDRs allowed to connect; empty allows every peer. It requires AllowRemote.
+	AllowFrom []string
+	Logger    *slog.Logger
 }
 type Server struct {
 	app          *app.Application
@@ -71,6 +73,13 @@ func New(a *app.Application, opts Options) (*Server, error) {
 	}
 	if (opts.TLSCert == "") != (opts.TLSKey == "") {
 		return nil, domain.Invalid("both TLS certificate and key are required")
+	}
+	if len(opts.AllowFrom) > 0 && !opts.AllowRemote {
+		return nil, domain.Invalid("--allow-from requires --allow-remote")
+	}
+	allowFrom, err := parseAllowFrom(opts.AllowFrom)
+	if err != nil {
+		return nil, err
 	}
 	var config *tls.Config
 	var fingerprint string
@@ -118,6 +127,9 @@ func New(a *app.Application, opts Options) (*Server, error) {
 	logger := opts.Logger
 	if logger == nil {
 		logger = slog.New(slog.DiscardHandler)
+	}
+	if len(allowFrom) > 0 {
+		listener = &allowListener{Listener: listener, allow: allowFrom, log: logger}
 	}
 	allowed := map[string]bool{}
 	if loopback {

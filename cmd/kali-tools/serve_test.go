@@ -56,6 +56,46 @@ func TestServeFlagsAndShutdown(t *testing.T) {
 	}
 }
 
+func TestServeTokenFileKeepsTokenOffStdout(t *testing.T) {
+	for _, jsonMode := range []bool{false, true} {
+		isolateServeConfig(t)
+		path := filepath.Join(t.TempDir(), "launch-url")
+		var out, stderr bytes.Buffer
+		ctx, cancel := context.WithCancel(t.Context())
+		listen := func(a *app.Application, opts httpapi.Options) (*httpapi.Server, error) {
+			s, err := newServeTestServer(a, opts)
+			cancel()
+			return s, err
+		}
+		args := []string{"--listen", "127.0.0.1:0", "--token-file", path}
+		if jsonMode {
+			args = append(args, "--json")
+		}
+		if code := runServe(ctx, args, &out, &stderr, listen); code != 0 {
+			t.Fatalf("code=%d out=%s stderr=%s", code, &out, &stderr)
+		}
+		raw, err := os.ReadFile(path)
+		if err != nil || !strings.Contains(string(raw), "#token=") {
+			t.Fatalf("token file: %q %v", raw, err)
+		}
+		token := strings.TrimSpace(string(raw))[strings.Index(string(raw), "#token=")+len("#token="):]
+		if strings.Contains(out.String()+stderr.String(), token) {
+			t.Fatal("token printed despite --token-file")
+		}
+		if info, err := os.Stat(path); err != nil || info.Mode().Perm()&0o077 != 0 && os.PathSeparator == '/' {
+			t.Fatal(info, err)
+		}
+	}
+}
+
+func TestServeAllowFromRequiresRemote(t *testing.T) {
+	isolateServeConfig(t)
+	var stderr bytes.Buffer
+	if code := runServe(t.Context(), []string{"--listen", "127.0.0.1:0", "--allow-from", "10.0.0.0/24"}, io.Discard, &stderr, newServeTestServer); code != 2 {
+		t.Fatalf("code=%d %s", code, &stderr)
+	}
+}
+
 func TestServeDispatch(t *testing.T) {
 	for _, args := range [][]string{{"serve", "--help"}, {"--json", "serve", "--help"}, {"--lang", "pt-BR", "serve", "--help"}} {
 		var out, stderr bytes.Buffer

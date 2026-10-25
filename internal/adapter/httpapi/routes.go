@@ -10,8 +10,8 @@ func addRoutes(mux *http.ServeMux, a *app.Application, s *Server) {
 	mux.Handle("POST /api/session", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		out := &statusWriter{ResponseWriter: w}
 		s.session.exchange(out, r)
-		if out.status == http.StatusUnauthorized {
-			s.log.Info("session exchange rejected")
+		if out.status == http.StatusUnauthorized || out.status == http.StatusTooManyRequests {
+			s.log.Info("session exchange rejected", "remote", r.RemoteAddr, "status", out.status)
 		}
 	}))
 	mux.Handle("GET /healthz", emptyRequest(handleHealth()))
